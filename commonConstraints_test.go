@@ -1,6 +1,7 @@
 package valix
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/stretchr/testify/require"
 	"regexp"
@@ -290,6 +291,16 @@ func TestPositive(t *testing.T) {
 	jobj["foo"] = 1
 	ok, violations = validator.Validate(jobj)
 	require.True(t, ok)
+
+	// test with json number...
+	jobj["foo"] = json.Number("0")
+	ok, violations = validator.Validate(jobj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, messageValuePositive, violations[0].Message)
+	jobj["foo"] = json.Number("1")
+	ok, violations = validator.Validate(jobj)
+	require.True(t, ok)
 }
 
 func TestPositiveOrZero(t *testing.T) {
@@ -323,6 +334,16 @@ func TestPositiveOrZero(t *testing.T) {
 	require.Equal(t, 1, len(violations))
 	require.Equal(t, messageValuePositiveOrZero, violations[0].Message)
 	jobj["foo"] = 0
+	ok, violations = validator.Validate(jobj)
+	require.True(t, ok)
+
+	// test with json number...
+	jobj["foo"] = json.Number("-1")
+	ok, violations = validator.Validate(jobj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, messageValuePositiveOrZero, violations[0].Message)
+	jobj["foo"] = json.Number("0")
 	ok, violations = validator.Validate(jobj)
 	require.True(t, ok)
 }
@@ -362,6 +383,16 @@ func TestNegative(t *testing.T) {
 	jobj["foo"] = -1
 	ok, violations = validator.Validate(jobj)
 	require.True(t, ok)
+
+	// test with json number...
+	jobj["foo"] = json.Number("0")
+	ok, violations = validator.Validate(jobj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, messageValueNegative, violations[0].Message)
+	jobj["foo"] = json.Number("-1")
+	ok, violations = validator.Validate(jobj)
+	require.True(t, ok)
 }
 
 func TestNegativeOrZero(t *testing.T) {
@@ -397,6 +428,16 @@ func TestNegativeOrZero(t *testing.T) {
 	jobj["foo"] = 0
 	ok, violations = validator.Validate(jobj)
 	require.True(t, ok)
+
+	// test with json number...
+	jobj["foo"] = json.Number("1")
+	ok, violations = validator.Validate(jobj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, messageValueNegativeOrZero, violations[0].Message)
+	jobj["foo"] = json.Number("0")
+	ok, violations = validator.Validate(jobj)
+	require.True(t, ok)
 }
 
 func TestMinimum(t *testing.T) {
@@ -429,6 +470,16 @@ func TestMinimum(t *testing.T) {
 	jobj["foo"] = 2
 	ok, violations = validator.Validate(jobj)
 	require.True(t, ok)
+
+	// test with json number...
+	jobj["foo"] = json.Number("1")
+	ok, violations = validator.Validate(jobj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, testMsg, violations[0].Message)
+	jobj["foo"] = json.Number("2")
+	ok, violations = validator.Validate(jobj)
+	require.True(t, ok)
 }
 
 func TestMaximum(t *testing.T) {
@@ -459,6 +510,16 @@ func TestMaximum(t *testing.T) {
 	require.Equal(t, 1, len(violations))
 	require.Equal(t, testMsg, violations[0].Message)
 	jobj["foo"] = 2
+	ok, violations = validator.Validate(jobj)
+	require.True(t, ok)
+
+	// test with json number...
+	jobj["foo"] = json.Number("3")
+	ok, violations = validator.Validate(jobj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, testMsg, violations[0].Message)
+	jobj["foo"] = json.Number("2")
 	ok, violations = validator.Validate(jobj)
 	require.True(t, ok)
 }
@@ -502,6 +563,21 @@ func TestRange(t *testing.T) {
 	require.Equal(t, 1, len(violations))
 	require.Equal(t, testMsg, violations[0].Message)
 	jobj["foo"] = 2
+	ok, violations = validator.Validate(jobj)
+	require.True(t, ok)
+
+	// test with json number...
+	jobj["foo"] = json.Number("4")
+	ok, violations = validator.Validate(jobj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, testMsg, violations[0].Message)
+	jobj["foo"] = json.Number("1")
+	ok, violations = validator.Validate(jobj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, testMsg, violations[0].Message)
+	jobj["foo"] = json.Number("2")
 	ok, violations = validator.Validate(jobj)
 	require.True(t, ok)
 }
@@ -594,15 +670,6 @@ func TestCustomConstraint(t *testing.T) {
 	jobj["foo"] = "Ba"
 	ok, violations = validator.Validate(jobj)
 	require.True(t, ok)
-}
-
-func TestFoo(t *testing.T) {
-	//var ISO_8601_FULL = /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(\.\d+)?(([+-]\d\d:\d\d)|Z)?$/i
-	//uuidRegexpPattern          = "([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})"
-	var patt = "(\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d(\\.\\d+)?(([+-]\\d\\d:\\d\\d)|Z)?)"
-	var rx = *regexp.MustCompile(patt)
-	println(rx.MatchString("2021-01-01T14:00:00.0-01:00"))
-	println(fmt.Sprint(rx))
 }
 
 func buildFooValidator(propertyType string, constraint Constraint, notNull bool) *Validator {
