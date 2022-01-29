@@ -1,8 +1,9 @@
 package valix
 
 import (
+	"encoding/json"
 	"fmt"
-	"strings"
+	"math"
 )
 
 const (
@@ -11,7 +12,7 @@ const (
 	MessageValueMustBeObject            = "Value must be an object"
 	MessageValueMustBeArray             = "Value must be an array"
 	MessageValueMustBeObjectOrArray     = "Value must be an object or array"
-	MessagePropertyObjectValidatorError = "Property object validator error - does not allow object or array!"
+	MessagePropertyObjectValidatorError = "CurrentProperty object validator error - does not allow object or array!"
 )
 
 var PropertyType = newPropertyTypesEnum()
@@ -37,10 +38,12 @@ type propertyType struct {
 }
 
 type PropertyValidator struct {
-	PropertyType    string
-	NotNull         bool
-	Mandatory       bool
-	Constraints     []Constraint
+	PropertyType string
+	NotNull      bool
+	Mandatory    bool
+	// Constraints are checked in the order they are specified
+	Constraints []Constraint
+	// ObjectValidator is checked, if specified, after all Constraints are checked
 	ObjectValidator *Validator
 }
 
@@ -50,9 +53,9 @@ func (pv *PropertyValidator) validate(actualValue interface{}, ctx *Context) {
 			ctx.AddViolationForCurrent(MessageValueCannotBeNull)
 		}
 	} else if pv.checkType(actualValue, ctx) {
-		pv.checkObjectValidation(actualValue, ctx)
-		if ctx.continues {
-			pv.checkConstraints(actualValue, ctx)
+		pv.checkConstraints(actualValue, ctx)
+		if ctx.continueAll && ctx.continuePty() {
+			pv.checkObjectValidation(actualValue, ctx)
 		}
 	}
 }
@@ -93,10 +96,11 @@ func checkValueType(value interface{}, t string) bool {
 func checkNumeric(value interface{}, isInt bool) bool {
 	var ok = false
 	if fVal, fOk := value.(float64); fOk {
-		ok = true
-		if isInt {
-			// this test may not be sufficient???
-			ok = !strings.Contains(fmt.Sprint(fVal), ".")
+		ok = !isInt || (math.Trunc(fVal) == fVal)
+	} else if nVal, nOk := value.(json.Number); nOk {
+		// using json.Number.Float64() to parse - as this still allows for e notation (e.g. "0.1e1" is a valid int)
+		if f, err := nVal.Float64(); err == nil {
+			ok = !isInt || (math.Trunc(f) == f)
 		}
 	} else {
 		_, ok = value.(int)
@@ -155,7 +159,7 @@ func (pv *PropertyValidator) checkConstraints(actualValue interface{}, ctx *Cont
 			if ok, msg := constraint.Validate(actualValue, ctx); !ok {
 				ctx.AddViolationForCurrent(msg)
 			}
-			if !ctx.continues {
+			if !ctx.continueAll || !ctx.continuePty() {
 				return
 			}
 		}

@@ -11,8 +11,8 @@ const (
 	MessageRequestBodyEmpty              = "Request body is empty"
 	MessageUnableToDecode                = "Unable to decode request body as JSON"
 	MessageRequestBodyNotJsonNull        = "Request body must not be JSON null"
-	MessageRequestBodyNotJsonArray       = "Request body must not be JSON array"
-	MessageRequestBodyNotJsonObject      = "Request body must not be JSON object"
+	MessageRequestBodyNotJsonArray       = "Request body must not be a JSON array"
+	MessageRequestBodyNotJsonObject      = "Request body must not be a JSON object"
 	MessageRequestBodyExpectedJsonArray  = "Request body expected to be JSON array"
 	MessageRequestBodyExpectedJsonObject = "Request body must be a JSON object"
 	MessageArrayElementMustBeObject      = "Array element [%d] must be an object"
@@ -21,12 +21,21 @@ const (
 )
 
 type Validator struct {
+	// IgnoreUnknownProperties is whether to ignore unknown properties (default false)
+	//
+	// Set this to `true` if you want to allow unknown properties
 	IgnoreUnknownProperties bool
-	Properties              map[string]*PropertyValidator
-	Constraints             []Constraint
-	AllowArray              bool
-	DisallowObject          bool
-	AllowNull               bool
+	// Properties is the map of property names (key) and PropertyValidator (value)
+	Properties map[string]*PropertyValidator
+	// Constraints is an optional slice of Constraint items to be checked on the object/array
+	//
+	// * These are checked in the order specified and prior to property validator & unknown property checks
+	Constraints    []Constraint
+	AllowArray     bool
+	DisallowObject bool
+	AllowNull      bool
+	// UseNumber forces RequestValidate method to use json.Number when decoding request body
+	UseNumber bool
 }
 
 // RequestValidate Performs validation on the request body of the supplied http.Request
@@ -34,16 +43,19 @@ func (v *Validator) RequestValidate(r *http.Request) (bool, []*Violation, interf
 	ctx := newContext(r, v)
 	var obj interface{} = nil
 	if r.Body == nil {
-		ctx.AddViolation(newEmptyViolation(MessageRequestBodyEmpty))
+		ctx.AddViolation(NewEmptyViolation(MessageRequestBodyEmpty))
 	} else {
 		decoder := json.NewDecoder(r.Body)
+		if v.UseNumber {
+			decoder.UseNumber()
+		}
 		obj = reflect.Interface
 		if err := decoder.Decode(&obj); err != nil {
 			obj = nil
-			ctx.AddViolation(newEmptyViolation(MessageUnableToDecode))
+			ctx.AddViolation(NewEmptyViolation(MessageUnableToDecode))
 		} else if obj == nil {
 			if !v.AllowNull {
-				ctx.AddViolation(newEmptyViolation(MessageRequestBodyNotJsonNull))
+				ctx.AddViolation(NewEmptyViolation(MessageRequestBodyNotJsonNull))
 			}
 		} else {
 			// determine whether body is a map (object) or an array...
@@ -51,20 +63,20 @@ func (v *Validator) RequestValidate(r *http.Request) (bool, []*Violation, interf
 				if v.AllowArray {
 					v.validateArrayOf(arr, ctx)
 				} else {
-					ctx.AddViolation(newEmptyViolation(MessageRequestBodyNotJsonArray))
+					ctx.AddViolation(NewEmptyViolation(MessageRequestBodyNotJsonArray))
 				}
 			} else if m, isMap := obj.(map[string]interface{}); isMap {
 				if v.DisallowObject {
 					if v.AllowArray {
-						ctx.AddViolation(newEmptyViolation(MessageRequestBodyExpectedJsonArray))
+						ctx.AddViolation(NewEmptyViolation(MessageRequestBodyExpectedJsonArray))
 					} else {
-						ctx.AddViolation(newEmptyViolation(MessageRequestBodyNotJsonObject))
+						ctx.AddViolation(NewEmptyViolation(MessageRequestBodyNotJsonObject))
 					}
 				} else {
 					v.validate(m, ctx)
 				}
 			} else {
-				ctx.AddViolation(newEmptyViolation(MessageRequestBodyExpectedJsonObject))
+				ctx.AddViolation(NewEmptyViolation(MessageRequestBodyExpectedJsonObject))
 			}
 		}
 	}
@@ -91,7 +103,7 @@ func (v *Validator) validate(obj map[string]interface{}, ctx *Context) {
 			if ok, msg := constraint.Validate(obj, ctx); !ok {
 				ctx.AddViolationForCurrent(msg)
 			}
-			if !ctx.continues {
+			if !ctx.continueAll {
 				return
 			}
 		}
@@ -110,7 +122,7 @@ func (v *Validator) validateArrayOf(arr []interface{}, ctx *Context) {
 			ctx.popPath()
 			ctx.AddViolationForCurrent(fmt.Sprintf(MessageArrayElementMustBeObject, i))
 		}
-		if !ctx.continues {
+		if !ctx.continueAll {
 			return
 		}
 	}
@@ -127,7 +139,7 @@ func (v *Validator) checkProperties(obj map[string]interface{}, ctx *Context) {
 			pv.validate(actualValue, ctx)
 			ctx.popPath()
 		}
-		if !ctx.continues {
+		if !ctx.continueAll {
 			return
 		}
 	}

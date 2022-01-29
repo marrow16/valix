@@ -2,26 +2,28 @@ package valix
 
 // Violation contains information about an encountered validation violation
 type Violation struct {
-	// the name of the property that failed validation
-	PropertyName string
-	// to path to the property that failed validation
+	// Property is the name of the property that failed validation
+	Property string
+	// Path is the path to the property that failed validation (in JSON format, e.g. "foo.bar[0].baz")
 	Path string
-	// the violation message
+	// Message is the violation message
 	Message string
 }
 
-func NewViolation(propertyName string, path string, msg string) *Violation {
+// NewViolation creates a new violation with the specified property, path and message
+func NewViolation(property string, path string, msg string) *Violation {
 	return &Violation{
-		PropertyName: propertyName,
-		Path:         path,
-		Message:      msg,
+		Property: property,
+		Path:     path,
+		Message:  msg,
 	}
 }
 
-func newEmptyViolation(msg string) *Violation {
+// NewEmptyViolation creates a new violation with the specified message (path and property are blank)
+func NewEmptyViolation(msg string) *Violation {
 	return &Violation{
-		PropertyName: "",
-		Path:         "",
-		Message:      msg,
+		Property: "",
+		Path:     "",
+		Message:  msg,
 	}
 }

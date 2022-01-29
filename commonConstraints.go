@@ -1,6 +1,7 @@
 package valix
 
 import (
+	"encoding/json"
 	"fmt"
 	"regexp"
 	"strings"
@@ -230,6 +231,10 @@ func (c *PositiveConstraint) Validate(value interface{}, ctx *Context) (bool, st
 		if i <= 0 {
 			return false, defaultMessage(c.Message, messageValuePositive)
 		}
+	} else if n, ok3 := value.(json.Number); ok3 {
+		if fv, fe := n.Float64(); fe == nil && fv <= 0 {
+			return false, defaultMessage(c.Message, messageValuePositive)
+		}
 	}
 	return true, ""
 }
@@ -249,6 +254,10 @@ func (c *PositiveOrZeroConstraint) Validate(value interface{}, ctx *Context) (bo
 		}
 	} else if i, ok2 := value.(int); ok2 {
 		if i < 0 {
+			return false, defaultMessage(c.Message, messageValuePositiveOrZero)
+		}
+	} else if n, ok3 := value.(json.Number); ok3 {
+		if fv, fe := n.Float64(); fe == nil && fv < 0 {
 			return false, defaultMessage(c.Message, messageValuePositiveOrZero)
 		}
 	}
@@ -272,6 +281,10 @@ func (c *NegativeConstraint) Validate(value interface{}, ctx *Context) (bool, st
 		if i >= 0 {
 			return false, defaultMessage(c.Message, messageValueNegative)
 		}
+	} else if n, ok3 := value.(json.Number); ok3 {
+		if fv, fe := n.Float64(); fe == nil && fv >= 0 {
+			return false, defaultMessage(c.Message, messageValueNegative)
+		}
 	}
 	return true, ""
 }
@@ -291,6 +304,10 @@ func (c *NegativeOrZeroConstraint) Validate(value interface{}, ctx *Context) (bo
 		}
 	} else if i, ok2 := value.(int); ok2 {
 		if i > 0 {
+			return false, defaultMessage(c.Message, messageValueNegativeOrZero)
+		}
+	} else if n, ok3 := value.(json.Number); ok3 {
+		if fv, fe := n.Float64(); fe == nil && fv > 0 {
 			return false, defaultMessage(c.Message, messageValueNegativeOrZero)
 		}
 	}
@@ -316,6 +333,10 @@ func (c *MinimumConstraint) Validate(value interface{}, ctx *Context) (bool, str
 		if float64(i) < c.Value {
 			return false, defaultMessage(c.Message, fmt.Sprintf(messageValueGte, c.Value))
 		}
+	} else if n, ok3 := value.(json.Number); ok3 {
+		if fv, fe := n.Float64(); fe == nil && fv < c.Value {
+			return false, defaultMessage(c.Message, messageValueGte)
+		}
 	}
 	return true, ""
 }
@@ -338,6 +359,10 @@ func (c *MaximumConstraint) Validate(value interface{}, ctx *Context) (bool, str
 	} else if i, ok2 := value.(int); ok2 {
 		if float64(i) > c.Value {
 			return false, defaultMessage(c.Message, fmt.Sprintf(messageValueLte, c.Value))
+		}
+	} else if n, ok3 := value.(json.Number); ok3 {
+		if fv, fe := n.Float64(); fe == nil && fv > c.Value {
+			return false, defaultMessage(c.Message, messageValueLte)
 		}
 	}
 	return true, ""
@@ -367,6 +392,14 @@ func (c *RangeConstraint) Validate(value interface{}, ctx *Context) (bool, strin
 			return false, defaultMessage(c.Message, fmt.Sprintf(messageValueGte, c.Minimum))
 		} else if float64(i) > c.Maximum {
 			return false, defaultMessage(c.Message, fmt.Sprintf(messageValueLte, c.Maximum))
+		}
+	} else if n, ok3 := value.(json.Number); ok3 {
+		if fv, fe := n.Float64(); fe == nil {
+			if fv < c.Minimum {
+				return false, defaultMessage(c.Message, fmt.Sprintf(messageValueGte, c.Minimum))
+			} else if fv > c.Maximum {
+				return false, defaultMessage(c.Message, fmt.Sprintf(messageValueLte, c.Maximum))
+			}
 		}
 	}
 	return true, ""
