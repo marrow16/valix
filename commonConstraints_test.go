@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/stretchr/testify/require"
 	"regexp"
-	"strings"
 	"testing"
 )
 
@@ -105,7 +104,7 @@ func TestStringMinLength(t *testing.T) {
 	ok, violations := validator.Validate(jobj)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(messageValueAtLeast, 2, "characters"), violations[0].Message)
+	require.Equal(t, fmt.Sprintf(messageValueAtLeast, 2), violations[0].Message)
 
 	jobj["foo"] = "Ab"
 	ok, violations = validator.Validate(jobj)
@@ -126,7 +125,7 @@ func TestStringMaxLength(t *testing.T) {
 	ok, violations := validator.Validate(jobj)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(messageValueNotMore, 2, "characters"), violations[0].Message)
+	require.Equal(t, fmt.Sprintf(messageValueNotMore, 2), violations[0].Message)
 
 	jobj["foo"] = "Ab"
 	ok, violations = validator.Validate(jobj)
@@ -147,13 +146,13 @@ func TestStringLength(t *testing.T) {
 	ok, violations := validator.Validate(jobj)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(messageValueAtLeast, 2, "characters"), violations[0].Message)
+	require.Equal(t, fmt.Sprintf(messageValueMinMax, 2, 3), violations[0].Message)
 
 	jobj["foo"] = "Abcd"
 	ok, violations = validator.Validate(jobj)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(messageValueNotMore, 3, "characters"), violations[0].Message)
+	require.Equal(t, fmt.Sprintf(messageValueMinMax, 2, 3), violations[0].Message)
 
 	jobj["foo"] = "Abc"
 	ok, violations = validator.Validate(jobj)
@@ -162,6 +161,18 @@ func TestStringLength(t *testing.T) {
 	jobj["foo"] = nil
 	ok, violations = validator.Validate(jobj)
 	require.True(t, ok)
+
+	// and without maximum length...
+	validator = buildFooValidator(PropertyType.String,
+		&StringLengthConstraint{Minimum: 2}, false)
+	jobj = jsonObject(`{
+		"foo": "A"
+	}`)
+
+	ok, violations = validator.Validate(jobj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, fmt.Sprintf(messageValueAtLeast, 2), violations[0].Message)
 }
 
 func TestLengthWithString(t *testing.T) {
@@ -174,13 +185,13 @@ func TestLengthWithString(t *testing.T) {
 	ok, violations := validator.Validate(jobj)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(messageValueAtLeast, 2, "characters"), violations[0].Message)
+	require.Equal(t, fmt.Sprintf(messageValueMinMax, 2, 3), violations[0].Message)
 
 	jobj["foo"] = "Abcd"
 	ok, violations = validator.Validate(jobj)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(messageValueNotMore, 3, "characters"), violations[0].Message)
+	require.Equal(t, fmt.Sprintf(messageValueMinMax, 2, 3), violations[0].Message)
 
 	jobj["foo"] = "Abc"
 	ok, violations = validator.Validate(jobj)
@@ -189,6 +200,17 @@ func TestLengthWithString(t *testing.T) {
 	jobj["foo"] = nil
 	ok, violations = validator.Validate(jobj)
 	require.True(t, ok)
+
+	// and without max...
+	validator = buildFooValidator(PropertyType.String,
+		&LengthConstraint{Minimum: 2}, false)
+	jobj = jsonObject(`{
+		"foo": "A"
+	}`)
+	ok, violations = validator.Validate(jobj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, fmt.Sprintf(messageValueAtLeast, 2), violations[0].Message)
 }
 
 func TestLengthWithObject(t *testing.T) {
@@ -203,7 +225,7 @@ func TestLengthWithObject(t *testing.T) {
 	ok, violations := validator.Validate(jobj)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(messageValueAtLeast, 2, "properties"), violations[0].Message)
+	require.Equal(t, fmt.Sprintf(messageValueMinMax, 2, 3), violations[0].Message)
 
 	jobj["foo"] = map[string]interface{}{
 		"foo": nil,
@@ -214,7 +236,7 @@ func TestLengthWithObject(t *testing.T) {
 	ok, violations = validator.Validate(jobj)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(messageValueNotMore, 3, "properties"), violations[0].Message)
+	require.Equal(t, fmt.Sprintf(messageValueMinMax, 2, 3), violations[0].Message)
 
 	jobj["foo"] = map[string]interface{}{
 		"foo": nil,
@@ -239,13 +261,13 @@ func TestLengthWithArray(t *testing.T) {
 	ok, violations := validator.Validate(jobj)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(messageValueAtLeast, 2, "elements"), violations[0].Message)
+	require.Equal(t, fmt.Sprintf(messageValueMinMax, 2, 3), violations[0].Message)
 
 	jobj["foo"] = []interface{}{"foo", "bar", "baz", "quz"}
 	ok, violations = validator.Validate(jobj)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(messageValueNotMore, 3, "elements"), violations[0].Message)
+	require.Equal(t, fmt.Sprintf(messageValueMinMax, 2, 3), violations[0].Message)
 
 	jobj["foo"] = []interface{}{"foo", "bar", "baz"}
 	ok, violations = validator.Validate(jobj)
@@ -592,7 +614,7 @@ func TestArrayOf(t *testing.T) {
 	ok, violations := validator.Validate(jobj)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(messageArrayElementType, PropertyType.String, 1), violations[0].Message)
+	require.Equal(t, fmt.Sprintf(messageArrayElementType, PropertyType.String), violations[0].Message)
 
 	jobj = jsonObject(`{
 		"foo": [null]
@@ -600,10 +622,25 @@ func TestArrayOf(t *testing.T) {
 	ok, violations = validator.Validate(jobj)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(messageArrayElementNull, 0), violations[0].Message)
+	require.Equal(t, fmt.Sprintf(messageArrayElementType, PropertyType.String), violations[0].Message)
 
 	jobj = jsonObject(`{
 		"foo": ["ok", "ok2"]
+	}`)
+	ok, violations = validator.Validate(jobj)
+	require.True(t, ok)
+
+	validator = buildFooValidator(PropertyType.Array,
+		&ArrayOfConstraint{Type: PropertyType.String, AllowNullElement: true}, false)
+	jobj = jsonObject(`{
+		"foo": [1, "ok2"]
+	}`)
+	ok, violations = validator.Validate(jobj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, fmt.Sprintf(messageArrayElementTypeOrNull, PropertyType.String), violations[0].Message)
+	jobj = jsonObject(`{
+		"foo": [null, "ok2"]
 	}`)
 	ok, violations = validator.Validate(jobj)
 	require.True(t, ok)
@@ -619,7 +656,7 @@ func TestStringValidUuid(t *testing.T) {
 	ok, violations := validator.Validate(jobj)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, messageValueNotValidUuid, violations[0].Message)
+	require.Equal(t, fmt.Sprintf(messageUuidMinVersion, 4), violations[0].Message)
 
 	jobj["foo"] = "db15398d-328f-4d16-be2f-f38e8f2d0a79"
 	ok, violations = validator.Validate(jobj)
@@ -635,41 +672,17 @@ func TestStringValidUuid(t *testing.T) {
 	ok, violations = validator.Validate(jobj)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(messageUuidIncorrectVer, 4), violations[0].Message)
-}
+	require.Equal(t, fmt.Sprintf(messageUuidCorrectVer, 4), violations[0].Message)
 
-func TestCustomConstraint(t *testing.T) {
-	msg := "Value must be greater than 'B'"
-	validator := buildFooValidator(PropertyType.String,
-		CustomConstraint(func(value interface{}, ctx *Context) (bool, string) {
-			if str, ok := value.(string); ok {
-				return strings.Compare(str, "B") > 0, msg
-			}
-			return true, ""
-		}), false)
-	jobj := jsonObject(`{
-		"foo": "OK is greater than B"
+	validator = buildFooValidator(PropertyType.String,
+		&StringValidUuidConstraint{}, false)
+	jobj = jsonObject(`{
+		"foo": "not a uuid"
 	}`)
-
-	ok, violations := validator.Validate(jobj)
-	require.True(t, ok)
-	require.Equal(t, 0, len(violations))
-
-	jobj["foo"] = "A"
 	ok, violations = validator.Validate(jobj)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, msg, violations[0].Message)
-
-	jobj["foo"] = "B"
-	ok, violations = validator.Validate(jobj)
-	require.False(t, ok)
-	require.Equal(t, 1, len(violations))
-	require.Equal(t, msg, violations[0].Message)
-
-	jobj["foo"] = "Ba"
-	ok, violations = validator.Validate(jobj)
-	require.True(t, ok)
+	require.Equal(t, fmt.Sprintf(messageValueValidUuid), violations[0].Message)
 }
 
 func buildFooValidator(propertyType string, constraint Constraint, notNull bool) *Validator {

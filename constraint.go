@@ -3,22 +3,27 @@ package valix
 // Constraint is the interface for all validation constraints on a property and object
 //
 // Custom constraints must implement this interface with the method:
-//    Validate(property string, value interface{}, ctx *valix.Context) (bool, string)
 type Constraint interface {
 	// Validate Validates the constraint for a given value
 	Validate(value interface{}, ctx *Context) (bool, string)
+	// GetMessage returns the actual message for the constraint
+	GetMessage() string
 }
 
-type Validate func(value interface{}, ctx *Context) (bool, string)
+type Validate func(value interface{}, ctx *Context, this *CustomConstraint) (bool, string)
 
-type customConstraint struct {
+type CustomConstraint struct {
 	validate Validate
+	Message  string
 }
 
-// CustomConstraint Creates a custom Constraint which uses the supplied Validate function
-func CustomConstraint(validate Validate) *customConstraint {
-	return &customConstraint{validate: validate}
+// NewCustomConstraint Creates a custom Constraint which uses the supplied Validate function
+func NewCustomConstraint(validate Validate, message string) *CustomConstraint {
+	return &CustomConstraint{validate: validate, Message: message}
 }
-func (v *customConstraint) Validate(value interface{}, ctx *Context) (bool, string) {
-	return v.validate(value, ctx)
+func (v *CustomConstraint) Validate(value interface{}, ctx *Context) (bool, string) {
+	return v.validate(value, ctx, v)
+}
+func (v *CustomConstraint) GetMessage() string {
+	return v.Message
 }
