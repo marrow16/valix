@@ -5,26 +5,24 @@ import (
 )
 
 type Context struct {
-	ok           bool
-	continueAll  bool
-	top          interface{}
-	topValidator *interface{}
-	violations   []*Violation
-	pathStack    []*pathStackItem
+	ok          bool
+	continueAll bool
+	root        interface{}
+	violations  []*Violation
+	pathStack   []*pathStackItem
 }
 
-func newContext(top interface{}, topValidator interface{}) *Context {
+func newContext(root interface{}) *Context {
 	return &Context{
-		ok:           true,
-		continueAll:  true,
-		top:          top,
-		topValidator: &topValidator,
-		violations:   []*Violation{},
+		ok:          true,
+		continueAll: true,
+		root:        root,
+		violations:  []*Violation{},
 		pathStack: []*pathStackItem{
 			{
 				property: nil,
 				path:     "",
-				value:    top,
+				value:    root,
 			},
 		},
 	}

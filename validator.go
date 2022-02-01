@@ -40,7 +40,7 @@ type Validator struct {
 
 // RequestValidate Performs validation on the request body of the supplied http.Request
 func (v *Validator) RequestValidate(r *http.Request) (bool, []*Violation, interface{}) {
-	ctx := newContext(r, v)
+	ctx := newContext(r)
 	var obj interface{} = nil
 	if r.Body == nil {
 		ctx.AddViolation(NewEmptyViolation(MessageRequestBodyEmpty))
@@ -85,14 +85,14 @@ func (v *Validator) RequestValidate(r *http.Request) (bool, []*Violation, interf
 
 // Validate Performs validation on the supplied object
 func (v *Validator) Validate(obj map[string]interface{}) (bool, []*Violation) {
-	ctx := newContext(obj, v)
+	ctx := newContext(obj)
 	v.validate(obj, ctx)
 	return ctx.ok, ctx.violations
 }
 
 // ValidateArrayOf Performs validation on each element of the supplied array
 func (v *Validator) ValidateArrayOf(arr []interface{}) (bool, []*Violation) {
-	ctx := newContext(arr, v)
+	ctx := newContext(arr)
 	v.validateArrayOf(arr, ctx)
 	return ctx.ok, ctx.violations
 }

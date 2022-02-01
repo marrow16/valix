@@ -122,7 +122,7 @@ func TestValidatorWithObjectConstraint(t *testing.T) {
 	ok, violations := v.Validate(o)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(messageValueAtLeast, 2, wordProperties), violations[0].Message)
+	require.Equal(t, fmt.Sprintf(messageValueMinMax, 2, 3), violations[0].Message)
 	require.Equal(t, "", violations[0].Path)
 	require.Equal(t, "", violations[0].Property)
 }
@@ -274,10 +274,10 @@ func TestValidatorStopsOnConstraint(t *testing.T) {
 	v := Validator{
 		IgnoreUnknownProperties: false,
 		Constraints: []Constraint{
-			CustomConstraint(func(value interface{}, ctx *Context) (bool, string) {
+			NewCustomConstraint(func(value interface{}, ctx *Context, cc *CustomConstraint) (bool, string) {
 				ctx.Stop()
 				return true, ""
-			}),
+			}, ""),
 		},
 		Properties: map[string]*PropertyValidator{
 			"foo": {
@@ -294,17 +294,17 @@ func TestValidatorStopsOnConstraint(t *testing.T) {
 }
 
 func TestValidatorStopsOnArrayElement(t *testing.T) {
-	msg := "Test message"
+	testMsg := "Test message"
 	v := Validator{
 		AllowArray: true,
 		Properties: map[string]*PropertyValidator{
 			"foo": {
 				PropertyType: PropertyType.Boolean,
 				Constraints: []Constraint{
-					CustomConstraint(func(value interface{}, ctx *Context) (bool, string) {
+					NewCustomConstraint(func(value interface{}, ctx *Context, cc *CustomConstraint) (bool, string) {
 						ctx.Stop()
-						return false, msg
-					}),
+						return false, cc.GetMessage()
+					}, testMsg),
 				},
 			},
 		},
@@ -314,7 +314,7 @@ func TestValidatorStopsOnArrayElement(t *testing.T) {
 	ok, violations := v.ValidateArrayOf(a)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, msg, violations[0].Message)
+	require.Equal(t, testMsg, violations[0].Message)
 }
 
 func TestPropertyValueObjectValidatorFailsForObjectOrArray(t *testing.T) {
@@ -466,7 +466,7 @@ func TestSubPropertyAsArrayValidation(t *testing.T) {
 	require.Equal(t, messageValuePositiveOrZero, violations[0].Message)
 	require.Equal(t, "person", violations[1].Path)
 	require.Equal(t, "name", violations[1].Property)
-	require.Equal(t, fmt.Sprintf(messageValueAtLeast, 1, wordCharacter), violations[1].Message)
+	require.Equal(t, fmt.Sprintf(messageValueMinMax, 1, 255), violations[1].Message)
 
 	o["person"] = []interface{}{
 		jsonObject(`{
@@ -655,10 +655,10 @@ func TestValidatorStops(t *testing.T) {
 				PropertyType: PropertyType.String,
 				NotNull:      true,
 				Constraints: []Constraint{
-					CustomConstraint(func(value interface{}, ctx *Context) (bool, string) {
+					NewCustomConstraint(func(value interface{}, ctx *Context, cc *CustomConstraint) (bool, string) {
 						ctx.Stop()
 						return true, ""
-					}),
+					}, ""),
 					// the following constraint should never be checked (because the prev constraint stops)
 					&StringNotEmptyConstraint{},
 				},
@@ -686,10 +686,10 @@ func TestValidatorManuallyAddedViolation(t *testing.T) {
 			"foo": {
 				PropertyType: PropertyType.String,
 				Constraints: []Constraint{
-					CustomConstraint(func(value interface{}, ctx *Context) (bool, string) {
+					NewCustomConstraint(func(value interface{}, ctx *Context, cc *CustomConstraint) (bool, string) {
 						ctx.AddViolation(NewViolation("", "", msg))
 						return true, ""
-					}),
+					}, ""),
 					&StringNotEmptyConstraint{},
 				},
 			},
@@ -711,10 +711,10 @@ func TestValidatorManuallyAddedCurrentViolation(t *testing.T) {
 			"foo": {
 				PropertyType: PropertyType.String,
 				Constraints: []Constraint{
-					CustomConstraint(func(value interface{}, ctx *Context) (bool, string) {
+					NewCustomConstraint(func(value interface{}, ctx *Context, cc *CustomConstraint) (bool, string) {
 						ctx.AddViolationForCurrent(msg)
 						return true, ""
-					}),
+					}, ""),
 					&StringNotEmptyConstraint{},
 				},
 			},
@@ -841,19 +841,19 @@ func TestCeaseFurtherWorks(t *testing.T) {
 			"foo": {
 				PropertyType: PropertyType.String,
 				Constraints: []Constraint{
-					CustomConstraint(func(value interface{}, ctx *Context) (bool, string) {
+					NewCustomConstraint(func(value interface{}, ctx *Context, cc *CustomConstraint) (bool, string) {
 						ctx.CeaseFurther()
 						return true, ""
-					}),
+					}, ""),
 					// these constraints should not be run because of the CeaseFurther (above)
 					&StringNotEmptyConstraint{},
 				},
 				ObjectValidator: &Validator{
 					Constraints: []Constraint{
-						CustomConstraint(func(value interface{}, ctx *Context) (bool, string) {
+						NewCustomConstraint(func(value interface{}, ctx *Context, cc *CustomConstraint) (bool, string) {
 							// this constraint should not be run because of the CeaseFurther (above)
 							return false, "Never run"
-						}),
+						}, ""),
 					},
 				},
 			},
@@ -880,6 +880,9 @@ type myCustomConstraint struct {
 
 func (c *myCustomConstraint) Validate(value interface{}, ctx *Context) (bool, string) {
 	return false, c.expectedPath
+}
+func (c *myCustomConstraint) GetMessage() string {
+	return ""
 }
 
 func buildFooPropertyTypeValidator(propertyType string, notNull bool) *Validator {
