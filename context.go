@@ -4,7 +4,7 @@ import (
 	"fmt"
 )
 
-type Context struct {
+type ValidatorContext struct {
 	ok          bool
 	continueAll bool
 	root        interface{}
@@ -12,8 +12,8 @@ type Context struct {
 	pathStack   []*pathStackItem
 }
 
-func newContext(root interface{}) *Context {
-	return &Context{
+func newValidatorContext(root interface{}) *ValidatorContext {
+	return &ValidatorContext{
 		ok:          true,
 		continueAll: true,
 		root:        root,
@@ -31,34 +31,34 @@ func newContext(root interface{}) *Context {
 // AddViolation adds a Violation to the validation context
 //
 // Note: Also causes the validator to fail (i.e. return false on validate)
-func (c *Context) AddViolation(v *Violation) {
-	c.violations = append(c.violations, v)
-	c.ok = false
+func (vc *ValidatorContext) AddViolation(v *Violation) {
+	vc.violations = append(vc.violations, v)
+	vc.ok = false
 }
 
 // AddViolationForCurrent adds a Violation to the validation context for
 // the current property and path
 //
 // Note: Also causes the validator to fail (i.e. return false on validate)
-func (c *Context) AddViolationForCurrent(msg string) {
-	curr := c.pathStack[len(c.pathStack)-1]
-	c.AddViolation(NewViolation(curr.propertyAsString(), curr.path, msg))
+func (vc *ValidatorContext) AddViolationForCurrent(msg string) {
+	curr := vc.pathStack[len(vc.pathStack)-1]
+	vc.AddViolation(NewViolation(curr.propertyAsString(), curr.path, msg))
 }
 
 // Stop causes the entire validation to stop - i.e. not further constraints or
 // property value validations are performed
 //
 // Note: This does not affect whether the validator succeeds or fails
-func (c *Context) Stop() {
-	c.continueAll = false
+func (vc *ValidatorContext) Stop() {
+	vc.continueAll = false
 }
 
 // CeaseFurther causes further constraints and property validators on the current
 // property to be ceased (i.e. not performed)
 //
 // Note: This does not affect whether the validator succeeds or fails
-func (c *Context) CeaseFurther() {
-	c.pathStack[len(c.pathStack)-1].stopped = true
+func (vc *ValidatorContext) CeaseFurther() {
+	vc.pathStack[len(vc.pathStack)-1].stopped = true
 }
 
 // CurrentProperty returns the current property - which may be a string (for property name)
@@ -68,13 +68,13 @@ func (c *Context) CeaseFurther() {
 //    CurrentPropertyName
 // or the current array index use...
 //    CurrentArrayIndex
-func (c *Context) CurrentProperty() interface{} {
-	return c.pathStack[len(c.pathStack)-1].property
+func (vc *ValidatorContext) CurrentProperty() interface{} {
+	return vc.pathStack[len(vc.pathStack)-1].property
 }
 
 // CurrentPropertyName returns the current property name (or nil if current is an array index)
-func (c *Context) CurrentPropertyName() *string {
-	pty := c.CurrentProperty()
+func (vc *ValidatorContext) CurrentPropertyName() *string {
+	pty := vc.CurrentProperty()
 	if s, ok := pty.(string); ok {
 		return &s
 	}
@@ -82,8 +82,8 @@ func (c *Context) CurrentPropertyName() *string {
 }
 
 // CurrentArrayIndex returns the current array index (or nil if current is a property name)
-func (c *Context) CurrentArrayIndex() *int {
-	pty := c.CurrentProperty()
+func (vc *ValidatorContext) CurrentArrayIndex() *int {
+	pty := vc.CurrentProperty()
 	if i, ok := pty.(int); ok {
 		return &i
 	}
@@ -91,13 +91,13 @@ func (c *Context) CurrentArrayIndex() *int {
 }
 
 // CurrentPath returns the current property path
-func (c *Context) CurrentPath() string {
-	return c.pathStack[len(c.pathStack)-1].path
+func (vc *ValidatorContext) CurrentPath() string {
+	return vc.pathStack[len(vc.pathStack)-1].path
 }
 
 // CurrentDepth returns the current depth of the context - i.e. how many properties deep in the tree
-func (c *Context) CurrentDepth() int {
-	return len(c.pathStack) - 1
+func (vc *ValidatorContext) CurrentDepth() int {
+	return len(vc.pathStack) - 1
 }
 
 // AncestorProperty returns an ancestor property - which may be a string (for property name)
@@ -107,16 +107,16 @@ func (c *Context) CurrentDepth() int {
 //    AncestorPropertyName
 // or an ancestor array index use...
 //    AncestorArrayIndex
-func (c *Context) AncestorProperty(level uint) (interface{}, bool) {
-	if itm, ok := c.ancestorStackItem(level); ok {
+func (vc *ValidatorContext) AncestorProperty(level uint) (interface{}, bool) {
+	if itm, ok := vc.ancestorStackItem(level); ok {
 		return itm.property, true
 	}
 	return nil, false
 }
 
 // AncestorPropertyName returns an ancestor property name (or nil if ancestor property is an array index)
-func (c *Context) AncestorPropertyName(level uint) (*string, bool) {
-	if itm, ok := c.ancestorStackItem(level); ok {
+func (vc *ValidatorContext) AncestorPropertyName(level uint) (*string, bool) {
+	if itm, ok := vc.ancestorStackItem(level); ok {
 		if s, oks := itm.property.(string); oks {
 			return &s, true
 		}
@@ -125,8 +125,8 @@ func (c *Context) AncestorPropertyName(level uint) (*string, bool) {
 }
 
 // AncestorArrayIndex returns an ancestor array index (or nil if ancestor is a property name)
-func (c *Context) AncestorArrayIndex(level uint) (*int, bool) {
-	if itm, ok := c.ancestorStackItem(level); ok {
+func (vc *ValidatorContext) AncestorArrayIndex(level uint) (*int, bool) {
+	if itm, ok := vc.ancestorStackItem(level); ok {
 		if i, oki := itm.property.(int); oki {
 			return &i, true
 		}
@@ -137,8 +137,8 @@ func (c *Context) AncestorArrayIndex(level uint) (*int, bool) {
 // AncestorPath returns an ancestor property path
 //
 // The level determines how far up the ancestry - 0 is parent, 1 is grandparent, etc.
-func (c *Context) AncestorPath(level uint) (*string, bool) {
-	if itm, ok := c.ancestorStackItem(level); ok {
+func (vc *ValidatorContext) AncestorPath(level uint) (*string, bool) {
+	if itm, ok := vc.ancestorStackItem(level); ok {
 		path := itm.path
 		return &path, true
 	}
@@ -146,8 +146,8 @@ func (c *Context) AncestorPath(level uint) (*string, bool) {
 }
 
 // AncestorValue returns an ancestor value
-func (c *Context) AncestorValue(level uint) (interface{}, bool) {
-	if itm, ok := c.ancestorStackItem(level); ok {
+func (vc *ValidatorContext) AncestorValue(level uint) (interface{}, bool) {
+	if itm, ok := vc.ancestorStackItem(level); ok {
 		return itm.value, true
 	}
 	return nil, false
@@ -157,15 +157,15 @@ func (c *Context) AncestorValue(level uint) (interface{}, bool) {
 //
 // Note: Use with extreme caution - altering values during validation may cause problems
 // for other constraints or validators in the chain
-func (c *Context) SetCurrentValue(v interface{}) bool {
-	if pv, ok := c.AncestorValue(0); ok {
+func (vc *ValidatorContext) SetCurrentValue(v interface{}) bool {
+	if pv, ok := vc.AncestorValue(0); ok {
 		if apv, aok := pv.([]interface{}); aok {
-			if idx := c.CurrentArrayIndex(); idx != nil {
+			if idx := vc.CurrentArrayIndex(); idx != nil {
 				apv[*idx] = v
 				return true
 			}
 		} else if opv, ook := pv.(map[string]interface{}); ook {
-			if pty := c.CurrentPropertyName(); pty != nil {
+			if pty := vc.CurrentPropertyName(); pty != nil {
 				opv[*pty] = v
 				return true
 			}
@@ -174,41 +174,41 @@ func (c *Context) SetCurrentValue(v interface{}) bool {
 	return false
 }
 
-func (c *Context) ancestorStackItem(level uint) (*pathStackItem, bool) {
+func (vc *ValidatorContext) ancestorStackItem(level uint) (*pathStackItem, bool) {
 	// note: -2 because... it's -1 for len and -1 for up one
-	idx := len(c.pathStack) - 2 - int(level)
+	idx := len(vc.pathStack) - 2 - int(level)
 	if idx < 0 {
 		return nil, false
 	}
-	return c.pathStack[idx], true
+	return vc.pathStack[idx], true
 }
 
-func (c *Context) pushPathProperty(property string, value interface{}) {
-	curr := c.pathStack[len(c.pathStack)-1]
-	c.pathStack = append(c.pathStack, &pathStackItem{
+func (vc *ValidatorContext) pushPathProperty(property string, value interface{}) {
+	curr := vc.pathStack[len(vc.pathStack)-1]
+	vc.pathStack = append(vc.pathStack, &pathStackItem{
 		property: property,
 		path:     curr.asPath(),
 		value:    value,
 	})
 }
 
-func (c *Context) pushPathIndex(idx int, value interface{}) {
-	curr := c.pathStack[len(c.pathStack)-1]
-	c.pathStack = append(c.pathStack, &pathStackItem{
+func (vc *ValidatorContext) pushPathIndex(idx int, value interface{}) {
+	curr := vc.pathStack[len(vc.pathStack)-1]
+	vc.pathStack = append(vc.pathStack, &pathStackItem{
 		property: idx,
 		path:     curr.asPath(),
 		value:    value,
 	})
 }
 
-func (c *Context) popPath() {
-	if len(c.pathStack) > 1 {
-		c.pathStack = c.pathStack[:len(c.pathStack)-1]
+func (vc *ValidatorContext) popPath() {
+	if len(vc.pathStack) > 1 {
+		vc.pathStack = vc.pathStack[:len(vc.pathStack)-1]
 	}
 }
 
-func (c *Context) continuePty() bool {
-	return !c.pathStack[len(c.pathStack)-1].stopped
+func (vc *ValidatorContext) continuePty() bool {
+	return !vc.pathStack[len(vc.pathStack)-1].stopped
 }
 
 type pathStackItem struct {
