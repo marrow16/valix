@@ -42,28 +42,28 @@ type PropertyValidator struct {
 	NotNull      bool
 	Mandatory    bool
 	// Constraints are checked in the order they are specified
-	Constraints []Constraint
+	Constraints Constraints
 	// ObjectValidator is checked, if specified, after all Constraints are checked
 	ObjectValidator *Validator
 }
 
-func (pv *PropertyValidator) validate(actualValue interface{}, ctx *Context) {
+func (pv *PropertyValidator) validate(actualValue interface{}, vcx *ValidatorContext) {
 	if actualValue == nil {
 		if pv.NotNull {
-			ctx.AddViolationForCurrent(MessageValueCannotBeNull)
+			vcx.AddViolationForCurrent(MessageValueCannotBeNull)
 		}
-	} else if pv.checkType(actualValue, ctx) {
-		pv.checkConstraints(actualValue, ctx)
-		if ctx.continueAll && ctx.continuePty() {
-			pv.checkObjectValidation(actualValue, ctx)
+	} else if pv.checkType(actualValue, vcx) {
+		pv.checkConstraints(actualValue, vcx)
+		if vcx.continueAll && vcx.continuePty() {
+			pv.checkObjectValidation(actualValue, vcx)
 		}
 	}
 }
 
-func (pv *PropertyValidator) checkType(actualValue interface{}, ctx *Context) bool {
+func (pv *PropertyValidator) checkType(actualValue interface{}, vcx *ValidatorContext) bool {
 	ok := checkValueType(actualValue, pv.PropertyType)
 	if !ok {
-		ctx.AddViolationForCurrent(fmt.Sprintf(MessageValueExpectedType, pv.PropertyType))
+		vcx.AddViolationForCurrent(fmt.Sprintf(MessageValueExpectedType, pv.PropertyType))
 	}
 	return ok
 }
@@ -108,58 +108,58 @@ func checkNumeric(value interface{}, isInt bool) bool {
 	return ok
 }
 
-func (pv *PropertyValidator) checkObjectValidation(actualValue interface{}, ctx *Context) {
+func (pv *PropertyValidator) checkObjectValidation(actualValue interface{}, vcx *ValidatorContext) {
 	if pv.ObjectValidator != nil {
 		if !pv.ObjectValidator.DisallowObject && pv.ObjectValidator.AllowArray {
 			// can be object or array...
-			if !pv.subValidateObjectOrArray(actualValue, ctx) {
-				ctx.AddViolationForCurrent(MessageValueMustBeObjectOrArray)
+			if !pv.subValidateObjectOrArray(actualValue, vcx) {
+				vcx.AddViolationForCurrent(MessageValueMustBeObjectOrArray)
 			}
 		} else if !pv.ObjectValidator.DisallowObject {
 			// can only be an object...
-			if !pv.subValidateObject(actualValue, ctx) {
-				ctx.AddViolationForCurrent(MessageValueMustBeObject)
+			if !pv.subValidateObject(actualValue, vcx) {
+				vcx.AddViolationForCurrent(MessageValueMustBeObject)
 			}
 		} else if pv.ObjectValidator.AllowArray {
 			// can only be an array...
-			if !pv.subValidateArray(actualValue, ctx) {
-				ctx.AddViolationForCurrent(MessageValueMustBeArray)
+			if !pv.subValidateArray(actualValue, vcx) {
+				vcx.AddViolationForCurrent(MessageValueMustBeArray)
 			}
 		} else {
 			// something seriously wrong here because the object validator doesn't allow an object or an array!...
-			ctx.AddViolationForCurrent(MessagePropertyObjectValidatorError)
-			ctx.Stop()
+			vcx.AddViolationForCurrent(MessagePropertyObjectValidatorError)
+			vcx.Stop()
 		}
 	}
 }
 
-func (pv *PropertyValidator) subValidateObjectOrArray(actualValue interface{}, ctx *Context) bool {
-	return pv.subValidateObject(actualValue, ctx) || pv.subValidateArray(actualValue, ctx)
+func (pv *PropertyValidator) subValidateObjectOrArray(actualValue interface{}, vcx *ValidatorContext) bool {
+	return pv.subValidateObject(actualValue, vcx) || pv.subValidateArray(actualValue, vcx)
 }
 
-func (pv *PropertyValidator) subValidateObject(actualValue interface{}, ctx *Context) bool {
+func (pv *PropertyValidator) subValidateObject(actualValue interface{}, vcx *ValidatorContext) bool {
 	if o, ok := actualValue.(map[string]interface{}); ok {
-		pv.ObjectValidator.validate(o, ctx)
+		pv.ObjectValidator.validate(o, vcx)
 		return true
 	}
 	return false
 }
 
-func (pv *PropertyValidator) subValidateArray(actualValue interface{}, ctx *Context) bool {
+func (pv *PropertyValidator) subValidateArray(actualValue interface{}, vcx *ValidatorContext) bool {
 	if a, ok := actualValue.([]interface{}); ok {
-		pv.ObjectValidator.validateArrayOf(a, ctx)
+		pv.ObjectValidator.validateArrayOf(a, vcx)
 		return true
 	}
 	return false
 }
 
-func (pv *PropertyValidator) checkConstraints(actualValue interface{}, ctx *Context) {
+func (pv *PropertyValidator) checkConstraints(actualValue interface{}, vcx *ValidatorContext) {
 	if pv.Constraints != nil {
 		for _, constraint := range pv.Constraints {
-			if ok, msg := constraint.Validate(actualValue, ctx); !ok {
-				ctx.AddViolationForCurrent(msg)
+			if ok, msg := constraint.Validate(actualValue, vcx); !ok {
+				vcx.AddViolationForCurrent(msg)
 			}
-			if !ctx.continueAll || !ctx.continuePty() {
+			if !vcx.continueAll || !vcx.continuePty() {
 				return
 			}
 		}

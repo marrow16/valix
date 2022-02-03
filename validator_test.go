@@ -18,12 +18,12 @@ import (
 var personValidator = &Validator{
 	IgnoreUnknownProperties: false,
 	AllowArray:              true,
-	Properties: map[string]*PropertyValidator{
+	Properties: Properties{
 		"name": {
 			PropertyType: PropertyType.String,
 			NotNull:      true,
 			Mandatory:    true,
-			Constraints: []Constraint{
+			Constraints: Constraints{
 				&StringLengthConstraint{Minimum: 1, Maximum: 255},
 			},
 		},
@@ -31,7 +31,7 @@ var personValidator = &Validator{
 			PropertyType: PropertyType.Int,
 			NotNull:      true,
 			Mandatory:    true,
-			Constraints: []Constraint{
+			Constraints: Constraints{
 				&PositiveOrZeroConstraint{},
 			},
 		},
@@ -112,7 +112,7 @@ func TestValidationOfArrayFailsWithNonObjectElement(t *testing.T) {
 func TestValidatorWithObjectConstraint(t *testing.T) {
 	v := Validator{
 		IgnoreUnknownProperties: true,
-		Constraints: []Constraint{
+		Constraints: Constraints{
 			&LengthConstraint{Minimum: 2, Maximum: 3},
 		},
 	}
@@ -122,7 +122,7 @@ func TestValidatorWithObjectConstraint(t *testing.T) {
 	ok, violations := v.Validate(o)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(messageValueMinMax, 2, 3), violations[0].Message)
+	require.Equal(t, fmt.Sprintf(messageMinMax, 2, 3), violations[0].Message)
 	require.Equal(t, "", violations[0].Path)
 	require.Equal(t, "", violations[0].Property)
 }
@@ -142,14 +142,14 @@ func TestRequestValidation(t *testing.T) {
 func TestRequestValidationUsingJsonNumber(t *testing.T) {
 	validator := Validator{
 		UseNumber: true,
-		Properties: map[string]*PropertyValidator{
+		Properties: Properties{
 			"foo": {
 				PropertyType: PropertyType.Number,
-				Constraints:  []Constraint{&PositiveConstraint{}},
+				Constraints:  Constraints{&PositiveConstraint{}},
 			},
 			"bar": {
 				PropertyType: PropertyType.Number,
-				Constraints:  []Constraint{&NegativeConstraint{}},
+				Constraints:  Constraints{&NegativeConstraint{}},
 			},
 		},
 	}
@@ -273,13 +273,13 @@ func TestRequestValidationWithBadJson(t *testing.T) {
 func TestValidatorStopsOnConstraint(t *testing.T) {
 	v := Validator{
 		IgnoreUnknownProperties: false,
-		Constraints: []Constraint{
-			NewCustomConstraint(func(value interface{}, ctx *Context, cc *CustomConstraint) (bool, string) {
+		Constraints: Constraints{
+			NewCustomConstraint(func(value interface{}, ctx *ValidatorContext, cc *CustomConstraint) (bool, string) {
 				ctx.Stop()
 				return true, ""
 			}, ""),
 		},
-		Properties: map[string]*PropertyValidator{
+		Properties: Properties{
 			"foo": {
 				// this should not get checked because the constraint stopped...
 				NotNull: true,
@@ -297,11 +297,11 @@ func TestValidatorStopsOnArrayElement(t *testing.T) {
 	testMsg := "Test message"
 	v := Validator{
 		AllowArray: true,
-		Properties: map[string]*PropertyValidator{
+		Properties: Properties{
 			"foo": {
 				PropertyType: PropertyType.Boolean,
-				Constraints: []Constraint{
-					NewCustomConstraint(func(value interface{}, ctx *Context, cc *CustomConstraint) (bool, string) {
+				Constraints: Constraints{
+					NewCustomConstraint(func(value interface{}, ctx *ValidatorContext, cc *CustomConstraint) (bool, string) {
 						ctx.Stop()
 						return false, cc.GetMessage()
 					}, testMsg),
@@ -319,7 +319,7 @@ func TestValidatorStopsOnArrayElement(t *testing.T) {
 
 func TestPropertyValueObjectValidatorFailsForObjectOrArray(t *testing.T) {
 	v := Validator{
-		Properties: map[string]*PropertyValidator{
+		Properties: Properties{
 			"foo": {
 				ObjectValidator: &Validator{
 					AllowNull:      false,
@@ -339,7 +339,7 @@ func TestPropertyValueObjectValidatorFailsForObjectOrArray(t *testing.T) {
 
 func TestPropertyValueObjectValidatorFailsForObjectOnly(t *testing.T) {
 	v := Validator{
-		Properties: map[string]*PropertyValidator{
+		Properties: Properties{
 			"foo": {
 				ObjectValidator: &Validator{
 					AllowNull:      false,
@@ -359,7 +359,7 @@ func TestPropertyValueObjectValidatorFailsForObjectOnly(t *testing.T) {
 
 func TestPropertyValueObjectValidatorFailsForArrayOnly(t *testing.T) {
 	v := Validator{
-		Properties: map[string]*PropertyValidator{
+		Properties: Properties{
 			"foo": {
 				ObjectValidator: &Validator{
 					AllowNull:      false,
@@ -379,7 +379,7 @@ func TestPropertyValueObjectValidatorFailsForArrayOnly(t *testing.T) {
 
 func TestPropertyValueObjectValidatorFailsForNeitherObjectNorArray(t *testing.T) {
 	v := Validator{
-		Properties: map[string]*PropertyValidator{
+		Properties: Properties{
 			"foo": {
 				ObjectValidator: &Validator{
 					AllowNull:      false,
@@ -399,7 +399,7 @@ func TestPropertyValueObjectValidatorFailsForNeitherObjectNorArray(t *testing.T)
 
 func TestSubPropertyValidation(t *testing.T) {
 	v := Validator{
-		Properties: map[string]*PropertyValidator{
+		Properties: Properties{
 			"person": {
 				NotNull:         true,
 				Mandatory:       true,
@@ -428,7 +428,7 @@ func TestSubPropertyValidation(t *testing.T) {
 
 func TestSubPropertyAsArrayValidation(t *testing.T) {
 	v := Validator{
-		Properties: map[string]*PropertyValidator{
+		Properties: Properties{
 			"person": {
 				NotNull:         true,
 				Mandatory:       true,
@@ -463,10 +463,10 @@ func TestSubPropertyAsArrayValidation(t *testing.T) {
 	sortViolationsByPathAndProperty(violations)
 	require.Equal(t, "person", violations[0].Path)
 	require.Equal(t, "age", violations[0].Property)
-	require.Equal(t, messageValuePositiveOrZero, violations[0].Message)
+	require.Equal(t, messagePositiveOrZero, violations[0].Message)
 	require.Equal(t, "person", violations[1].Path)
 	require.Equal(t, "name", violations[1].Property)
-	require.Equal(t, fmt.Sprintf(messageValueMinMax, 1, 255), violations[1].Message)
+	require.Equal(t, fmt.Sprintf(messageMinMax, 1, 255), violations[1].Message)
 
 	o["person"] = []interface{}{
 		jsonObject(`{
@@ -650,12 +650,12 @@ func TestCheckPropertyTypeArray(t *testing.T) {
 
 func TestValidatorStops(t *testing.T) {
 	v := Validator{
-		Properties: map[string]*PropertyValidator{
+		Properties: Properties{
 			"foo": {
 				PropertyType: PropertyType.String,
 				NotNull:      true,
-				Constraints: []Constraint{
-					NewCustomConstraint(func(value interface{}, ctx *Context, cc *CustomConstraint) (bool, string) {
+				Constraints: Constraints{
+					NewCustomConstraint(func(value interface{}, ctx *ValidatorContext, cc *CustomConstraint) (bool, string) {
 						ctx.Stop()
 						return true, ""
 					}, ""),
@@ -682,11 +682,11 @@ func TestValidatorStops(t *testing.T) {
 func TestValidatorManuallyAddedViolation(t *testing.T) {
 	msg := "Something went wrong"
 	v := Validator{
-		Properties: map[string]*PropertyValidator{
+		Properties: Properties{
 			"foo": {
 				PropertyType: PropertyType.String,
-				Constraints: []Constraint{
-					NewCustomConstraint(func(value interface{}, ctx *Context, cc *CustomConstraint) (bool, string) {
+				Constraints: Constraints{
+					NewCustomConstraint(func(value interface{}, ctx *ValidatorContext, cc *CustomConstraint) (bool, string) {
 						ctx.AddViolation(NewViolation("", "", msg))
 						return true, ""
 					}, ""),
@@ -701,17 +701,17 @@ func TestValidatorManuallyAddedViolation(t *testing.T) {
 	require.False(t, ok)
 	require.Equal(t, 2, len(violations))
 	require.Equal(t, msg, violations[0].Message)
-	require.Equal(t, messageValueNotEmptyString, violations[1].Message)
+	require.Equal(t, messageNotEmptyString, violations[1].Message)
 }
 
 func TestValidatorManuallyAddedCurrentViolation(t *testing.T) {
 	msg := "Something went wrong"
 	v := Validator{
-		Properties: map[string]*PropertyValidator{
+		Properties: Properties{
 			"foo": {
 				PropertyType: PropertyType.String,
-				Constraints: []Constraint{
-					NewCustomConstraint(func(value interface{}, ctx *Context, cc *CustomConstraint) (bool, string) {
+				Constraints: Constraints{
+					NewCustomConstraint(func(value interface{}, ctx *ValidatorContext, cc *CustomConstraint) (bool, string) {
 						ctx.AddViolationForCurrent(msg)
 						return true, ""
 					}, ""),
@@ -728,28 +728,28 @@ func TestValidatorManuallyAddedCurrentViolation(t *testing.T) {
 	require.Equal(t, msg, violations[0].Message)
 	require.Equal(t, "", violations[0].Path)
 	require.Equal(t, "foo", violations[0].Property)
-	require.Equal(t, messageValueNotEmptyString, violations[1].Message)
+	require.Equal(t, messageNotEmptyString, violations[1].Message)
 	require.Equal(t, "", violations[1].Path)
 	require.Equal(t, "foo", violations[1].Property)
 }
 
 func TestValidatorContextPathing(t *testing.T) {
 	v := Validator{
-		Properties: map[string]*PropertyValidator{
+		Properties: Properties{
 			"foo": {
-				Constraints: []Constraint{&myCustomConstraint{expectedPath: ""}},
+				Constraints: Constraints{&myCustomConstraint{expectedPath: ""}},
 				ObjectValidator: &Validator{
-					Properties: map[string]*PropertyValidator{
+					Properties: Properties{
 						"bar": {
-							Constraints: []Constraint{&myCustomConstraint{expectedPath: "foo"}},
+							Constraints: Constraints{&myCustomConstraint{expectedPath: "foo"}},
 							ObjectValidator: &Validator{
-								Properties: map[string]*PropertyValidator{
+								Properties: Properties{
 									"baz": {
-										Constraints: []Constraint{&myCustomConstraint{expectedPath: "foo.bar"}},
+										Constraints: Constraints{&myCustomConstraint{expectedPath: "foo.bar"}},
 										ObjectValidator: &Validator{
-											Properties: map[string]*PropertyValidator{
+											Properties: Properties{
 												"qux": {
-													Constraints: []Constraint{&myCustomConstraint{expectedPath: "foo.bar.baz"}},
+													Constraints: Constraints{&myCustomConstraint{expectedPath: "foo.bar.baz"}},
 												},
 											},
 										},
@@ -782,24 +782,24 @@ func TestValidatorContextPathing(t *testing.T) {
 func TestValidatorContextPathingOnArrays(t *testing.T) {
 	v := Validator{
 		AllowArray: true,
-		Properties: map[string]*PropertyValidator{
+		Properties: Properties{
 			"foo": {
-				Constraints: []Constraint{&myCustomConstraint{expectedPath: ""}},
+				Constraints: Constraints{&myCustomConstraint{expectedPath: ""}},
 				ObjectValidator: &Validator{
 					AllowArray: true,
-					Properties: map[string]*PropertyValidator{
+					Properties: Properties{
 						"bar": {
-							Constraints: []Constraint{&myCustomConstraint{expectedPath: "foo[0]"}},
+							Constraints: Constraints{&myCustomConstraint{expectedPath: "foo[0]"}},
 							ObjectValidator: &Validator{
 								AllowArray: true,
-								Properties: map[string]*PropertyValidator{
+								Properties: Properties{
 									"baz": {
-										Constraints: []Constraint{&myCustomConstraint{expectedPath: "foo[0].bar[0]"}},
+										Constraints: Constraints{&myCustomConstraint{expectedPath: "foo[0].bar[0]"}},
 										ObjectValidator: &Validator{
 											AllowArray: true,
-											Properties: map[string]*PropertyValidator{
+											Properties: Properties{
 												"qux": {
-													Constraints: []Constraint{&myCustomConstraint{expectedPath: "foo[0].bar[0].baz[0]"}},
+													Constraints: Constraints{&myCustomConstraint{expectedPath: "foo[0].bar[0].baz[0]"}},
 												},
 											},
 										},
@@ -837,11 +837,11 @@ func TestValidatorContextPathingOnArrays(t *testing.T) {
 
 func TestCeaseFurtherWorks(t *testing.T) {
 	v := Validator{
-		Properties: map[string]*PropertyValidator{
+		Properties: Properties{
 			"foo": {
 				PropertyType: PropertyType.String,
-				Constraints: []Constraint{
-					NewCustomConstraint(func(value interface{}, ctx *Context, cc *CustomConstraint) (bool, string) {
+				Constraints: Constraints{
+					NewCustomConstraint(func(value interface{}, ctx *ValidatorContext, cc *CustomConstraint) (bool, string) {
 						ctx.CeaseFurther()
 						return true, ""
 					}, ""),
@@ -849,8 +849,8 @@ func TestCeaseFurtherWorks(t *testing.T) {
 					&StringNotEmptyConstraint{},
 				},
 				ObjectValidator: &Validator{
-					Constraints: []Constraint{
-						NewCustomConstraint(func(value interface{}, ctx *Context, cc *CustomConstraint) (bool, string) {
+					Constraints: Constraints{
+						NewCustomConstraint(func(value interface{}, ctx *ValidatorContext, cc *CustomConstraint) (bool, string) {
 							// this constraint should not be run because of the CeaseFurther (above)
 							return false, "Never run"
 						}, ""),
@@ -878,7 +878,7 @@ type myCustomConstraint struct {
 	expectedPath string
 }
 
-func (c *myCustomConstraint) Validate(value interface{}, ctx *Context) (bool, string) {
+func (c *myCustomConstraint) Validate(value interface{}, ctx *ValidatorContext) (bool, string) {
 	return false, c.expectedPath
 }
 func (c *myCustomConstraint) GetMessage() string {
@@ -887,7 +887,7 @@ func (c *myCustomConstraint) GetMessage() string {
 
 func buildFooPropertyTypeValidator(propertyType string, notNull bool) *Validator {
 	return &Validator{
-		Properties: map[string]*PropertyValidator{
+		Properties: Properties{
 			"foo": {
 				PropertyType: propertyType,
 				NotNull:      notNull,

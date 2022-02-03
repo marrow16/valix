@@ -20,17 +20,20 @@ const (
 	MessageUnknownProperty               = "Unknown property '%s'"
 )
 
+type Properties map[string]*PropertyValidator
+type Constraints []Constraint
+
 type Validator struct {
 	// IgnoreUnknownProperties is whether to ignore unknown properties (default false)
 	//
 	// Set this to `true` if you want to allow unknown properties
 	IgnoreUnknownProperties bool
 	// Properties is the map of property names (key) and PropertyValidator (value)
-	Properties map[string]*PropertyValidator
+	Properties Properties
 	// Constraints is an optional slice of Constraint items to be checked on the object/array
 	//
 	// * These are checked in the order specified and prior to property validator & unknown property checks
-	Constraints    []Constraint
+	Constraints    Constraints
 	AllowArray     bool
 	DisallowObject bool
 	AllowNull      bool
@@ -40,10 +43,10 @@ type Validator struct {
 
 // RequestValidate Performs validation on the request body of the supplied http.Request
 func (v *Validator) RequestValidate(r *http.Request) (bool, []*Violation, interface{}) {
-	ctx := newContext(r)
+	vcx := newValidatorContext(r)
 	var obj interface{} = nil
 	if r.Body == nil {
-		ctx.AddViolation(NewEmptyViolation(MessageRequestBodyEmpty))
+		vcx.AddViolation(NewEmptyViolation(MessageRequestBodyEmpty))
 	} else {
 		decoder := json.NewDecoder(r.Body)
 		if v.UseNumber {
@@ -52,104 +55,104 @@ func (v *Validator) RequestValidate(r *http.Request) (bool, []*Violation, interf
 		obj = reflect.Interface
 		if err := decoder.Decode(&obj); err != nil {
 			obj = nil
-			ctx.AddViolation(NewEmptyViolation(MessageUnableToDecode))
+			vcx.AddViolation(NewEmptyViolation(MessageUnableToDecode))
 		} else if obj == nil {
 			if !v.AllowNull {
-				ctx.AddViolation(NewEmptyViolation(MessageRequestBodyNotJsonNull))
+				vcx.AddViolation(NewEmptyViolation(MessageRequestBodyNotJsonNull))
 			}
 		} else {
 			// determine whether body is a map (object) or an array...
 			if arr, isArr := obj.([]interface{}); isArr {
 				if v.AllowArray {
-					v.validateArrayOf(arr, ctx)
+					v.validateArrayOf(arr, vcx)
 				} else {
-					ctx.AddViolation(NewEmptyViolation(MessageRequestBodyNotJsonArray))
+					vcx.AddViolation(NewEmptyViolation(MessageRequestBodyNotJsonArray))
 				}
 			} else if m, isMap := obj.(map[string]interface{}); isMap {
 				if v.DisallowObject {
 					if v.AllowArray {
-						ctx.AddViolation(NewEmptyViolation(MessageRequestBodyExpectedJsonArray))
+						vcx.AddViolation(NewEmptyViolation(MessageRequestBodyExpectedJsonArray))
 					} else {
-						ctx.AddViolation(NewEmptyViolation(MessageRequestBodyNotJsonObject))
+						vcx.AddViolation(NewEmptyViolation(MessageRequestBodyNotJsonObject))
 					}
 				} else {
-					v.validate(m, ctx)
+					v.validate(m, vcx)
 				}
 			} else {
-				ctx.AddViolation(NewEmptyViolation(MessageRequestBodyExpectedJsonObject))
+				vcx.AddViolation(NewEmptyViolation(MessageRequestBodyExpectedJsonObject))
 			}
 		}
 	}
-	return ctx.ok, ctx.violations, obj
+	return vcx.ok, vcx.violations, obj
 }
 
 // Validate Performs validation on the supplied object
 func (v *Validator) Validate(obj map[string]interface{}) (bool, []*Violation) {
-	ctx := newContext(obj)
-	v.validate(obj, ctx)
-	return ctx.ok, ctx.violations
+	vcx := newValidatorContext(obj)
+	v.validate(obj, vcx)
+	return vcx.ok, vcx.violations
 }
 
 // ValidateArrayOf Performs validation on each element of the supplied array
 func (v *Validator) ValidateArrayOf(arr []interface{}) (bool, []*Violation) {
-	ctx := newContext(arr)
-	v.validateArrayOf(arr, ctx)
-	return ctx.ok, ctx.violations
+	vcx := newValidatorContext(arr)
+	v.validateArrayOf(arr, vcx)
+	return vcx.ok, vcx.violations
 }
 
-func (v *Validator) validate(obj map[string]interface{}, ctx *Context) {
+func (v *Validator) validate(obj map[string]interface{}, vcx *ValidatorContext) {
 	if v.Constraints != nil {
 		for _, constraint := range v.Constraints {
-			if ok, msg := constraint.Validate(obj, ctx); !ok {
-				ctx.AddViolationForCurrent(msg)
+			if ok, msg := constraint.Validate(obj, vcx); !ok {
+				vcx.AddViolationForCurrent(msg)
 			}
-			if !ctx.continueAll {
+			if !vcx.continueAll {
 				return
 			}
 		}
 	}
-	v.checkUnknownProperties(obj, ctx)
-	v.checkProperties(obj, ctx)
+	v.checkUnknownProperties(obj, vcx)
+	v.checkProperties(obj, vcx)
 }
 
-func (v *Validator) validateArrayOf(arr []interface{}, ctx *Context) {
+func (v *Validator) validateArrayOf(arr []interface{}, vcx *ValidatorContext) {
 	for i, elem := range arr {
-		ctx.pushPathIndex(i, elem)
+		vcx.pushPathIndex(i, elem)
 		if obj, itemOk := elem.(map[string]interface{}); itemOk {
-			v.validate(obj, ctx)
-			ctx.popPath()
+			v.validate(obj, vcx)
+			vcx.popPath()
 		} else {
-			ctx.popPath()
-			ctx.AddViolationForCurrent(fmt.Sprintf(MessageArrayElementMustBeObject, i))
+			vcx.popPath()
+			vcx.AddViolationForCurrent(fmt.Sprintf(MessageArrayElementMustBeObject, i))
 		}
-		if !ctx.continueAll {
+		if !vcx.continueAll {
 			return
 		}
 	}
 }
 
-func (v *Validator) checkProperties(obj map[string]interface{}, ctx *Context) {
+func (v *Validator) checkProperties(obj map[string]interface{}, vcx *ValidatorContext) {
 	for propertyName, pv := range v.Properties {
 		if actualValue, pOk := obj[propertyName]; !pOk {
 			if pv.Mandatory {
-				ctx.AddViolationForCurrent(fmt.Sprintf(MessageMissingProperty, propertyName))
+				vcx.AddViolationForCurrent(fmt.Sprintf(MessageMissingProperty, propertyName))
 			}
 		} else {
-			ctx.pushPathProperty(propertyName, actualValue)
-			pv.validate(actualValue, ctx)
-			ctx.popPath()
+			vcx.pushPathProperty(propertyName, actualValue)
+			pv.validate(actualValue, vcx)
+			vcx.popPath()
 		}
-		if !ctx.continueAll {
+		if !vcx.continueAll {
 			return
 		}
 	}
 }
 
-func (v *Validator) checkUnknownProperties(obj map[string]interface{}, ctx *Context) {
+func (v *Validator) checkUnknownProperties(obj map[string]interface{}, vcx *ValidatorContext) {
 	if !v.IgnoreUnknownProperties {
 		for propertyName := range obj {
 			if _, hasK := v.Properties[propertyName]; !hasK {
-				ctx.AddViolationForCurrent(fmt.Sprintf(MessageUnknownProperty, propertyName))
+				vcx.AddViolationForCurrent(fmt.Sprintf(MessageUnknownProperty, propertyName))
 			}
 		}
 	}

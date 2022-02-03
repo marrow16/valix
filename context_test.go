@@ -6,7 +6,7 @@ import (
 )
 
 func TestCreateContext(t *testing.T) {
-	ctx := newContext(nil)
+	ctx := newValidatorContext(nil)
 	require.Nil(t, ctx.CurrentProperty())
 	require.Nil(t, ctx.CurrentPropertyName())
 	require.Nil(t, ctx.CurrentArrayIndex())
@@ -14,7 +14,7 @@ func TestCreateContext(t *testing.T) {
 }
 
 func TestContextPathing(t *testing.T) {
-	ctx := newContext(nil)
+	ctx := newValidatorContext(nil)
 	require.Nil(t, ctx.CurrentProperty())
 	require.Equal(t, "", ctx.CurrentPath())
 
@@ -50,7 +50,7 @@ func TestContextPathing(t *testing.T) {
 }
 
 func TestContextIndexPathing(t *testing.T) {
-	ctx := newContext(nil)
+	ctx := newValidatorContext(nil)
 	require.Nil(t, ctx.CurrentProperty())
 	require.Nil(t, ctx.CurrentPropertyName())
 	require.Nil(t, ctx.CurrentArrayIndex())
@@ -93,7 +93,7 @@ func TestContextIndexPathing(t *testing.T) {
 }
 
 func TestContextIndexPathingFromRoot(t *testing.T) {
-	ctx := newContext(nil)
+	ctx := newValidatorContext(nil)
 	require.Nil(t, ctx.CurrentProperty())
 	require.Nil(t, ctx.CurrentPropertyName())
 	require.Nil(t, ctx.CurrentArrayIndex())
@@ -117,7 +117,7 @@ func TestContextIndexPathingFromRoot(t *testing.T) {
 	require.Nil(t, ctx.CurrentArrayIndex())
 	require.Equal(t, "[0].foo", ctx.CurrentPath())
 
-	ctx = newContext(nil)
+	ctx = newValidatorContext(nil)
 	require.Nil(t, ctx.CurrentProperty())
 	require.Nil(t, ctx.CurrentPropertyName())
 	require.Nil(t, ctx.CurrentArrayIndex())
@@ -131,7 +131,7 @@ func TestContextIndexPathingFromRoot(t *testing.T) {
 }
 
 func TestPathPopNeverFails(t *testing.T) {
-	ctx := newContext(nil)
+	ctx := newValidatorContext(nil)
 
 	// push 4...
 	ctx.pushPathProperty("foo1", nil)
@@ -177,7 +177,7 @@ func TestPathPopNeverFails(t *testing.T) {
 }
 
 func TestContext_CurrentDepth(t *testing.T) {
-	ctx := newContext(nil)
+	ctx := newValidatorContext(nil)
 	require.Equal(t, 0, ctx.CurrentDepth())
 
 	ctx.pushPathProperty("foo", nil)
@@ -198,7 +198,7 @@ func TestContext_CurrentDepth(t *testing.T) {
 }
 
 func TestContext_AncestorPath(t *testing.T) {
-	ctx := newContext(nil)
+	ctx := newValidatorContext(nil)
 	ap, apok := ctx.AncestorPath(0)
 	require.False(t, apok)
 	require.Nil(t, ap)
@@ -229,7 +229,7 @@ func TestContext_AncestorPath(t *testing.T) {
 }
 
 func TestContext_AncestorProperty(t *testing.T) {
-	ctx := newContext(nil)
+	ctx := newValidatorContext(nil)
 	ap, apok := ctx.AncestorProperty(0)
 	require.False(t, apok)
 	require.Nil(t, ap)
@@ -276,7 +276,7 @@ func TestContext_AncestorProperty(t *testing.T) {
 }
 
 func TestContext_AncestorPropertyName(t *testing.T) {
-	ctx := newContext(nil)
+	ctx := newValidatorContext(nil)
 	ctx.pushPathProperty("foo", nil)
 	ctx.pushPathProperty("bar", nil)
 	ctx.pushPathProperty("baz", nil)
@@ -304,7 +304,7 @@ func TestContext_AncestorPropertyName(t *testing.T) {
 }
 
 func TestContext_AncestorArrayIndex(t *testing.T) {
-	ctx := newContext(nil)
+	ctx := newValidatorContext(nil)
 	ctx.pushPathIndex(0, nil)
 	ctx.pushPathIndex(1, nil)
 	ctx.pushPathIndex(2, nil)
@@ -348,7 +348,7 @@ func TestContext_AncestorValue(t *testing.T) {
 		"foo": fooVal,
 	}
 	const testMsg = "TEST MESSAGE"
-	finalTestConstraint := NewCustomConstraint(func(value interface{}, ctx *Context, cc *CustomConstraint) (bool, string) {
+	finalTestConstraint := NewCustomConstraint(func(value interface{}, ctx *ValidatorContext, cc *CustomConstraint) (bool, string) {
 		av, ok := ctx.AncestorValue(0)
 		require.True(t, ok)
 		require.Equal(t, arrItem0, av)
@@ -369,26 +369,26 @@ func TestContext_AncestorValue(t *testing.T) {
 		return false, cc.GetMessage()
 	}, testMsg)
 	v := Validator{
-		Properties: map[string]*PropertyValidator{
+		Properties: Properties{
 			"foo": {
 				Mandatory: true,
 				NotNull:   true,
 				ObjectValidator: &Validator{
-					Properties: map[string]*PropertyValidator{
+					Properties: Properties{
 						"bar": {
 							Mandatory: true,
 							NotNull:   true,
 							ObjectValidator: &Validator{
-								Properties: map[string]*PropertyValidator{
+								Properties: Properties{
 									"baz": {
 										Mandatory: true,
 										NotNull:   true,
 										ObjectValidator: &Validator{
 											AllowArray: true,
-											Properties: map[string]*PropertyValidator{
+											Properties: Properties{
 												"qux": {
 													PropertyType: PropertyType.Boolean,
-													Constraints: []Constraint{
+													Constraints: Constraints{
 														finalTestConstraint,
 													},
 												},
@@ -419,18 +419,18 @@ func TestContext_SetCurrentValue(t *testing.T) {
 	}`)
 	const testMsg = "TEST MESSAGE"
 	v := Validator{
-		Properties: map[string]*PropertyValidator{
+		Properties: Properties{
 			"foo": {
 				Mandatory: true,
 				NotNull:   true,
 				ObjectValidator: &Validator{
-					Properties: map[string]*PropertyValidator{
+					Properties: Properties{
 						"bar": {
 							PropertyType: PropertyType.Boolean,
 							Mandatory:    true,
 							NotNull:      true,
-							Constraints: []Constraint{
-								NewCustomConstraint(func(value interface{}, ctx *Context, cc *CustomConstraint) (bool, string) {
+							Constraints: Constraints{
+								NewCustomConstraint(func(value interface{}, ctx *ValidatorContext, cc *CustomConstraint) (bool, string) {
 									ctx.SetCurrentValue(false)
 									return false, cc.GetMessage()
 								}, testMsg),
@@ -468,20 +468,20 @@ func TestContext_SetCurrentValueInArray(t *testing.T) {
 	const testMsg = "TEST MESSAGE"
 	const testValue = "TEST VALUE"
 	v := Validator{
-		Properties: map[string]*PropertyValidator{
+		Properties: Properties{
 			"foo": {
 				PropertyType: PropertyType.Array,
 				Mandatory:    true,
 				NotNull:      true,
 				ObjectValidator: &Validator{
 					AllowArray: true,
-					Constraints: []Constraint{
-						NewCustomConstraint(func(value interface{}, ctx *Context, cc *CustomConstraint) (bool, string) {
+					Constraints: Constraints{
+						NewCustomConstraint(func(value interface{}, ctx *ValidatorContext, cc *CustomConstraint) (bool, string) {
 							ctx.SetCurrentValue(testValue)
 							return false, cc.GetMessage()
 						}, testMsg),
 					},
-					Properties: map[string]*PropertyValidator{
+					Properties: Properties{
 						"bar": {
 							PropertyType: PropertyType.Boolean,
 						},
@@ -492,11 +492,11 @@ func TestContext_SetCurrentValueInArray(t *testing.T) {
 	}
 
 	// check that validator actually hit our test constraint...
-	ok, violaions := v.Validate(o)
+	ok, violations := v.Validate(o)
 	require.False(t, ok)
-	require.Equal(t, 2, len(violaions))
-	require.Equal(t, testMsg, violaions[0].Message)
-	require.Equal(t, testMsg, violaions[1].Message)
+	require.Equal(t, 2, len(violations))
+	require.Equal(t, testMsg, violations[0].Message)
+	require.Equal(t, testMsg, violations[1].Message)
 
 	// and check the values of each foo item were changed...
 	foo := o["foo"].([]interface{})
@@ -509,16 +509,16 @@ func TestContext_SetCurrentValueOnRootFails(t *testing.T) {
 	const testMsg = "TEST MESSAGE"
 	v := Validator{
 		IgnoreUnknownProperties: true,
-		Constraints: []Constraint{
-			NewCustomConstraint(func(value interface{}, ctx *Context, cc *CustomConstraint) (bool, string) {
+		Constraints: Constraints{
+			NewCustomConstraint(func(value interface{}, ctx *ValidatorContext, cc *CustomConstraint) (bool, string) {
 				return ctx.SetCurrentValue(nil), cc.GetMessage()
 			}, testMsg),
 		},
 	}
 
 	// check that validator actually hit our test constraint...
-	ok, violaions := v.Validate(o)
+	ok, violations := v.Validate(o)
 	require.False(t, ok)
-	require.Equal(t, 1, len(violaions))
-	require.Equal(t, testMsg, violaions[0].Message)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, testMsg, violations[0].Message)
 }
