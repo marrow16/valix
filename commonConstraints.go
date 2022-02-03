@@ -525,22 +525,26 @@ func (c *StringValidUuidConstraint) GetMessage() string {
 }
 
 const (
-	iso8601FullPattern            = "^(\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(([+-]\\d{2}:\\d{2})|Z)?)$"
-	iso8601NoOffsPattern          = "^(\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?)$"
-	iso8601NoMillisPattern        = "^(\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(([+-]\\d{2}:\\d{2})|Z)?)$"
-	iso8601MinPattern             = "^(\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2})$"
-	iso8601DateOnlyPattern        = "^(\\d{4}-\\d{2}-\\d{2})$"
-	iso8601FullLayout             = "2006-01-02T15:04:05.999999999Z07:00"
-	iso8601NoOffLayout            = "2006-01-02T15:04:05.999999999"
-	iso8601NoMillisLayout         = "2006-01-02T15:04:05Z07:00"
-	iso8601MinLayout              = "2006-01-02T15:04:05"
-	iso8601DateOnlyLayout         = "2006-01-02"
-	messageValidISODatetime       = "Value must be a valid date/time string"
-	messageValidISODate           = "Value must be a valid date string (format: YYYY-MM-DD)"
-	messageDatetimeFormatFull     = " (format: YYYY-MM-DDThh:mm:ss.sss[Z|+-hh:mm])"
-	messageDatetimeFormatNoOffs   = " (format: YYYY-MM-DDThh:mm:ss.sss)"
-	messageDatetimeFormatNoMillis = " (format: YYYY-MM-DDThh:mm:ss[Z|+-hh:mm])"
-	messageDatetimeFormatMin      = " (format: YYYY-MM-DDThh:mm:ss)"
+	iso8601FullPattern             = "^(\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(([+-]\\d{2}:\\d{2})|Z)?)$"
+	iso8601NoOffsPattern           = "^(\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?)$"
+	iso8601NoMillisPattern         = "^(\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(([+-]\\d{2}:\\d{2})|Z)?)$"
+	iso8601MinPattern              = "^(\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2})$"
+	iso8601DateOnlyPattern         = "^(\\d{4}-\\d{2}-\\d{2})$"
+	iso8601FullLayout              = "2006-01-02T15:04:05.999999999Z07:00"
+	iso8601NoOffLayout             = "2006-01-02T15:04:05.999999999"
+	iso8601NoMillisLayout          = "2006-01-02T15:04:05Z07:00"
+	iso8601MinLayout               = "2006-01-02T15:04:05"
+	iso8601DateOnlyLayout          = "2006-01-02"
+	messageValidISODatetime        = "Value must be a valid date/time string"
+	messageValidISODate            = "Value must be a valid date string (format: YYYY-MM-DD)"
+	messageDatetimeFormatFull      = " (format: YYYY-MM-DDThh:mm:ss.sss[Z|+-hh:mm])"
+	messageDatetimeFormatNoOffs    = " (format: YYYY-MM-DDThh:mm:ss.sss)"
+	messageDatetimeFormatNoMillis  = " (format: YYYY-MM-DDThh:mm:ss[Z|+-hh:mm])"
+	messageDatetimeFormatMin       = " (format: YYYY-MM-DDThh:mm:ss)"
+	messageDatetimeFuture          = "Value must be a valid date/time in the future"
+	messageDatetimeFutureOrPresent = "Value must be a valid date/time in the future or present"
+	messageDatetimePast            = "Value must be a valid date/time in the past"
+	messageDatetimePastOrPresent   = "Value must be a valid date/time in the past or present"
 )
 
 var (
@@ -629,6 +633,113 @@ func (c *StringValidISODateConstraint) Validate(value interface{}, vcx *Validato
 }
 func (c *StringValidISODateConstraint) GetMessage() string {
 	return defaultMessage(c.Message, messageValidISODate)
+}
+
+// DatetimeFutureConstraint checks that a datetime/data (represented as string or time.Time) is in the future
+type DatetimeFutureConstraint struct {
+	// the violation message to be used if the constraint fails (see Violation.Message)
+	//
+	// (if the Message is an empty string then the default violation message is used)
+	Message string
+}
+
+func (c *DatetimeFutureConstraint) Validate(value interface{}, vcx *ValidatorContext) (bool, string) {
+	if str, ok := value.(string); ok {
+		if dt, ok2 := stringToTime(str); !ok2 || !dt.After(time.Now()) {
+			return false, c.GetMessage()
+		}
+	} else if dt, ok2 := value.(time.Time); ok2 && !dt.After(time.Now()) {
+		return false, c.GetMessage()
+	}
+	return true, ""
+}
+func (c *DatetimeFutureConstraint) GetMessage() string {
+	return defaultMessage(c.Message, messageDatetimeFuture)
+}
+
+// DatetimeFutureOrPresentConstraint checks that a datetime/data (represented as string or time.Time) is in the future or present
+type DatetimeFutureOrPresentConstraint struct {
+	// the violation message to be used if the constraint fails (see Violation.Message)
+	//
+	// (if the Message is an empty string then the default violation message is used)
+	Message string
+}
+
+func (c *DatetimeFutureOrPresentConstraint) Validate(value interface{}, vcx *ValidatorContext) (bool, string) {
+	if str, ok := value.(string); ok {
+		if dt, ok2 := stringToTime(str); !ok2 || dt.Before(time.Now()) {
+			return false, c.GetMessage()
+		}
+	} else if dt, ok2 := value.(time.Time); ok2 && dt.Before(time.Now()) {
+		return false, c.GetMessage()
+	}
+	return true, ""
+}
+func (c *DatetimeFutureOrPresentConstraint) GetMessage() string {
+	return defaultMessage(c.Message, messageDatetimeFutureOrPresent)
+}
+
+// DatetimePastConstraint checks that a datetime/data (represented as string or time.Time) is in the past
+type DatetimePastConstraint struct {
+	// the violation message to be used if the constraint fails (see Violation.Message)
+	//
+	// (if the Message is an empty string then the default violation message is used)
+	Message string
+}
+
+func (c *DatetimePastConstraint) Validate(value interface{}, vcx *ValidatorContext) (bool, string) {
+	if str, ok := value.(string); ok {
+		if dt, ok2 := stringToTime(str); !ok2 || !dt.Before(time.Now()) {
+			return false, c.GetMessage()
+		}
+	} else if dt, ok2 := value.(time.Time); ok2 && !dt.Before(time.Now()) {
+		return false, c.GetMessage()
+	}
+	return true, ""
+}
+func (c *DatetimePastConstraint) GetMessage() string {
+	return defaultMessage(c.Message, messageDatetimePast)
+}
+
+// DatetimePastOrPresentConstraint checks that a datetime/data (represented as string or time.Time) is in the past or present
+type DatetimePastOrPresentConstraint struct {
+	// the violation message to be used if the constraint fails (see Violation.Message)
+	//
+	// (if the Message is an empty string then the default violation message is used)
+	Message string
+}
+
+func (c *DatetimePastOrPresentConstraint) Validate(value interface{}, vcx *ValidatorContext) (bool, string) {
+	if str, ok := value.(string); ok {
+		if dt, ok2 := stringToTime(str); !ok2 || dt.After(time.Now()) {
+			return false, c.GetMessage()
+		}
+	} else if dt, ok2 := value.(time.Time); ok2 && dt.After(time.Now()) {
+		return false, c.GetMessage()
+	}
+	return true, ""
+}
+func (c *DatetimePastOrPresentConstraint) GetMessage() string {
+	return defaultMessage(c.Message, messageDatetimePastOrPresent)
+}
+
+func stringToTime(str string) (*time.Time, bool) {
+	parseLayout := ""
+	if iso8601DateOnlyRegex.MatchString(str) {
+		parseLayout = iso8601DateOnlyLayout
+	} else if iso8601MinRegex.MatchString(str) {
+		parseLayout = iso8601MinLayout
+	} else if iso8601NoMillisRegex.MatchString(str) {
+		parseLayout = iso8601NoMillisLayout
+	} else if iso8601NoOffsRegex.MatchString(str) {
+		parseLayout = iso8601NoOffLayout
+	} else if iso8601FullRegex.MatchString(str) {
+		parseLayout = iso8601FullLayout
+	} else {
+		return nil, false
+	}
+	result, err := time.Parse(parseLayout, str)
+	return &result, err == nil
 }
 
 func defaultMessage(msg string, def string) string {
