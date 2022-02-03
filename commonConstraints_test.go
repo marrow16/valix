@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"regexp"
 	"testing"
+	"time"
 )
 
 func TestStringNotEmpty(t *testing.T) {
@@ -732,7 +733,7 @@ func TestStringValidISODatetimeWithDifferentSettings(t *testing.T) {
 		{testValue: "2022-02-02T18:19:20.1234567890+01:00", okFull: false, okNoMillis: false, okNoOffs: false, okMin: false},
 		{testValue: "2022-02-02T18:19:20.12345-01:00", okFull: true, okNoMillis: false, okNoOffs: false, okMin: false},
 		{testValue: "2022-02-02T18:19:20.12345Z", okFull: true, okNoMillis: false, okNoOffs: false, okMin: false},
-		{testValue: "2022-02-02T18:19:20.12345Z+1", okFull: false, okNoMillis: false, okNoOffs: false, okMin: false},
+		{testValue: "2022-02-02T18:19:20.12345Z+01:00", okFull: false, okNoMillis: false, okNoOffs: false, okMin: false},
 		{testValue: "2022-02-02T18:19:20+01:00", okFull: true, okNoMillis: true, okNoOffs: false, okMin: false},
 		{testValue: "2022-02-02T18:19:20.123456", okFull: true, okNoMillis: false, okNoOffs: true, okMin: false},
 		{testValue: "2022-02-02T18:19:20Z", okFull: true, okNoMillis: true, okNoOffs: false, okMin: false},
@@ -814,6 +815,176 @@ func TestStringValidISODate(t *testing.T) {
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
 	require.Equal(t, messageValidISODate, violations[0].Message)
+}
+
+var variousDatetimeFormats = []string{
+	"2006-01-02T15:04:05.999999999-07:00",
+	"2006-01-02T15:04:05.999999999Z",
+	"2006-01-02T15:04:05.999999999",
+	"2006-01-02T15:04:05-07:00",
+	"2006-01-02T15:04:05Z",
+	"2006-01-02T15:04:05",
+	"2006-01-02",
+}
+
+func TestDatetimeFuture(t *testing.T) {
+	pastTime := time.Now().Add(0 - (5 * time.Minute))
+	validator := buildFooValidator("",
+		&DatetimeFutureConstraint{}, false)
+	obj := map[string]interface{}{
+		"foo": pastTime.Format("2006-01-02T15:04:05.000000000-07:00"),
+	}
+	ok, violations := validator.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, messageDatetimeFuture, violations[0].Message)
+
+	obj["foo"] = time.Now().Add(time.Minute).Format("2006-01-02T15:04:05.000000000-07:00")
+	ok, violations = validator.Validate(obj)
+	require.True(t, ok)
+
+	// check with actual time.Time...
+	obj["foo"] = pastTime
+	ok, violations = validator.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, messageDatetimeFuture, violations[0].Message)
+
+	// check with varying formats...
+	for _, layout := range variousDatetimeFormats {
+		obj["foo"] = pastTime.Format(layout)
+		ok, violations = validator.Validate(obj)
+		require.False(t, ok)
+		require.Equal(t, 1, len(violations))
+		require.Equal(t, messageDatetimeFuture, violations[0].Message)
+	}
+
+	// and finally with invalid datetime...
+	obj["foo"] = ""
+	ok, violations = validator.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, messageDatetimeFuture, violations[0].Message)
+}
+
+func TestDatetimeFutureOrPresent(t *testing.T) {
+	pastTime := time.Now().Add(0 - (5 * time.Minute))
+	validator := buildFooValidator("",
+		&DatetimeFutureOrPresentConstraint{}, false)
+	obj := map[string]interface{}{
+		"foo": pastTime.Format("2006-01-02T15:04:05.000000000-07:00"),
+	}
+	ok, violations := validator.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, messageDatetimeFutureOrPresent, violations[0].Message)
+
+	obj["foo"] = time.Now().Add(time.Minute).Format("2006-01-02T15:04:05.000000000-07:00")
+	ok, violations = validator.Validate(obj)
+	require.True(t, ok)
+
+	// check with actual time.Time...
+	obj["foo"] = pastTime
+	ok, violations = validator.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, messageDatetimeFutureOrPresent, violations[0].Message)
+
+	// check with varying formats...
+	for _, layout := range variousDatetimeFormats {
+		obj["foo"] = pastTime.Format(layout)
+		ok, violations = validator.Validate(obj)
+		require.False(t, ok)
+		require.Equal(t, 1, len(violations))
+		require.Equal(t, messageDatetimeFutureOrPresent, violations[0].Message)
+	}
+
+	// and finally with invalid datetime...
+	obj["foo"] = ""
+	ok, violations = validator.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, messageDatetimeFutureOrPresent, violations[0].Message)
+}
+
+func TestDatetimePast(t *testing.T) {
+	futureTime := time.Now().Add(24 * time.Hour)
+	validator := buildFooValidator("",
+		&DatetimePastConstraint{}, false)
+	obj := map[string]interface{}{
+		"foo": futureTime.Format("2006-01-02T15:04:05.000000000-07:00"),
+	}
+	ok, violations := validator.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, messageDatetimePast, violations[0].Message)
+
+	obj["foo"] = time.Now().Add(0 - time.Minute).Format("2006-01-02T15:04:05.000000000-07:00")
+	ok, violations = validator.Validate(obj)
+	require.True(t, ok)
+
+	// check with actual time.Time...
+	obj["foo"] = futureTime
+	ok, violations = validator.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, messageDatetimePast, violations[0].Message)
+
+	// check with varying formats...
+	for _, layout := range variousDatetimeFormats {
+		obj["foo"] = futureTime.Format(layout)
+		ok, violations = validator.Validate(obj)
+		require.False(t, ok)
+		require.Equal(t, 1, len(violations))
+		require.Equal(t, messageDatetimePast, violations[0].Message)
+	}
+
+	// and finally with invalid datetime...
+	obj["foo"] = ""
+	ok, violations = validator.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, messageDatetimePast, violations[0].Message)
+}
+
+func TestDatetimePastOrPresent(t *testing.T) {
+	futureTime := time.Now().Add(24 * time.Hour)
+	validator := buildFooValidator("",
+		&DatetimePastOrPresentConstraint{}, false)
+	obj := map[string]interface{}{
+		"foo": futureTime.Format("2006-01-02T15:04:05.000000000-07:00"),
+	}
+	ok, violations := validator.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, messageDatetimePastOrPresent, violations[0].Message)
+
+	obj["foo"] = time.Now().Add(0 - time.Minute).Format("2006-01-02T15:04:05.000000000-07:00")
+	ok, violations = validator.Validate(obj)
+	require.True(t, ok)
+
+	// check with actual time.Time...
+	obj["foo"] = futureTime
+	ok, violations = validator.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, messageDatetimePastOrPresent, violations[0].Message)
+
+	// check with varying formats...
+	for _, layout := range variousDatetimeFormats {
+		obj["foo"] = futureTime.Format(layout)
+		ok, violations = validator.Validate(obj)
+		require.False(t, ok)
+		require.Equal(t, 1, len(violations))
+		require.Equal(t, messageDatetimePastOrPresent, violations[0].Message)
+	}
+
+	// and finally with invalid datetime...
+	obj["foo"] = ""
+	ok, violations = validator.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, messageDatetimePastOrPresent, violations[0].Message)
 }
 
 func buildFooValidator(propertyType string, constraint Constraint, notNull bool) *Validator {
