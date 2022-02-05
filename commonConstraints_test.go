@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"testing"
 	"time"
+	"unicode"
 )
 
 func TestStringNotEmpty(t *testing.T) {
@@ -95,6 +96,78 @@ func TestStringPattern(t *testing.T) {
 	require.True(t, ok)
 }
 
+func TestStringCharactersConstraint(t *testing.T) {
+	validator := buildFooValidator(PropertyType.String,
+		&StringCharactersConstraint{
+			AllowRanges: []*unicode.RangeTable{
+				unicode.Upper,
+			},
+		}, false)
+	obj := jsonObject(`{
+		"foo": "xxx"
+	}`)
+
+	ok, violations := validator.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, messageInvalidCharacters, violations[0].Message)
+
+	obj["foo"] = "ABC"
+	ok, violations = validator.Validate(obj)
+	require.True(t, ok)
+}
+
+func TestStringCharactersConstraintWithDisallows(t *testing.T) {
+	validator := buildFooValidator(PropertyType.String,
+		&StringCharactersConstraint{
+			AllowRanges: []*unicode.RangeTable{
+				unicode.Upper,
+			},
+			DisallowRanges: []*unicode.RangeTable{
+				unicode.Hex_Digit,
+			},
+		}, false)
+	obj := jsonObject(`{
+		"foo": "ABC"
+	}`)
+
+	ok, violations := validator.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, messageInvalidCharacters, violations[0].Message)
+
+	obj["foo"] = "GHI"
+	ok, violations = validator.Validate(obj)
+	require.True(t, ok)
+}
+
+func TestStringCharactersConstraintWithPlanes(t *testing.T) {
+	validator := buildFooValidator(PropertyType.String,
+		&StringCharactersConstraint{
+			AllowRanges: []*unicode.RangeTable{
+				UnicodeBMP, UnicodeSMP,
+			},
+		}, false)
+	obj := jsonObject(`{
+		"foo": "\ud840\udc06 < surrogate representation of u+20006 - a Chinese char in SIP (Supplementary Ideographic Plane)"
+	}`)
+
+	ok, violations := validator.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, messageInvalidCharacters, violations[0].Message)
+
+	// now try again by allowing SIP (Supplementary Ideographic Plane)...
+	validator = buildFooValidator(PropertyType.String,
+		&StringCharactersConstraint{
+			AllowRanges: []*unicode.RangeTable{
+				UnicodeBMP, UnicodeSMP, UnicodeSIP,
+			},
+		}, false)
+	ok, violations = validator.Validate(obj)
+	require.True(t, ok)
+}
+
 func TestStringMinLength(t *testing.T) {
 	validator := buildFooValidator(PropertyType.String,
 		&StringMinLengthConstraint{Value: 2}, false)
@@ -113,6 +186,24 @@ func TestStringMinLength(t *testing.T) {
 
 	obj["foo"] = nil
 	ok, violations = validator.Validate(obj)
+	require.True(t, ok)
+}
+
+func TestStringMinLengthWithRuneLength(t *testing.T) {
+	vWithUnicode := buildFooValidator(PropertyType.String,
+		&StringMinLengthConstraint{Value: 2, UseRuneLen: true}, false)
+	vWithoutUnicode := buildFooValidator(PropertyType.String,
+		&StringMinLengthConstraint{Value: 2, UseRuneLen: false}, false)
+	// NB. "\ud834\udd22" is surrogate representation of u+1D122 (musical symbol F clef)
+	obj := jsonObject(`{
+		"foo": "\ud834\udd22"
+	}`)
+
+	ok, violations := vWithUnicode.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, fmt.Sprintf(messageAtLeast, 2), violations[0].Message)
+	ok, violations = vWithoutUnicode.Validate(obj)
 	require.True(t, ok)
 }
 
@@ -135,6 +226,24 @@ func TestStringMaxLength(t *testing.T) {
 	obj["foo"] = nil
 	ok, violations = validator.Validate(obj)
 	require.True(t, ok)
+}
+
+func TestStringMaxLengthWithRuneLength(t *testing.T) {
+	vWithUnicode := buildFooValidator(PropertyType.String,
+		&StringMaxLengthConstraint{Value: 1, UseRuneLen: true}, false)
+	vWithoutUnicode := buildFooValidator(PropertyType.String,
+		&StringMaxLengthConstraint{Value: 1, UseRuneLen: false}, false)
+	// NB. "\ud834\udd22" is surrogate representation of u+1D122 (musical symbol F clef)
+	obj := jsonObject(`{
+		"foo": "\ud834\udd22"
+	}`)
+
+	ok, violations := vWithUnicode.Validate(obj)
+	require.True(t, ok)
+	ok, violations = vWithoutUnicode.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, fmt.Sprintf(messageNotMore, 1), violations[0].Message)
 }
 
 func TestStringLength(t *testing.T) {
@@ -174,6 +283,26 @@ func TestStringLength(t *testing.T) {
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
 	require.Equal(t, fmt.Sprintf(messageAtLeast, 2), violations[0].Message)
+}
+
+func TestStringLengthWithRuneLength(t *testing.T) {
+	validator := buildFooValidator(PropertyType.String,
+		&StringLengthConstraint{Minimum: 1, Maximum: 1}, false)
+	// NB. "\ud840\udc06" is surrogate representation of u+20006
+	obj := jsonObject(`{
+		"foo": "\ud840\udc06"
+	}`)
+
+	ok, violations := validator.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, fmt.Sprintf(messageExactLength, 1), violations[0].Message)
+
+	// now try again but using rune length (actual Unicode length)...
+	validator = buildFooValidator(PropertyType.String,
+		&StringLengthConstraint{Minimum: 1, Maximum: 1, UseRuneLen: true}, false)
+	ok, _ = validator.Validate(obj)
+	require.True(t, ok)
 }
 
 func TestLengthWithString(t *testing.T) {
@@ -277,6 +406,19 @@ func TestLengthWithArray(t *testing.T) {
 	obj["foo"] = nil
 	ok, violations = validator.Validate(obj)
 	require.True(t, ok)
+}
+
+func TestLengthConstraintWithSameMinMax(t *testing.T) {
+	validator := buildFooValidator(PropertyType.Array,
+		&LengthConstraint{Minimum: 2, Maximum: 2}, false)
+	obj := jsonObject(`{
+		"foo": ["bar"]
+	}`)
+
+	ok, violations := validator.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, fmt.Sprintf(messageExactLength, 2), violations[0].Message)
 }
 
 func TestPositive(t *testing.T) {

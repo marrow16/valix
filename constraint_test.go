@@ -30,27 +30,27 @@ func TestCustomConstraint(t *testing.T) {
 			}
 			return true, ""
 		}, msg), false)
-	jobj := jsonObject(`{
+	obj := jsonObject(`{
 		"foo": "OK is greater than B"
 	}`)
 
-	ok, violations := validator.Validate(jobj)
+	ok, violations := validator.Validate(obj)
 	require.True(t, ok)
 	require.Equal(t, 0, len(violations))
 
-	jobj["foo"] = "A"
-	ok, violations = validator.Validate(jobj)
+	obj["foo"] = "A"
+	ok, violations = validator.Validate(obj)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
 	require.Equal(t, msg, violations[0].Message)
 
-	jobj["foo"] = "B"
-	ok, violations = validator.Validate(jobj)
+	obj["foo"] = "B"
+	ok, violations = validator.Validate(obj)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
 	require.Equal(t, msg, violations[0].Message)
 
-	jobj["foo"] = "Ba"
-	ok, violations = validator.Validate(jobj)
+	obj["foo"] = "Ba"
+	ok, violations = validator.Validate(obj)
 	require.True(t, ok)
 }
