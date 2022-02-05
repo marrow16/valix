@@ -46,7 +46,7 @@ func (v *Validator) RequestValidate(r *http.Request) (bool, []*Violation, interf
 	vcx := newValidatorContext(r)
 	var obj interface{} = nil
 	if r.Body == nil {
-		vcx.AddViolation(NewEmptyViolation(MessageRequestBodyEmpty))
+		vcx.AddViolation(NewBadRequestViolation(MessageRequestBodyEmpty))
 	} else {
 		decoder := json.NewDecoder(r.Body)
 		if v.UseNumber {
@@ -55,10 +55,10 @@ func (v *Validator) RequestValidate(r *http.Request) (bool, []*Violation, interf
 		obj = reflect.Interface
 		if err := decoder.Decode(&obj); err != nil {
 			obj = nil
-			vcx.AddViolation(NewEmptyViolation(MessageUnableToDecode))
+			vcx.AddViolation(NewBadRequestViolation(MessageUnableToDecode))
 		} else if obj == nil {
 			if !v.AllowNull {
-				vcx.AddViolation(NewEmptyViolation(MessageRequestBodyNotJsonNull))
+				vcx.AddViolation(NewBadRequestViolation(MessageRequestBodyNotJsonNull))
 			}
 		} else {
 			// determine whether body is a map (object) or an array...
@@ -79,7 +79,7 @@ func (v *Validator) RequestValidate(r *http.Request) (bool, []*Violation, interf
 					v.validate(m, vcx)
 				}
 			} else {
-				vcx.AddViolation(NewEmptyViolation(MessageRequestBodyExpectedJsonObject))
+				vcx.AddViolation(NewBadRequestViolation(MessageRequestBodyExpectedJsonObject))
 			}
 		}
 	}

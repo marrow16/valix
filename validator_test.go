@@ -136,6 +136,8 @@ func TestRequestValidation(t *testing.T) {
 	ok, violations, obj := personValidator.RequestValidate(req)
 	require.False(t, ok)
 	require.Equal(t, 2, len(violations))
+	require.False(t, violations[0].BadRequest)
+	require.False(t, violations[1].BadRequest)
 	require.NotNil(t, obj)
 }
 
@@ -161,6 +163,8 @@ func TestRequestValidationUsingJsonNumber(t *testing.T) {
 	ok, violations, obj := validator.RequestValidate(req)
 	require.False(t, ok)
 	require.Equal(t, 2, len(violations))
+	require.False(t, violations[0].BadRequest)
+	require.False(t, violations[1].BadRequest)
 	require.NotNil(t, obj)
 }
 
@@ -173,6 +177,8 @@ func TestRequestValidationWithArray(t *testing.T) {
 	ok, violations, obj := personValidator.RequestValidate(req)
 	require.False(t, ok)
 	require.Equal(t, 2, len(violations))
+	require.False(t, violations[0].BadRequest)
+	require.False(t, violations[1].BadRequest)
 	require.NotNil(t, obj)
 }
 
@@ -186,6 +192,7 @@ func TestRequestValidationWithJsonNullBody(t *testing.T) {
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
 	require.Equal(t, MessageRequestBodyNotJsonNull, violations[0].Message)
+	require.True(t, violations[0].BadRequest)
 	require.Nil(t, obj)
 }
 
@@ -198,6 +205,7 @@ func TestRequestValidationWithNoBody(t *testing.T) {
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
 	require.Equal(t, MessageRequestBodyEmpty, violations[0].Message)
+	require.True(t, violations[0].BadRequest)
 	require.Nil(t, obj)
 }
 
@@ -212,6 +220,7 @@ func TestRequestValidationFailsWithArrayWhenArrayNotAllowed(t *testing.T) {
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
 	require.Equal(t, MessageRequestBodyNotJsonArray, violations[0].Message)
+	require.False(t, violations[0].BadRequest)
 	require.NotNil(t, obj)
 }
 
@@ -226,6 +235,7 @@ func TestRequestValidationFailsWithObjectWhenObjectNotAllowed(t *testing.T) {
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
 	require.Equal(t, MessageRequestBodyExpectedJsonArray, violations[0].Message)
+	require.False(t, violations[0].BadRequest)
 	require.NotNil(t, obj)
 }
 
@@ -240,6 +250,7 @@ func TestRequestValidationFailsWhenExpectingObject(t *testing.T) {
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
 	require.Equal(t, MessageRequestBodyExpectedJsonObject, violations[0].Message)
+	require.True(t, violations[0].BadRequest)
 	require.NotNil(t, obj)
 }
 
@@ -254,6 +265,7 @@ func TestRequestValidationFailsWhenObjectDisallowed(t *testing.T) {
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
 	require.Equal(t, MessageRequestBodyNotJsonObject, violations[0].Message)
+	require.False(t, violations[0].BadRequest)
 	require.NotNil(t, obj)
 }
 
@@ -267,6 +279,7 @@ func TestRequestValidationWithBadJson(t *testing.T) {
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
 	require.Equal(t, MessageUnableToDecode, violations[0].Message)
+	require.True(t, violations[0].BadRequest)
 	require.Nil(t, obj)
 }
 
