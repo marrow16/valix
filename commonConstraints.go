@@ -6,14 +6,17 @@ import (
 	"regexp"
 	"strings"
 	"time"
+	"unicode"
 )
 
 const (
 	messageNotEmptyString         = "Value must not be empty string"
 	messageNotBlankString         = "Value must not be a blank string"
 	messageNoControlChars         = "Value must not contain control characters"
-	messageInvalidPattern         = "Value has invalid pattern"
+	messageInvalidPattern         = "Value must have valid pattern"
+	messageInvalidCharacters      = "Value must not have invalid characters"
 	messageAtLeast                = "Value length must be at least %d"
+	messageExactLength            = "Value length must be %d"
 	messageNotMore                = "Value length must not exceed %d"
 	messageMinMax                 = "Value length must be between %d and %d (inclusive)"
 	messagePositive               = "Value must be positive"
@@ -120,10 +123,83 @@ func (c *StringPatternConstraint) GetMessage() string {
 	return defaultMessage(c.Message, messageInvalidPattern)
 }
 
+var _Bmp = &unicode.RangeTable{
+	R16: []unicode.Range16{
+		{0x0000, 0xffff, 1},
+	},
+}
+var _Smp = &unicode.RangeTable{
+	R32: []unicode.Range32{
+		{0x10000, 0x1ffff, 1},
+	},
+}
+var _Sip = &unicode.RangeTable{
+	R32: []unicode.Range32{
+		{0x20000, 0x2ffff, 1},
+	},
+}
+var (
+	// UnicodeBMP is the Unicode BMP (Basic Multilingual Plane)
+	//
+	// For use with StringCharactersConstraint
+	UnicodeBMP = _Bmp
+	// UnicodeSMP is the Unicode SMP (Supplementary Multilingual Plane)
+	//
+	// For use with StringCharactersConstraint
+	UnicodeSMP = _Smp
+	// UnicodeSIP is the Unicode SIP (Supplementary Ideographic Plane)
+	//
+	// For use with StringCharactersConstraint
+	UnicodeSIP = _Sip
+)
+
+// StringCharactersConstraint to check that a string contains only allowable characters
+type StringCharactersConstraint struct {
+	// AllowRanges the ranges of characters (runes) that are allowed - each character
+	// must be in at least one of these
+	AllowRanges []*unicode.RangeTable
+	// DisallowRanges the ranges of characters (runes) that are not allowed - if any character
+	// is in any of these ranges then the constraint is violated
+	DisallowRanges []*unicode.RangeTable
+	// the violation message to be used if the constraint fails (see Violation.Message)
+	//
+	// (if the Message is an empty string then the default violation message is used)
+	Message string
+}
+
+func (c *StringCharactersConstraint) Validate(value interface{}, vcx *ValidatorContext) (bool, string) {
+	if str, ok := value.(string); ok {
+		runes := []rune(str)
+		allowedCount := -1
+		for i, r := range runes {
+			for _, dr := range c.DisallowRanges {
+				if unicode.Is(dr, r) {
+					return false, c.GetMessage()
+				}
+			}
+			for _, ar := range c.AllowRanges {
+				if unicode.Is(ar, r) {
+					allowedCount++
+					break
+				}
+			}
+			if i != allowedCount {
+				return false, c.GetMessage()
+			}
+		}
+	}
+	return true, ""
+}
+func (c *StringCharactersConstraint) GetMessage() string {
+	return defaultMessage(c.Message, messageInvalidCharacters)
+}
+
 // StringMinLengthConstraint to check that a string has a minimum length
 type StringMinLengthConstraint struct {
 	// the minimum length value
 	Value int
+	// UseRuneLen if set to true, uses the rune length (true Unicode length) to check length of string
+	UseRuneLen bool
 	// the violation message to be used if the constraint fails (see Violation.Message)
 	//
 	// (if the Message is an empty string then the default violation message is used)
@@ -132,7 +208,11 @@ type StringMinLengthConstraint struct {
 
 func (c *StringMinLengthConstraint) Validate(value interface{}, vcx *ValidatorContext) (bool, string) {
 	if str, ok := value.(string); ok {
-		if len(str) < c.Value {
+		l := len(str)
+		if c.UseRuneLen {
+			l = len([]rune(str))
+		}
+		if l < c.Value {
 			return false, c.GetMessage()
 		}
 	}
@@ -146,6 +226,8 @@ func (c *StringMinLengthConstraint) GetMessage() string {
 type StringMaxLengthConstraint struct {
 	// the maximum length value
 	Value int
+	// UseRuneLen if set to true, uses the rune length (true Unicode length) to check length of string
+	UseRuneLen bool
 	// the violation message to be used if the constraint fails (see Violation.Message)
 	//
 	// (if the Message is an empty string then the default violation message is used)
@@ -154,7 +236,11 @@ type StringMaxLengthConstraint struct {
 
 func (c *StringMaxLengthConstraint) Validate(value interface{}, vcx *ValidatorContext) (bool, string) {
 	if str, ok := value.(string); ok {
-		if len(str) > c.Value {
+		l := len(str)
+		if c.UseRuneLen {
+			l = len([]rune(str))
+		}
+		if l > c.Value {
 			return false, c.GetMessage()
 		}
 	}
@@ -171,6 +257,8 @@ type StringLengthConstraint struct {
 	Minimum int
 	// the maximum length (only checked if this value is > 0)
 	Maximum int
+	// UseRuneLen if set to true, uses the rune length (true Unicode length) to check length of string
+	UseRuneLen bool
 	// the violation message to be used if the constraint fails (see Violation.Message)
 	//
 	// (if the Message is an empty string then the default violation message is used)
@@ -179,15 +267,23 @@ type StringLengthConstraint struct {
 
 func (c *StringLengthConstraint) Validate(value interface{}, vcx *ValidatorContext) (bool, string) {
 	if str, ok := value.(string); ok {
-		if len(str) < c.Minimum {
+		l := len(str)
+		if c.UseRuneLen {
+			l = len([]rune(str))
+		}
+		if l < c.Minimum {
 			return false, c.GetMessage()
-		} else if c.Maximum > 0 && len(str) > c.Maximum {
+		} else if c.Maximum > 0 && l > c.Maximum {
 			return false, c.GetMessage()
 		}
 	}
 	return true, ""
 }
 func (c *StringLengthConstraint) GetMessage() string {
+	if c.Minimum == c.Maximum {
+		return defaultMessage(c.Message,
+			fmt.Sprintf(messageExactLength, c.Minimum))
+	}
 	if c.Maximum > 0 {
 		return defaultMessage(c.Message,
 			fmt.Sprintf(messageMinMax, c.Minimum, c.Maximum))
@@ -198,7 +294,9 @@ func (c *StringLengthConstraint) GetMessage() string {
 
 // LengthConstraint to check that a property value has minimum and maximum length
 //
-// This constraint can be used for string, object and array property values
+// This constraint can be used for string, object and array property values - however, if
+// checking string lengths where actual Unicode length needs to be checked, it is better
+// to use StringLengthConstraint with UseRuneLength set to true
 type LengthConstraint struct {
 	// the minimum length
 	Minimum int
@@ -233,6 +331,10 @@ func (c *LengthConstraint) Validate(value interface{}, vcx *ValidatorContext) (b
 	return true, ""
 }
 func (c *LengthConstraint) GetMessage() string {
+	if c.Minimum == c.Maximum {
+		return defaultMessage(c.Message,
+			fmt.Sprintf(messageExactLength, c.Minimum))
+	}
 	if c.Maximum > 0 {
 		return defaultMessage(c.Message,
 			fmt.Sprintf(messageMinMax, c.Minimum, c.Maximum))
@@ -586,10 +688,10 @@ func (c *StringValidISODatetimeConstraint) Validate(value interface{}, vcx *Vali
 		}
 		// and attempt to parse it (it may match regex but datetime could still be invalid)...
 		if _, err := time.Parse(useLayout, str); err != nil {
-			if perr, ok := err.(*time.ParseError); ok && perr.Message == "" && strings.HasSuffix(useLayout, perr.LayoutElem) {
+			if pErr, ok := err.(*time.ParseError); ok && pErr.Message == "" && strings.HasSuffix(useLayout, pErr.LayoutElem) {
 				// time.Parse is pretty dumb when it comes to timezones - if it's in the layout but not the string it fails
 				// so remove the bit it doesn't like (in the layout) and try again...
-				useLayout = useLayout[0 : len(useLayout)-len(perr.LayoutElem)]
+				useLayout = useLayout[0 : len(useLayout)-len(pErr.LayoutElem)]
 				if _, err := time.Parse(useLayout, str); err != nil {
 					return false, c.GetMessage()
 				}

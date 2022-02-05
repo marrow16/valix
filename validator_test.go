@@ -274,8 +274,8 @@ func TestValidatorStopsOnConstraint(t *testing.T) {
 	v := Validator{
 		IgnoreUnknownProperties: false,
 		Constraints: Constraints{
-			NewCustomConstraint(func(value interface{}, ctx *ValidatorContext, cc *CustomConstraint) (bool, string) {
-				ctx.Stop()
+			NewCustomConstraint(func(value interface{}, vcx *ValidatorContext, cc *CustomConstraint) (bool, string) {
+				vcx.Stop()
 				return true, ""
 			}, ""),
 		},
@@ -301,8 +301,8 @@ func TestValidatorStopsOnArrayElement(t *testing.T) {
 			"foo": {
 				PropertyType: PropertyType.Boolean,
 				Constraints: Constraints{
-					NewCustomConstraint(func(value interface{}, ctx *ValidatorContext, cc *CustomConstraint) (bool, string) {
-						ctx.Stop()
+					NewCustomConstraint(func(value interface{}, vcx *ValidatorContext, cc *CustomConstraint) (bool, string) {
+						vcx.Stop()
 						return false, cc.GetMessage()
 					}, testMsg),
 				},
@@ -655,8 +655,8 @@ func TestValidatorStops(t *testing.T) {
 				PropertyType: PropertyType.String,
 				NotNull:      true,
 				Constraints: Constraints{
-					NewCustomConstraint(func(value interface{}, ctx *ValidatorContext, cc *CustomConstraint) (bool, string) {
-						ctx.Stop()
+					NewCustomConstraint(func(value interface{}, vcx *ValidatorContext, cc *CustomConstraint) (bool, string) {
+						vcx.Stop()
 						return true, ""
 					}, ""),
 					// the following constraint should never be checked (because the prev constraint stops)
@@ -686,8 +686,8 @@ func TestValidatorManuallyAddedViolation(t *testing.T) {
 			"foo": {
 				PropertyType: PropertyType.String,
 				Constraints: Constraints{
-					NewCustomConstraint(func(value interface{}, ctx *ValidatorContext, cc *CustomConstraint) (bool, string) {
-						ctx.AddViolation(NewViolation("", "", msg))
+					NewCustomConstraint(func(value interface{}, vcx *ValidatorContext, cc *CustomConstraint) (bool, string) {
+						vcx.AddViolation(NewViolation("", "", msg))
 						return true, ""
 					}, ""),
 					&StringNotEmptyConstraint{},
@@ -711,8 +711,8 @@ func TestValidatorManuallyAddedCurrentViolation(t *testing.T) {
 			"foo": {
 				PropertyType: PropertyType.String,
 				Constraints: Constraints{
-					NewCustomConstraint(func(value interface{}, ctx *ValidatorContext, cc *CustomConstraint) (bool, string) {
-						ctx.AddViolationForCurrent(msg)
+					NewCustomConstraint(func(value interface{}, vcx *ValidatorContext, cc *CustomConstraint) (bool, string) {
+						vcx.AddViolationForCurrent(msg)
 						return true, ""
 					}, ""),
 					&StringNotEmptyConstraint{},
@@ -841,8 +841,8 @@ func TestCeaseFurtherWorks(t *testing.T) {
 			"foo": {
 				PropertyType: PropertyType.String,
 				Constraints: Constraints{
-					NewCustomConstraint(func(value interface{}, ctx *ValidatorContext, cc *CustomConstraint) (bool, string) {
-						ctx.CeaseFurther()
+					NewCustomConstraint(func(value interface{}, vcx *ValidatorContext, cc *CustomConstraint) (bool, string) {
+						vcx.CeaseFurther()
 						return true, ""
 					}, ""),
 					// these constraints should not be run because of the CeaseFurther (above)
@@ -850,7 +850,7 @@ func TestCeaseFurtherWorks(t *testing.T) {
 				},
 				ObjectValidator: &Validator{
 					Constraints: Constraints{
-						NewCustomConstraint(func(value interface{}, ctx *ValidatorContext, cc *CustomConstraint) (bool, string) {
+						NewCustomConstraint(func(value interface{}, vcx *ValidatorContext, cc *CustomConstraint) (bool, string) {
 							// this constraint should not be run because of the CeaseFurther (above)
 							return false, "Never run"
 						}, ""),
@@ -878,7 +878,7 @@ type myCustomConstraint struct {
 	expectedPath string
 }
 
-func (c *myCustomConstraint) Validate(value interface{}, ctx *ValidatorContext) (bool, string) {
+func (c *myCustomConstraint) Validate(value interface{}, vcx *ValidatorContext) (bool, string) {
 	return false, c.expectedPath
 }
 func (c *myCustomConstraint) GetMessage() string {
