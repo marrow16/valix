@@ -22,14 +22,14 @@ func TestCustomConstraintStoresMessage(t *testing.T) {
 }
 
 func TestCustomConstraint(t *testing.T) {
-	msg := "Value must be greater than 'B'"
+	const testMsg = "Value must be greater than 'B'"
 	validator := buildFooValidator(PropertyType.String,
 		NewCustomConstraint(func(value interface{}, ctx *ValidatorContext, cc *CustomConstraint) (bool, string) {
 			if str, ok := value.(string); ok {
 				return strings.Compare(str, "B") > 0, cc.GetMessage()
 			}
 			return true, ""
-		}, msg), false)
+		}, testMsg), false)
 	obj := jsonObject(`{
 		"foo": "OK is greater than B"
 	}`)
@@ -42,13 +42,13 @@ func TestCustomConstraint(t *testing.T) {
 	ok, violations = validator.Validate(obj)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, msg, violations[0].Message)
+	require.Equal(t, testMsg, violations[0].Message)
 
 	obj["foo"] = "B"
 	ok, violations = validator.Validate(obj)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, msg, violations[0].Message)
+	require.Equal(t, testMsg, violations[0].Message)
 
 	obj["foo"] = "Ba"
 	ok, violations = validator.Validate(obj)
