@@ -1,28 +1,31 @@
 package valix
 
 // Constraint is the interface for all validation constraints on a property and object
-//
-// Custom constraints must implement this interface with the method:
 type Constraint interface {
-	// Validate Validates the constraint for a given value
-	Validate(value interface{}, vcx *ValidatorContext) (bool, string)
+	// Check the constraint against a given value
+	Check(value interface{}, vcx *ValidatorContext) (bool, string)
 	// GetMessage returns the actual message for the constraint
+	//
+	// This method is required so that any documenting functionality can determine
+	// the constraint message without having to actually run the constraint
 	GetMessage() string
 }
 
-type Validate func(value interface{}, vcx *ValidatorContext, this *CustomConstraint) (bool, string)
+// Check function signature for custom constraints
+type Check func(value interface{}, vcx *ValidatorContext, this *CustomConstraint) (bool, string)
 
+// CustomConstraint is a constraint that can declared on the fly and implements the Constraint interface
 type CustomConstraint struct {
-	validate Validate
-	Message  string
+	CheckFunc Check
+	Message   string
 }
 
-// NewCustomConstraint Creates a custom Constraint which uses the supplied Validate function
-func NewCustomConstraint(validate Validate, message string) *CustomConstraint {
-	return &CustomConstraint{validate: validate, Message: message}
+// NewCustomConstraint Creates a custom Constraint which uses the supplied Check function
+func NewCustomConstraint(check Check, message string) *CustomConstraint {
+	return &CustomConstraint{CheckFunc: check, Message: message}
 }
-func (v *CustomConstraint) Validate(value interface{}, vcx *ValidatorContext) (bool, string) {
-	return v.validate(value, vcx, v)
+func (v *CustomConstraint) Check(value interface{}, vcx *ValidatorContext) (bool, string) {
+	return v.CheckFunc(value, vcx, v)
 }
 func (v *CustomConstraint) GetMessage() string {
 	return v.Message
