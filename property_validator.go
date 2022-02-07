@@ -53,9 +53,10 @@ func (pv *PropertyValidator) validate(actualValue interface{}, vcx *ValidatorCon
 			vcx.AddViolationForCurrent(MessageValueCannotBeNull)
 		}
 	} else if pv.checkType(actualValue, vcx) {
-		pv.checkConstraints(actualValue, vcx)
+		// don't pass the actualValue down further - because it may change!
+		pv.checkConstraints(vcx)
 		if vcx.continueAll && vcx.continuePty() {
-			pv.checkObjectValidation(actualValue, vcx)
+			pv.checkObjectValidation(vcx)
 		}
 	}
 }
@@ -108,21 +109,21 @@ func checkNumeric(value interface{}, isInt bool) bool {
 	return ok
 }
 
-func (pv *PropertyValidator) checkObjectValidation(actualValue interface{}, vcx *ValidatorContext) {
+func (pv *PropertyValidator) checkObjectValidation(vcx *ValidatorContext) {
 	if pv.ObjectValidator != nil {
 		if !pv.ObjectValidator.DisallowObject && pv.ObjectValidator.AllowArray {
 			// can be object or array...
-			if !pv.subValidateObjectOrArray(actualValue, vcx) {
+			if !pv.subValidateObjectOrArray(vcx.CurrentValue(), vcx) {
 				vcx.AddViolationForCurrent(MessageValueMustBeObjectOrArray)
 			}
 		} else if !pv.ObjectValidator.DisallowObject {
 			// can only be an object...
-			if !pv.subValidateObject(actualValue, vcx) {
+			if !pv.subValidateObject(vcx.CurrentValue(), vcx) {
 				vcx.AddViolationForCurrent(MessageValueMustBeObject)
 			}
 		} else if pv.ObjectValidator.AllowArray {
 			// can only be an array...
-			if !pv.subValidateArray(actualValue, vcx) {
+			if !pv.subValidateArray(vcx.CurrentValue(), vcx) {
 				vcx.AddViolationForCurrent(MessageValueMustBeArray)
 			}
 		} else {
@@ -153,10 +154,11 @@ func (pv *PropertyValidator) subValidateArray(actualValue interface{}, vcx *Vali
 	return false
 }
 
-func (pv *PropertyValidator) checkConstraints(actualValue interface{}, vcx *ValidatorContext) {
+func (pv *PropertyValidator) checkConstraints(vcx *ValidatorContext) {
 	if pv.Constraints != nil {
 		for _, constraint := range pv.Constraints {
-			if ok, msg := constraint.Validate(actualValue, vcx); !ok {
+			// re-get the current value each time because it may have changed
+			if ok, msg := constraint.Check(vcx.CurrentValue(), vcx); !ok {
 				vcx.AddViolationForCurrent(msg)
 			}
 			if !vcx.continueAll || !vcx.continuePty() {

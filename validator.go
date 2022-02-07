@@ -23,6 +23,7 @@ const (
 type Properties map[string]*PropertyValidator
 type Constraints []Constraint
 
+// Validator is the validator against which requests, maps and slices can be checked
 type Validator struct {
 	// IgnoreUnknownProperties is whether to ignore unknown properties (default false)
 	//
@@ -86,7 +87,7 @@ func (v *Validator) RequestValidate(r *http.Request) (bool, []*Violation, interf
 	return vcx.ok, vcx.violations, obj
 }
 
-// Validate Performs validation on the supplied object
+// Validate performs validation on the supplied object
 func (v *Validator) Validate(obj map[string]interface{}) (bool, []*Violation) {
 	vcx := newValidatorContext(obj)
 	v.validate(obj, vcx)
@@ -103,7 +104,7 @@ func (v *Validator) ValidateArrayOf(arr []interface{}) (bool, []*Violation) {
 func (v *Validator) validate(obj map[string]interface{}, vcx *ValidatorContext) {
 	if v.Constraints != nil {
 		for _, constraint := range v.Constraints {
-			if ok, msg := constraint.Validate(obj, vcx); !ok {
+			if ok, msg := constraint.Check(obj, vcx); !ok {
 				vcx.AddViolationForCurrent(msg)
 			}
 			if !vcx.continueAll {

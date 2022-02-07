@@ -5,11 +5,16 @@ import (
 )
 
 type ValidatorContext struct {
-	ok          bool
+	// ok is the final result of the validator
+	ok bool
+	// continueAll is whether entire validation is ok to continue
 	continueAll bool
-	root        interface{}
-	violations  []*Violation
-	pathStack   []*pathStackItem
+	// root is the original starting object (map or slice) for the validator
+	root interface{}
+	// violations is the collected violations
+	violations []*Violation
+	// pathStack is the path as each property or array index is checked
+	pathStack []*pathStackItem
 }
 
 func newValidatorContext(root interface{}) *ValidatorContext {
@@ -30,7 +35,7 @@ func newValidatorContext(root interface{}) *ValidatorContext {
 
 // AddViolation adds a Violation to the validation context
 //
-// Note: Also causes the validator to fail (i.e. return false on validate)
+// Note: Also causes the validator to fail (i.e. return false on CheckFunc)
 func (vc *ValidatorContext) AddViolation(v *Violation) {
 	vc.violations = append(vc.violations, v)
 	vc.ok = false
@@ -39,7 +44,7 @@ func (vc *ValidatorContext) AddViolation(v *Violation) {
 // AddViolationForCurrent adds a Violation to the validation context for
 // the current property and path
 //
-// Note: Also causes the validator to fail (i.e. return false on validate)
+// Note: Also causes the validator to fail (i.e. return false on CheckFunc)
 func (vc *ValidatorContext) AddViolationForCurrent(msg string) {
 	curr := vc.pathStack[len(vc.pathStack)-1]
 	vc.AddViolation(NewViolation(curr.propertyAsString(), curr.path, msg))
@@ -93,6 +98,24 @@ func (vc *ValidatorContext) CurrentArrayIndex() *int {
 // CurrentPath returns the current property path
 func (vc *ValidatorContext) CurrentPath() string {
 	return vc.pathStack[len(vc.pathStack)-1].path
+}
+
+func (vc *ValidatorContext) CurrentValue() interface{} {
+	return vc.pathStack[len(vc.pathStack)-1].value
+	/*
+		if pv, ok := vc.AncestorValue(0); ok {
+			if apv, aok := pv.([]interface{}); aok {
+				if idx := vc.CurrentArrayIndex(); idx != nil {
+					return true, apv[*idx]
+				}
+			} else if opv, ook := pv.(map[string]interface{}); ook {
+				if pty := vc.CurrentPropertyName(); pty != nil {
+					return true, opv[*pty]
+				}
+			}
+		}
+		return false, nil
+	*/
 }
 
 // CurrentDepth returns the current depth of the context - i.e. how many properties deep in the tree
@@ -155,18 +178,21 @@ func (vc *ValidatorContext) AncestorValue(level uint) (interface{}, bool) {
 
 // SetCurrentValue set the value of the current property during validation
 //
-// Note: Use with extreme caution - altering values during validation may cause problems
-// for other constraints or validators in the chain
+// Note: Use with extreme caution - altering values that are maps or slices (objects or arrays)
+// during validation may cause severe problems where there are descendant validators on them
 func (vc *ValidatorContext) SetCurrentValue(v interface{}) bool {
 	if pv, ok := vc.AncestorValue(0); ok {
+		currStackItem := vc.pathStack[len(vc.pathStack)-1]
 		if apv, aok := pv.([]interface{}); aok {
 			if idx := vc.CurrentArrayIndex(); idx != nil {
 				apv[*idx] = v
+				currStackItem.value = v
 				return true
 			}
 		} else if opv, ook := pv.(map[string]interface{}); ook {
 			if pty := vc.CurrentPropertyName(); pty != nil {
 				opv[*pty] = v
+				currStackItem.value = v
 				return true
 			}
 		}

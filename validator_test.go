@@ -24,7 +24,7 @@ var personValidator = &Validator{
 			NotNull:      true,
 			Mandatory:    true,
 			Constraints: Constraints{
-				&StringLengthConstraint{Minimum: 1, Maximum: 255},
+				&StringLength{Minimum: 1, Maximum: 255},
 			},
 		},
 		"age": {
@@ -32,7 +32,7 @@ var personValidator = &Validator{
 			NotNull:      true,
 			Mandatory:    true,
 			Constraints: Constraints{
-				&PositiveOrZeroConstraint{},
+				&PositiveOrZero{},
 			},
 		},
 	},
@@ -44,6 +44,37 @@ func TestEmptyValidatorWorks(t *testing.T) {
 	ok, violations := v.Validate(o)
 	require.True(t, ok)
 	require.Equal(t, 0, len(violations))
+}
+
+var addPersonToGroupValidator = &Validator{
+	IgnoreUnknownProperties: false,
+	Properties: Properties{
+		"person": {
+			PropertyType:    PropertyType.Object,
+			ObjectValidator: personValidator,
+		},
+		"group": {
+			PropertyType: PropertyType.String,
+			NotNull:      true,
+			Mandatory:    true,
+			Constraints: Constraints{
+				&StringLength{Minimum: 1, Maximum: 255},
+			},
+		},
+	},
+}
+
+func TestValidatorWithReUseWorks(t *testing.T) {
+	o := jsonObject(`{
+		"person": {
+			"name": "",
+			"age": -1
+		},
+		"group": ""
+	}`)
+	ok, violations := addPersonToGroupValidator.Validate(o)
+	require.False(t, ok)
+	require.Equal(t, 3, len(violations))
 }
 
 func TestMissingPropertyDetection(t *testing.T) {
@@ -113,7 +144,7 @@ func TestValidatorWithObjectConstraint(t *testing.T) {
 	v := Validator{
 		IgnoreUnknownProperties: true,
 		Constraints: Constraints{
-			&LengthConstraint{Minimum: 2, Maximum: 3},
+			&Length{Minimum: 2, Maximum: 3},
 		},
 	}
 	o := jsonObject(`{
@@ -147,11 +178,11 @@ func TestRequestValidationUsingJsonNumber(t *testing.T) {
 		Properties: Properties{
 			"foo": {
 				PropertyType: PropertyType.Number,
-				Constraints:  Constraints{&PositiveConstraint{}},
+				Constraints:  Constraints{&Positive{}},
 			},
 			"bar": {
 				PropertyType: PropertyType.Number,
-				Constraints:  Constraints{&NegativeConstraint{}},
+				Constraints:  Constraints{&Negative{}},
 			},
 		},
 	}
@@ -479,7 +510,7 @@ func TestSubPropertyAsArrayValidation(t *testing.T) {
 	require.Equal(t, messagePositiveOrZero, violations[0].Message)
 	require.Equal(t, "person", violations[1].Path)
 	require.Equal(t, "name", violations[1].Property)
-	require.Equal(t, fmt.Sprintf(messageMinMax, 1, 255), violations[1].Message)
+	require.Equal(t, fmt.Sprintf(messageStringMinMaxLen, 1, 255), violations[1].Message)
 
 	o["person"] = []interface{}{
 		jsonObject(`{
@@ -673,7 +704,7 @@ func TestValidatorStops(t *testing.T) {
 						return true, ""
 					}, ""),
 					// the following constraint should never be checked (because the prev constraint stops)
-					&StringNotEmptyConstraint{},
+					&StringNotEmpty{},
 				},
 			},
 		},
@@ -684,7 +715,7 @@ func TestValidatorStops(t *testing.T) {
 	require.True(t, ok)
 	require.Equal(t, 0, len(violations))
 
-	// check that the NotNull still works...
+	// CheckFunc that the NotNull still works...
 	o["foo"] = nil
 	ok, violations = v.Validate(o)
 	require.False(t, ok)
@@ -703,7 +734,7 @@ func TestValidatorManuallyAddedViolation(t *testing.T) {
 						vcx.AddViolation(NewViolation("", "", msg))
 						return true, ""
 					}, ""),
-					&StringNotEmptyConstraint{},
+					&StringNotEmpty{},
 				},
 			},
 		},
@@ -728,7 +759,7 @@ func TestValidatorManuallyAddedCurrentViolation(t *testing.T) {
 						vcx.AddViolationForCurrent(msg)
 						return true, ""
 					}, ""),
-					&StringNotEmptyConstraint{},
+					&StringNotEmpty{},
 				},
 			},
 		},
@@ -859,7 +890,7 @@ func TestCeaseFurtherWorks(t *testing.T) {
 						return true, ""
 					}, ""),
 					// these constraints should not be run because of the CeaseFurther (above)
-					&StringNotEmptyConstraint{},
+					&StringNotEmpty{},
 				},
 				ObjectValidator: &Validator{
 					Constraints: Constraints{
@@ -891,7 +922,7 @@ type myCustomConstraint struct {
 	expectedPath string
 }
 
-func (c *myCustomConstraint) Validate(value interface{}, vcx *ValidatorContext) (bool, string) {
+func (c *myCustomConstraint) Check(value interface{}, vcx *ValidatorContext) (bool, string) {
 	return false, c.expectedPath
 }
 func (c *myCustomConstraint) GetMessage() string {

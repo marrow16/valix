@@ -207,7 +207,7 @@ func TestContext_AncestorPath(t *testing.T) {
 	ap, apok = ctx.AncestorPath(0)
 	require.True(t, apok)
 	require.Equal(t, "", *ap)
-	// check ancestor too far is no ok...
+	// CheckFunc ancestor too far is no ok...
 	ap, apok = ctx.AncestorPath(1)
 	require.False(t, apok)
 	require.Nil(t, ap)
@@ -405,7 +405,7 @@ func TestContext_AncestorValue(t *testing.T) {
 	}
 
 	ok, violations := v.Validate(o)
-	// check that validator actually hit our test constraint...
+	// CheckFunc that validator actually hit our test constraint...
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
 	require.Equal(t, testMsg, violations[0].Message)
@@ -442,13 +442,13 @@ func TestContext_SetCurrentValue(t *testing.T) {
 		},
 	}
 
-	// check that validator actually hit our test constraint...
+	// CheckFunc that validator actually hit our test constraint...
 	ok, violations := v.Validate(o)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
 	require.Equal(t, testMsg, violations[0].Message)
 
-	// and check that foo.bar got set to false...
+	// and CheckFunc that foo.bar got set to false...
 	foo := o["foo"].(map[string]interface{})
 	fooBar := foo["bar"].(bool)
 	require.False(t, fooBar)
@@ -491,14 +491,14 @@ func TestContext_SetCurrentValueInArray(t *testing.T) {
 		},
 	}
 
-	// check that validator actually hit our test constraint...
+	// CheckFunc that validator actually hit our test constraint...
 	ok, violations := v.Validate(o)
 	require.False(t, ok)
 	require.Equal(t, 2, len(violations))
 	require.Equal(t, testMsg, violations[0].Message)
 	require.Equal(t, testMsg, violations[1].Message)
 
-	// and check the values of each foo item were changed...
+	// and CheckFunc the values of each foo item were changed...
 	foo := o["foo"].([]interface{})
 	require.Equal(t, testValue, foo[0])
 	require.Equal(t, testValue, foo[1])
@@ -516,7 +516,7 @@ func TestContext_SetCurrentValueOnRootFails(t *testing.T) {
 		},
 	}
 
-	// check that validator actually hit our test constraint...
+	// CheckFunc that validator actually hit our test constraint...
 	ok, violations := v.Validate(o)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
