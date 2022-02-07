@@ -23,15 +23,6 @@ type Violation struct {
 	BadRequest bool
 }
 
-// NewViolation creates a new violation with the specified property, path and message
-func NewViolation(property string, path string, msg string) *Violation {
-	return &Violation{
-		Property: property,
-		Path:     path,
-		Message:  msg,
-	}
-}
-
 // NewEmptyViolation creates a new violation with the specified message (path and property are blank)
 func NewEmptyViolation(msg string) *Violation {
 	return &Violation{
@@ -41,6 +32,16 @@ func NewEmptyViolation(msg string) *Violation {
 	}
 }
 
+// NewViolation creates a new violation with the specified property, path and message
+func NewViolation(property string, path string, msg string) *Violation {
+	return &Violation{
+		Property: property,
+		Path:     path,
+		Message:  msg,
+	}
+}
+
+// NewBadRequestViolation creates a new violation with BadRequest flag set (path and property are blank)
 func NewBadRequestViolation(msg string) *Violation {
 	return &Violation{
 		Property:   "",
