@@ -23,7 +23,7 @@ func TestCustomConstraintStoresMessage(t *testing.T) {
 
 func TestCustomConstraint(t *testing.T) {
 	const testMsg = "Value must be greater than 'B'"
-	validator := buildFooValidator(PropertyType.String,
+	validator := buildFooValidator(JsonString,
 		NewCustomConstraint(func(value interface{}, ctx *ValidatorContext, cc *CustomConstraint) (bool, string) {
 			if str, ok := value.(string); ok {
 				return strings.Compare(str, "B") > 0, cc.GetMessage()

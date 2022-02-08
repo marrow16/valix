@@ -9,7 +9,7 @@ Validators can be expressed effectively as, for example:
 		IgnoreUnknownProperties: false,
 		Properties: valix.Properties{
 			"name": {
-				PropertyType: valix.PropertyType.String,
+				Type: valix.Type.JsonString,
 				NotNull:      true,
 				Mandatory:    true,
 				Constraints:  valix.Constraints{
@@ -17,7 +17,7 @@ Validators can be expressed effectively as, for example:
 				},
 			},
 			"age": {
-				PropertyType: valix.PropertyType.Int,
+				Type: valix.Type.Int,
 				NotNull:      true,
 				Mandatory:    true,
 				Constraints:  valix.Constraints{
@@ -32,11 +32,11 @@ Validators can re-use common property validators, for example re-using the `pers
 		IgnoreUnknownProperties: false,
 		Properties: valix.Properties{
 			"person": {
-				PropertyType: valix.PropertyType.Object,
+				Type: valix.Type.JsonObject,
 				ObjectValidator: personValidator,
 			},
 			"group": {
-				PropertyType: valix.PropertyType.String,
+				Type: valix.Type.JsonString,
 				NotNull:      true,
 				Mandatory:    true,
 				Constraints:  valix.Constraints{

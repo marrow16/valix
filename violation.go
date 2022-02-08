@@ -19,7 +19,7 @@ type Violation struct {
 	// * the request body does not parse (unmarshal) as JSON
 	//
 	// * the request body is JSON null (i.e. a request body containing just 'null') and the
-	// Validator.AllowNull is set to false
+	// Validator.AllowNullJson is set to false
 	BadRequest bool
 }
 

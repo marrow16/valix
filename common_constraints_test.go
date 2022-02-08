@@ -12,7 +12,7 @@ import (
 )
 
 func TestStringNotEmpty(t *testing.T) {
-	validator := buildFooValidator(PropertyType.String,
+	validator := buildFooValidator(JsonString,
 		&StringNotEmpty{}, false)
 	obj := jsonObject(`{
 		"foo": ""
@@ -33,7 +33,7 @@ func TestStringNotEmpty(t *testing.T) {
 }
 
 func TestStringNotBlank(t *testing.T) {
-	validator := buildFooValidator(PropertyType.String,
+	validator := buildFooValidator(JsonString,
 		&StringNotBlank{}, false)
 	obj := jsonObject(`{
 		"foo": " \t\n\r "
@@ -54,7 +54,7 @@ func TestStringNotBlank(t *testing.T) {
 }
 
 func TestStringNoControlChars(t *testing.T) {
-	validator := buildFooValidator(PropertyType.String,
+	validator := buildFooValidator(JsonString,
 		&StringNoControlCharacters{}, false)
 	obj := jsonObject(`{
 		"foo": "Abc\t\n\r"
@@ -75,7 +75,7 @@ func TestStringNoControlChars(t *testing.T) {
 }
 
 func TestStringPattern(t *testing.T) {
-	validator := buildFooValidator(PropertyType.String,
+	validator := buildFooValidator(JsonString,
 		&StringPattern{
 			Regexp: *regexp.MustCompile("([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})"),
 		}, false)
@@ -98,7 +98,7 @@ func TestStringPattern(t *testing.T) {
 }
 
 func TestStringCharactersConstraint(t *testing.T) {
-	validator := buildFooValidator(PropertyType.String,
+	validator := buildFooValidator(JsonString,
 		&StringCharacters{
 			AllowRanges: []*unicode.RangeTable{
 				unicode.Upper,
@@ -119,7 +119,7 @@ func TestStringCharactersConstraint(t *testing.T) {
 }
 
 func TestStringCharactersConstraintWithDisallows(t *testing.T) {
-	validator := buildFooValidator(PropertyType.String,
+	validator := buildFooValidator(JsonString,
 		&StringCharacters{
 			AllowRanges: []*unicode.RangeTable{
 				unicode.Upper,
@@ -143,7 +143,7 @@ func TestStringCharactersConstraintWithDisallows(t *testing.T) {
 }
 
 func TestStringCharactersConstraintWithPlanes(t *testing.T) {
-	validator := buildFooValidator(PropertyType.String,
+	validator := buildFooValidator(JsonString,
 		&StringCharacters{
 			AllowRanges: []*unicode.RangeTable{
 				UnicodeBMP, UnicodeSMP,
@@ -159,7 +159,7 @@ func TestStringCharactersConstraintWithPlanes(t *testing.T) {
 	require.Equal(t, messageInvalidCharacters, violations[0].Message)
 
 	// now try again by allowing SIP (Supplementary Ideographic Plane)...
-	validator = buildFooValidator(PropertyType.String,
+	validator = buildFooValidator(JsonString,
 		&StringCharacters{
 			AllowRanges: []*unicode.RangeTable{
 				UnicodeBMP, UnicodeSMP, UnicodeSIP,
@@ -170,7 +170,7 @@ func TestStringCharactersConstraintWithPlanes(t *testing.T) {
 }
 
 func TestStringValidUnicodeNormalization(t *testing.T) {
-	validator := buildFooValidator(PropertyType.String,
+	validator := buildFooValidator(JsonString,
 		&StringValidUnicodeNormalization{Form: norm.NFC}, false)
 	// NB. "\u0063\u0327" is 'c' followed by combining cedilla
 	obj := jsonObject(`{
@@ -186,7 +186,7 @@ func TestStringValidUnicodeNormalization(t *testing.T) {
 	ok, violations = validator.Validate(obj)
 	require.True(t, ok)
 
-	validator = buildFooValidator(PropertyType.String,
+	validator = buildFooValidator(JsonString,
 		&StringValidUnicodeNormalization{Form: norm.NFD}, false)
 	ok, violations = validator.Validate(obj)
 	require.False(t, ok)
@@ -195,7 +195,7 @@ func TestStringValidUnicodeNormalization(t *testing.T) {
 }
 
 func TestStringValidUnicodeNormalizationK(t *testing.T) {
-	validator := buildFooValidator(PropertyType.String,
+	validator := buildFooValidator(JsonString,
 		&StringValidUnicodeNormalization{Form: norm.NFKC}, false)
 	// NB. "\u0063\u0327" is 'c' followed by combining cedilla
 	obj := jsonObject(`{
@@ -211,7 +211,7 @@ func TestStringValidUnicodeNormalizationK(t *testing.T) {
 	ok, violations = validator.Validate(obj)
 	require.True(t, ok)
 
-	validator = buildFooValidator(PropertyType.String,
+	validator = buildFooValidator(JsonString,
 		&StringValidUnicodeNormalization{Form: norm.NFKD}, false)
 	ok, violations = validator.Validate(obj)
 	require.False(t, ok)
@@ -220,7 +220,7 @@ func TestStringValidUnicodeNormalizationK(t *testing.T) {
 }
 
 func TestStringMinLength(t *testing.T) {
-	validator := buildFooValidator(PropertyType.String,
+	validator := buildFooValidator(JsonString,
 		&StringMinLength{Value: 2}, false)
 	obj := jsonObject(`{
 		"foo": "A"
@@ -241,9 +241,9 @@ func TestStringMinLength(t *testing.T) {
 }
 
 func TestStringMinLengthWithRuneLength(t *testing.T) {
-	vWithUnicode := buildFooValidator(PropertyType.String,
+	vWithUnicode := buildFooValidator(JsonString,
 		&StringMinLength{Value: 2, UseRuneLen: true}, false)
-	vWithoutUnicode := buildFooValidator(PropertyType.String,
+	vWithoutUnicode := buildFooValidator(JsonString,
 		&StringMinLength{Value: 2, UseRuneLen: false}, false)
 	// NB. "\ud834\udd22" is surrogate representation of u+1D122 (musical symbol F clef)
 	obj := jsonObject(`{
@@ -259,7 +259,7 @@ func TestStringMinLengthWithRuneLength(t *testing.T) {
 }
 
 func TestStringMaxLength(t *testing.T) {
-	validator := buildFooValidator(PropertyType.String,
+	validator := buildFooValidator(JsonString,
 		&StringMaxLength{Value: 2}, false)
 	obj := jsonObject(`{
 		"foo": "Abc"
@@ -280,9 +280,9 @@ func TestStringMaxLength(t *testing.T) {
 }
 
 func TestStringMaxLengthWithRuneLength(t *testing.T) {
-	vWithUnicode := buildFooValidator(PropertyType.String,
+	vWithUnicode := buildFooValidator(JsonString,
 		&StringMaxLength{Value: 1, UseRuneLen: true}, false)
-	vWithoutUnicode := buildFooValidator(PropertyType.String,
+	vWithoutUnicode := buildFooValidator(JsonString,
 		&StringMaxLength{Value: 1, UseRuneLen: false}, false)
 	// NB. "\ud834\udd22" is surrogate representation of u+1D122 (musical symbol F clef)
 	obj := jsonObject(`{
@@ -298,7 +298,7 @@ func TestStringMaxLengthWithRuneLength(t *testing.T) {
 }
 
 func TestStringLength(t *testing.T) {
-	validator := buildFooValidator(PropertyType.String,
+	validator := buildFooValidator(JsonString,
 		&StringLength{Minimum: 2, Maximum: 3}, false)
 	obj := jsonObject(`{
 		"foo": "A"
@@ -324,7 +324,7 @@ func TestStringLength(t *testing.T) {
 	require.True(t, ok)
 
 	// and without maximum length...
-	validator = buildFooValidator(PropertyType.String,
+	validator = buildFooValidator(JsonString,
 		&StringLength{Minimum: 2}, false)
 	obj = jsonObject(`{
 		"foo": "A"
@@ -337,7 +337,7 @@ func TestStringLength(t *testing.T) {
 }
 
 func TestStringLengthWithRuneLength(t *testing.T) {
-	validator := buildFooValidator(PropertyType.String,
+	validator := buildFooValidator(JsonString,
 		&StringLength{Minimum: 1, Maximum: 1}, false)
 	// NB. "\ud840\udc06" is surrogate representation of u+20006
 	obj := jsonObject(`{
@@ -350,14 +350,14 @@ func TestStringLengthWithRuneLength(t *testing.T) {
 	require.Equal(t, fmt.Sprintf(messageStringExactLen, 1), violations[0].Message)
 
 	// now try again but using rune length (actual Unicode length)...
-	validator = buildFooValidator(PropertyType.String,
+	validator = buildFooValidator(JsonString,
 		&StringLength{Minimum: 1, Maximum: 1, UseRuneLen: true}, false)
 	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
 }
 
 func TestLengthWithString(t *testing.T) {
-	validator := buildFooValidator(PropertyType.String,
+	validator := buildFooValidator(JsonString,
 		&Length{Minimum: 2, Maximum: 3}, false)
 	obj := jsonObject(`{
 		"foo": "A"
@@ -383,7 +383,7 @@ func TestLengthWithString(t *testing.T) {
 	require.True(t, ok)
 
 	// and without max...
-	validator = buildFooValidator(PropertyType.String,
+	validator = buildFooValidator(JsonString,
 		&Length{Minimum: 2}, false)
 	obj = jsonObject(`{
 		"foo": "A"
@@ -395,7 +395,7 @@ func TestLengthWithString(t *testing.T) {
 }
 
 func TestLengthWithObject(t *testing.T) {
-	validator := buildFooValidator(PropertyType.Object,
+	validator := buildFooValidator(JsonObject,
 		&Length{Minimum: 2, Maximum: 3}, false)
 	obj := jsonObject(`{
 		"foo": {
@@ -433,7 +433,7 @@ func TestLengthWithObject(t *testing.T) {
 }
 
 func TestLengthWithArray(t *testing.T) {
-	validator := buildFooValidator(PropertyType.Array,
+	validator := buildFooValidator(JsonArray,
 		&Length{Minimum: 2, Maximum: 3}, false)
 	obj := jsonObject(`{
 		"foo": ["bar"]
@@ -460,7 +460,7 @@ func TestLengthWithArray(t *testing.T) {
 }
 
 func TestLengthConstraintWithSameMinMax(t *testing.T) {
-	validator := buildFooValidator(PropertyType.Array,
+	validator := buildFooValidator(JsonArray,
 		&Length{Minimum: 2, Maximum: 2}, false)
 	obj := jsonObject(`{
 		"foo": ["bar"]
@@ -473,7 +473,7 @@ func TestLengthConstraintWithSameMinMax(t *testing.T) {
 }
 
 func TestPositive(t *testing.T) {
-	validator := buildFooValidator(PropertyType.Number,
+	validator := buildFooValidator(JsonNumber,
 		&Positive{}, false)
 	obj := jsonObject(`{
 		"foo": -1
@@ -520,7 +520,7 @@ func TestPositive(t *testing.T) {
 }
 
 func TestPositiveOrZero(t *testing.T) {
-	validator := buildFooValidator(PropertyType.Number,
+	validator := buildFooValidator(JsonNumber,
 		&PositiveOrZero{}, false)
 	obj := jsonObject(`{
 		"foo": -1
@@ -565,7 +565,7 @@ func TestPositiveOrZero(t *testing.T) {
 }
 
 func TestNegative(t *testing.T) {
-	validator := buildFooValidator(PropertyType.Number,
+	validator := buildFooValidator(JsonNumber,
 		&Negative{}, false)
 	obj := jsonObject(`{
 		"foo": 1
@@ -612,7 +612,7 @@ func TestNegative(t *testing.T) {
 }
 
 func TestNegativeOrZero(t *testing.T) {
-	validator := buildFooValidator(PropertyType.Number,
+	validator := buildFooValidator(JsonNumber,
 		&NegativeOrZero{}, false)
 	obj := jsonObject(`{
 		"foo": 1
@@ -658,7 +658,7 @@ func TestNegativeOrZero(t *testing.T) {
 
 func TestMinimum(t *testing.T) {
 	testMsg := "Must not be less than 2"
-	validator := buildFooValidator(PropertyType.Number,
+	validator := buildFooValidator(JsonNumber,
 		&Minimum{Value: 2, Message: testMsg}, false)
 	obj := jsonObject(`{
 		"foo": 1
@@ -700,7 +700,7 @@ func TestMinimum(t *testing.T) {
 
 func TestMaximum(t *testing.T) {
 	testMsg := "Must not be greater than 2"
-	validator := buildFooValidator(PropertyType.Number,
+	validator := buildFooValidator(JsonNumber,
 		&Maximum{Value: 2, Message: testMsg}, false)
 	obj := jsonObject(`{
 		"foo": 3
@@ -742,7 +742,7 @@ func TestMaximum(t *testing.T) {
 
 func TestRange(t *testing.T) {
 	testMsg := "Must be between 2 and 3 (inclusive)"
-	validator := buildFooValidator(PropertyType.Number,
+	validator := buildFooValidator(JsonNumber,
 		&Range{Minimum: 2, Maximum: 3, Message: testMsg}, false)
 	obj := jsonObject(`{
 		"foo": 1
@@ -799,8 +799,8 @@ func TestRange(t *testing.T) {
 }
 
 func TestArrayOf(t *testing.T) {
-	validator := buildFooValidator(PropertyType.Array,
-		&ArrayOf{Type: PropertyType.String, AllowNullElement: false}, false)
+	validator := buildFooValidator(JsonArray,
+		&ArrayOf{Type: JsonString, AllowNullElement: false}, false)
 	obj := jsonObject(`{
 		"foo": ["ok", false]
 	}`)
@@ -808,7 +808,7 @@ func TestArrayOf(t *testing.T) {
 	ok, violations := validator.Validate(obj)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(messageArrayElementType, PropertyType.String), violations[0].Message)
+	require.Equal(t, fmt.Sprintf(messageArrayElementType, JsonString), violations[0].Message)
 
 	obj = jsonObject(`{
 		"foo": [null]
@@ -816,7 +816,7 @@ func TestArrayOf(t *testing.T) {
 	ok, violations = validator.Validate(obj)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(messageArrayElementType, PropertyType.String), violations[0].Message)
+	require.Equal(t, fmt.Sprintf(messageArrayElementType, JsonString), violations[0].Message)
 
 	obj = jsonObject(`{
 		"foo": ["ok", "ok2"]
@@ -824,15 +824,15 @@ func TestArrayOf(t *testing.T) {
 	ok, violations = validator.Validate(obj)
 	require.True(t, ok)
 
-	validator = buildFooValidator(PropertyType.Array,
-		&ArrayOf{Type: PropertyType.String, AllowNullElement: true}, false)
+	validator = buildFooValidator(JsonArray,
+		&ArrayOf{Type: JsonString, AllowNullElement: true}, false)
 	obj = jsonObject(`{
 		"foo": [1, "ok2"]
 	}`)
 	ok, violations = validator.Validate(obj)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(messageArrayElementTypeOrNull, PropertyType.String), violations[0].Message)
+	require.Equal(t, fmt.Sprintf(messageArrayElementTypeOrNull, JsonString), violations[0].Message)
 	obj = jsonObject(`{
 		"foo": [null, "ok2"]
 	}`)
@@ -841,7 +841,7 @@ func TestArrayOf(t *testing.T) {
 }
 
 func TestStringValidUuid(t *testing.T) {
-	validator := buildFooValidator(PropertyType.String,
+	validator := buildFooValidator(JsonString,
 		&StringValidUuid{MinVersion: 4}, false)
 	obj := jsonObject(`{
 		"foo": "not a uuid"
@@ -861,14 +861,14 @@ func TestStringValidUuid(t *testing.T) {
 	require.Equal(t, 1, len(violations))
 	require.Equal(t, fmt.Sprintf(messageUuidMinVersion, 4), violations[0].Message)
 
-	validator = buildFooValidator(PropertyType.String,
+	validator = buildFooValidator(JsonString,
 		&StringValidUuid{SpecificVersion: 4}, false)
 	ok, violations = validator.Validate(obj)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
 	require.Equal(t, fmt.Sprintf(messageUuidCorrectVer, 4), violations[0].Message)
 
-	validator = buildFooValidator(PropertyType.String,
+	validator = buildFooValidator(JsonString,
 		&StringValidUuid{}, false)
 	obj = jsonObject(`{
 		"foo": "not a uuid"
@@ -880,7 +880,7 @@ func TestStringValidUuid(t *testing.T) {
 }
 
 func TestStringValidISODatetime(t *testing.T) {
-	validator := buildFooValidator(PropertyType.String,
+	validator := buildFooValidator(JsonString,
 		&StringValidISODatetime{}, false)
 	obj := jsonObject(`{
 		"foo": "2022-02-02T18:19:20.12345+01:00 but not a datetime with this on the end"
@@ -904,13 +904,13 @@ func TestStringValidISODatetime(t *testing.T) {
 }
 
 func TestStringValidISODatetimeWithDifferentSettings(t *testing.T) {
-	vFull := buildFooValidator(PropertyType.String,
+	vFull := buildFooValidator(JsonString,
 		&StringValidISODatetime{}, false)
-	vNoNano := buildFooValidator(PropertyType.String,
+	vNoNano := buildFooValidator(JsonString,
 		&StringValidISODatetime{NoMillis: true}, false)
-	vNoOffs := buildFooValidator(PropertyType.String,
+	vNoOffs := buildFooValidator(JsonString,
 		&StringValidISODatetime{NoOffset: true}, false)
-	vMin := buildFooValidator(PropertyType.String,
+	vMin := buildFooValidator(JsonString,
 		&StringValidISODatetime{NoOffset: true, NoMillis: true}, false)
 
 	testCases := []struct {
@@ -980,7 +980,7 @@ func TestStringValidISODatetimeWithDifferentSettings(t *testing.T) {
 }
 
 func TestStringValidISODate(t *testing.T) {
-	validator := buildFooValidator(PropertyType.String,
+	validator := buildFooValidator(JsonString,
 		&StringValidISODate{}, false)
 	obj := jsonObject(`{
 		"foo": "2022-02-02 but not a date with this on the end"
@@ -1022,7 +1022,7 @@ var variousDatetimeFormats = []string{
 
 func TestDatetimeFuture(t *testing.T) {
 	pastTime := time.Now().Add(0 - (5 * time.Minute))
-	validator := buildFooValidator("",
+	validator := buildFooValidator(JsonAny,
 		&DatetimeFuture{}, false)
 	obj := map[string]interface{}{
 		"foo": pastTime.Format("2006-01-02T15:04:05.000000000-07:00"),
@@ -1036,14 +1036,14 @@ func TestDatetimeFuture(t *testing.T) {
 	ok, violations = validator.Validate(obj)
 	require.True(t, ok)
 
-	// CheckFunc with actual time.Time...
+	// check with actual time.Time...
 	obj["foo"] = pastTime
 	ok, violations = validator.Validate(obj)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
 	require.Equal(t, messageDatetimeFuture, violations[0].Message)
 
-	// CheckFunc with varying formats...
+	// check with varying formats...
 	for _, layout := range variousDatetimeFormats {
 		obj["foo"] = pastTime.Format(layout)
 		ok, violations = validator.Validate(obj)
@@ -1062,7 +1062,7 @@ func TestDatetimeFuture(t *testing.T) {
 
 func TestDatetimeFutureOrPresent(t *testing.T) {
 	pastTime := time.Now().Add(0 - (5 * time.Minute))
-	validator := buildFooValidator("",
+	validator := buildFooValidator(JsonAny,
 		&DatetimeFutureOrPresent{}, false)
 	obj := map[string]interface{}{
 		"foo": pastTime.Format("2006-01-02T15:04:05.000000000-07:00"),
@@ -1076,14 +1076,14 @@ func TestDatetimeFutureOrPresent(t *testing.T) {
 	ok, violations = validator.Validate(obj)
 	require.True(t, ok)
 
-	// CheckFunc with actual time.Time...
+	// check with actual time.Time...
 	obj["foo"] = pastTime
 	ok, violations = validator.Validate(obj)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
 	require.Equal(t, messageDatetimeFutureOrPresent, violations[0].Message)
 
-	// CheckFunc with varying formats...
+	// check with varying formats...
 	for _, layout := range variousDatetimeFormats {
 		obj["foo"] = pastTime.Format(layout)
 		ok, violations = validator.Validate(obj)
@@ -1102,7 +1102,7 @@ func TestDatetimeFutureOrPresent(t *testing.T) {
 
 func TestDatetimePast(t *testing.T) {
 	futureTime := time.Now().Add(24 * time.Hour)
-	validator := buildFooValidator("",
+	validator := buildFooValidator(JsonAny,
 		&DatetimePast{}, false)
 	obj := map[string]interface{}{
 		"foo": futureTime.Format("2006-01-02T15:04:05.000000000-07:00"),
@@ -1116,14 +1116,14 @@ func TestDatetimePast(t *testing.T) {
 	ok, violations = validator.Validate(obj)
 	require.True(t, ok)
 
-	// CheckFunc with actual time.Time...
+	// check with actual time.Time...
 	obj["foo"] = futureTime
 	ok, violations = validator.Validate(obj)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
 	require.Equal(t, messageDatetimePast, violations[0].Message)
 
-	// CheckFunc with varying formats...
+	// check with varying formats...
 	for _, layout := range variousDatetimeFormats {
 		obj["foo"] = futureTime.Format(layout)
 		ok, violations = validator.Validate(obj)
@@ -1142,7 +1142,7 @@ func TestDatetimePast(t *testing.T) {
 
 func TestDatetimePastOrPresent(t *testing.T) {
 	futureTime := time.Now().Add(24 * time.Hour)
-	validator := buildFooValidator("",
+	validator := buildFooValidator(JsonAny,
 		&DatetimePastOrPresent{}, false)
 	obj := map[string]interface{}{
 		"foo": futureTime.Format("2006-01-02T15:04:05.000000000-07:00"),
@@ -1156,14 +1156,14 @@ func TestDatetimePastOrPresent(t *testing.T) {
 	ok, violations = validator.Validate(obj)
 	require.True(t, ok)
 
-	// CheckFunc with actual time.Time...
+	// check with actual time.Time...
 	obj["foo"] = futureTime
 	ok, violations = validator.Validate(obj)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
 	require.Equal(t, messageDatetimePastOrPresent, violations[0].Message)
 
-	// CheckFunc with varying formats...
+	// check with varying formats...
 	for _, layout := range variousDatetimeFormats {
 		obj["foo"] = futureTime.Format(layout)
 		ok, violations = validator.Validate(obj)
@@ -1181,7 +1181,7 @@ func TestDatetimePastOrPresent(t *testing.T) {
 }
 
 func TestStringValidCardNumberConstraint(t *testing.T) {
-	validator := buildFooValidator("",
+	validator := buildFooValidator(JsonAny,
 		&StringValidCardNumber{}, false)
 	obj := map[string]interface{}{
 		"foo": "",
@@ -1270,14 +1270,14 @@ func TestStringValidCardNumberConstraint(t *testing.T) {
 	}
 }
 
-func buildFooValidator(propertyType string, constraint Constraint, notNull bool) *Validator {
+func buildFooValidator(propertyType JsonType, constraint Constraint, notNull bool) *Validator {
 	return &Validator{
 		Properties: Properties{
 			"foo": {
-				PropertyType: propertyType,
-				NotNull:      notNull,
-				Mandatory:    true,
-				Constraints:  Constraints{constraint},
+				Type:        propertyType,
+				NotNull:     notNull,
+				Mandatory:   true,
+				Constraints: Constraints{constraint},
 			},
 		},
 	}
