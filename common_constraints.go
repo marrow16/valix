@@ -11,16 +11,16 @@ import (
 )
 
 const (
-	messageNotEmptyString           = "String value must not be an empty string"
-	messageNotBlankString           = "String value must not be a blank string"
-	messageNoControlChars           = "String value must not contain control characters"
-	messageInvalidPattern           = "String value must have valid pattern"
-	messageInvalidCharacters        = "String Value must not have invalid characters"
-	messageStringMinLen             = "String value length must be at least %d characters"
-	messageStringMaxLen             = "String value length must not exceed %d characters"
-	messageStringExactLen           = "String value length must be %d characters"
-	messageStringMinMaxLen          = "String value length must be between %d and %d (inclusive)"
-	messageUnicodeNormalization     = "String value must be correct normalization form"
+	messageNotEmptyString           = "JsonString value must not be an empty string"
+	messageNotBlankString           = "JsonString value must not be a blank string"
+	messageNoControlChars           = "JsonString value must not contain control characters"
+	messageInvalidPattern           = "JsonString value must have valid pattern"
+	messageInvalidCharacters        = "JsonString Value must not have invalid characters"
+	messageStringMinLen             = "JsonString value length must be at least %d characters"
+	messageStringMaxLen             = "JsonString value length must not exceed %d characters"
+	messageStringExactLen           = "JsonString value length must be %d characters"
+	messageStringMinMaxLen          = "JsonString value length must be between %d and %d (inclusive)"
+	messageUnicodeNormalization     = "JsonString value must be correct normalization form"
 	messageUnicodeNormalizationNFC  = messageUnicodeNormalization + " NFC"
 	messageUnicodeNormalizationNFKC = messageUnicodeNormalization + " NFKC"
 	messageUnicodeNormalizationNFD  = messageUnicodeNormalization + " NFD"
@@ -35,8 +35,8 @@ const (
 	messageGte                      = "Value must be greater than or equal to %f"
 	messageLte                      = "Value must be less than or equal to %f"
 	messageRange                    = "Value must be between %f and %f (inclusive)"
-	messageArrayElementType         = "Array value elements must be of type %s"
-	messageArrayElementTypeOrNull   = "Array value elements must be of type %s or null"
+	messageArrayElementType         = "JsonArray value elements must be of type %s"
+	messageArrayElementTypeOrNull   = "JsonArray value elements must be of type %s or null"
 	messageValidUuid                = "Value must be a valid UUID"
 	messageUuidMinVersion           = "Value must be a valid UUID (minimum version %d)"
 	messageUuidCorrectVer           = "Value must be a valid UUID (version %d)"
@@ -162,7 +162,7 @@ var (
 	UnicodeSIP = _Sip
 )
 
-// StringCharacters to check that a string contains only allowable characters
+// StringCharacters to check that a string contains only allowable characters (and does not contain any disallowed characters)
 type StringCharacters struct {
 	// AllowRanges the ranges of characters (runes) that are allowed - each character
 	// must be in at least one of these
@@ -301,6 +301,7 @@ func (c *StringLength) GetMessage() string {
 		fmt.Sprintf(messageStringMinLen, c.Minimum))
 }
 
+// StringValidUnicodeNormalization to check that a string has the correct Unicode normalization form
 type StringValidUnicodeNormalization struct {
 	// Form is the normalization form required - i.e. norm.NFC, norm.NFKC, norm.NFD or norm.NFKD
 	//
@@ -598,8 +599,8 @@ func (c *Range) GetMessage() string {
 
 // ArrayOf to check each element in an array value is of the correct type
 type ArrayOf struct {
-	// the type to check for each item (use PropertyType values)
-	Type string
+	// the type to check for each item (use Type values)
+	Type JsonType
 	// whether to allow null items in the array
 	AllowNullElement bool
 	// the violation message to be used if the constraint fails (see Violation.Message)
@@ -778,7 +779,7 @@ func (c *StringValidISODate) GetMessage() string {
 	return defaultMessage(c.Message, messageValidISODate)
 }
 
-// DatetimeFuture checks that a datetime/data (represented as string or time.Time) is in the future
+// DatetimeFuture checks that a datetime/date (represented as string or time.Time) is in the future
 type DatetimeFuture struct {
 	// the violation message to be used if the constraint fails (see Violation.Message)
 	//
@@ -800,7 +801,7 @@ func (c *DatetimeFuture) GetMessage() string {
 	return defaultMessage(c.Message, messageDatetimeFuture)
 }
 
-// DatetimeFutureOrPresent checks that a datetime/data (represented as string or time.Time) is in the future or present
+// DatetimeFutureOrPresent checks that a datetime/date (represented as string or time.Time) is in the future or present
 type DatetimeFutureOrPresent struct {
 	// the violation message to be used if the constraint fails (see Violation.Message)
 	//
@@ -822,7 +823,7 @@ func (c *DatetimeFutureOrPresent) GetMessage() string {
 	return defaultMessage(c.Message, messageDatetimeFutureOrPresent)
 }
 
-// DatetimePast checks that a datetime/data (represented as string or time.Time) is in the past
+// DatetimePast checks that a datetime/date (represented as string or time.Time) is in the past
 type DatetimePast struct {
 	// the violation message to be used if the constraint fails (see Violation.Message)
 	//
@@ -844,7 +845,7 @@ func (c *DatetimePast) GetMessage() string {
 	return defaultMessage(c.Message, messageDatetimePast)
 }
 
-// DatetimePastOrPresent checks that a datetime/data (represented as string or time.Time) is in the past or present
+// DatetimePastOrPresent checks that a datetime/date (represented as string or time.Time) is in the past or present
 type DatetimePastOrPresent struct {
 	// the violation message to be used if the constraint fails (see Violation.Message)
 	//

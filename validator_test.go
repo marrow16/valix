@@ -20,17 +20,17 @@ var personValidator = &Validator{
 	AllowArray:              true,
 	Properties: Properties{
 		"name": {
-			PropertyType: PropertyType.String,
-			NotNull:      true,
-			Mandatory:    true,
+			Type:      JsonString,
+			NotNull:   true,
+			Mandatory: true,
 			Constraints: Constraints{
 				&StringLength{Minimum: 1, Maximum: 255},
 			},
 		},
 		"age": {
-			PropertyType: PropertyType.Int,
-			NotNull:      true,
-			Mandatory:    true,
+			Type:      JsonInteger,
+			NotNull:   true,
+			Mandatory: true,
 			Constraints: Constraints{
 				&PositiveOrZero{},
 			},
@@ -50,13 +50,13 @@ var addPersonToGroupValidator = &Validator{
 	IgnoreUnknownProperties: false,
 	Properties: Properties{
 		"person": {
-			PropertyType:    PropertyType.Object,
+			Type:            JsonObject,
 			ObjectValidator: personValidator,
 		},
 		"group": {
-			PropertyType: PropertyType.String,
-			NotNull:      true,
-			Mandatory:    true,
+			Type:      JsonString,
+			NotNull:   true,
+			Mandatory: true,
 			Constraints: Constraints{
 				&StringLength{Minimum: 1, Maximum: 255},
 			},
@@ -177,12 +177,12 @@ func TestRequestValidationUsingJsonNumber(t *testing.T) {
 		UseNumber: true,
 		Properties: Properties{
 			"foo": {
-				PropertyType: PropertyType.Number,
-				Constraints:  Constraints{&Positive{}},
+				Type:        JsonNumber,
+				Constraints: Constraints{&Positive{}},
 			},
 			"bar": {
-				PropertyType: PropertyType.Number,
-				Constraints:  Constraints{&Negative{}},
+				Type:        JsonNumber,
+				Constraints: Constraints{&Negative{}},
 			},
 		},
 	}
@@ -343,7 +343,7 @@ func TestValidatorStopsOnArrayElement(t *testing.T) {
 		AllowArray: true,
 		Properties: Properties{
 			"foo": {
-				PropertyType: PropertyType.Boolean,
+				Type: JsonBoolean,
 				Constraints: Constraints{
 					NewCustomConstraint(func(value interface{}, vcx *ValidatorContext, cc *CustomConstraint) (bool, string) {
 						vcx.Stop()
@@ -366,7 +366,6 @@ func TestPropertyValueObjectValidatorFailsForObjectOrArray(t *testing.T) {
 		Properties: Properties{
 			"foo": {
 				ObjectValidator: &Validator{
-					AllowNull:      false,
 					DisallowObject: false,
 					AllowArray:     true,
 				},
@@ -386,7 +385,6 @@ func TestPropertyValueObjectValidatorFailsForObjectOnly(t *testing.T) {
 		Properties: Properties{
 			"foo": {
 				ObjectValidator: &Validator{
-					AllowNull:      false,
 					DisallowObject: false,
 					AllowArray:     false,
 				},
@@ -406,7 +404,6 @@ func TestPropertyValueObjectValidatorFailsForArrayOnly(t *testing.T) {
 		Properties: Properties{
 			"foo": {
 				ObjectValidator: &Validator{
-					AllowNull:      false,
 					DisallowObject: true,
 					AllowArray:     true,
 				},
@@ -426,7 +423,6 @@ func TestPropertyValueObjectValidatorFailsForNeitherObjectNorArray(t *testing.T)
 		Properties: Properties{
 			"foo": {
 				ObjectValidator: &Validator{
-					AllowNull:      false,
 					DisallowObject: true,
 					AllowArray:     false,
 				},
@@ -535,13 +531,13 @@ func TestSubPropertyAsArrayValidation(t *testing.T) {
 }
 
 func TestCheckPropertyTypeString(t *testing.T) {
-	v := buildFooPropertyTypeValidator(PropertyType.String, true)
+	v := buildFooPropertyTypeValidator(JsonString, true)
 	o := jsonObject(`{"foo": 1}`)
 
 	ok, violations := v.Validate(o)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(MessageValueExpectedType, PropertyType.String), violations[0].Message)
+	require.Equal(t, fmt.Sprintf(MessageValueExpectedType, JsonString), violations[0].Message)
 
 	o["foo"] = true
 	ok, _ = v.Validate(o)
@@ -565,13 +561,13 @@ func TestCheckPropertyTypeString(t *testing.T) {
 }
 
 func TestCheckPropertyTypeNumber(t *testing.T) {
-	v := buildFooPropertyTypeValidator(PropertyType.Number, true)
+	v := buildFooPropertyTypeValidator(JsonNumber, true)
 	o := jsonObject(`{"foo": "abc"}`)
 
 	ok, violations := v.Validate(o)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(MessageValueExpectedType, PropertyType.Number), violations[0].Message)
+	require.Equal(t, fmt.Sprintf(MessageValueExpectedType, JsonNumber), violations[0].Message)
 
 	o["foo"] = true
 	ok, _ = v.Validate(o)
@@ -599,13 +595,13 @@ func TestCheckPropertyTypeNumber(t *testing.T) {
 }
 
 func TestCheckPropertyTypeBoolean(t *testing.T) {
-	v := buildFooPropertyTypeValidator(PropertyType.Boolean, true)
+	v := buildFooPropertyTypeValidator(JsonBoolean, true)
 	o := jsonObject(`{"foo": "abc"}`)
 
 	ok, violations := v.Validate(o)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(MessageValueExpectedType, PropertyType.Boolean), violations[0].Message)
+	require.Equal(t, fmt.Sprintf(MessageValueExpectedType, JsonBoolean), violations[0].Message)
 
 	o["foo"] = 1.0
 	ok, _ = v.Validate(o)
@@ -633,13 +629,13 @@ func TestCheckPropertyTypeBoolean(t *testing.T) {
 }
 
 func TestCheckPropertyTypeObject(t *testing.T) {
-	v := buildFooPropertyTypeValidator(PropertyType.Object, true)
+	v := buildFooPropertyTypeValidator(JsonObject, true)
 	o := jsonObject(`{"foo": "abc"}`)
 
 	ok, violations := v.Validate(o)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(MessageValueExpectedType, PropertyType.Object), violations[0].Message)
+	require.Equal(t, fmt.Sprintf(MessageValueExpectedType, JsonObject), violations[0].Message)
 
 	o["foo"] = 1.0
 	ok, _ = v.Validate(o)
@@ -663,13 +659,13 @@ func TestCheckPropertyTypeObject(t *testing.T) {
 }
 
 func TestCheckPropertyTypeArray(t *testing.T) {
-	v := buildFooPropertyTypeValidator(PropertyType.Array, true)
+	v := buildFooPropertyTypeValidator(JsonArray, true)
 	o := jsonObject(`{"foo": "abc"}`)
 
 	ok, violations := v.Validate(o)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(MessageValueExpectedType, PropertyType.Array), violations[0].Message)
+	require.Equal(t, fmt.Sprintf(MessageValueExpectedType, JsonArray), violations[0].Message)
 
 	o["foo"] = 1.0
 	ok, _ = v.Validate(o)
@@ -696,8 +692,8 @@ func TestValidatorStops(t *testing.T) {
 	v := Validator{
 		Properties: Properties{
 			"foo": {
-				PropertyType: PropertyType.String,
-				NotNull:      true,
+				Type:    JsonString,
+				NotNull: true,
 				Constraints: Constraints{
 					NewCustomConstraint(func(value interface{}, vcx *ValidatorContext, cc *CustomConstraint) (bool, string) {
 						vcx.Stop()
@@ -715,7 +711,7 @@ func TestValidatorStops(t *testing.T) {
 	require.True(t, ok)
 	require.Equal(t, 0, len(violations))
 
-	// CheckFunc that the NotNull still works...
+	// check that the NotNull still works...
 	o["foo"] = nil
 	ok, violations = v.Validate(o)
 	require.False(t, ok)
@@ -728,7 +724,7 @@ func TestValidatorManuallyAddedViolation(t *testing.T) {
 	v := Validator{
 		Properties: Properties{
 			"foo": {
-				PropertyType: PropertyType.String,
+				Type: JsonString,
 				Constraints: Constraints{
 					NewCustomConstraint(func(value interface{}, vcx *ValidatorContext, cc *CustomConstraint) (bool, string) {
 						vcx.AddViolation(NewViolation("", "", msg))
@@ -753,7 +749,7 @@ func TestValidatorManuallyAddedCurrentViolation(t *testing.T) {
 	v := Validator{
 		Properties: Properties{
 			"foo": {
-				PropertyType: PropertyType.String,
+				Type: JsonString,
 				Constraints: Constraints{
 					NewCustomConstraint(func(value interface{}, vcx *ValidatorContext, cc *CustomConstraint) (bool, string) {
 						vcx.AddViolationForCurrent(msg)
@@ -883,7 +879,7 @@ func TestCeaseFurtherWorks(t *testing.T) {
 	v := Validator{
 		Properties: Properties{
 			"foo": {
-				PropertyType: PropertyType.String,
+				Type: JsonString,
 				Constraints: Constraints{
 					NewCustomConstraint(func(value interface{}, vcx *ValidatorContext, cc *CustomConstraint) (bool, string) {
 						vcx.CeaseFurther()
@@ -902,7 +898,7 @@ func TestCeaseFurtherWorks(t *testing.T) {
 				},
 			},
 			"bar": {
-				PropertyType: PropertyType.String,
+				Type: JsonString,
 				// not null will be checked - because this is a different property
 				NotNull: true,
 			},
@@ -929,13 +925,13 @@ func (c *myCustomConstraint) GetMessage() string {
 	return ""
 }
 
-func buildFooPropertyTypeValidator(propertyType string, notNull bool) *Validator {
+func buildFooPropertyTypeValidator(jsonType JsonType, notNull bool) *Validator {
 	return &Validator{
 		Properties: Properties{
 			"foo": {
-				PropertyType: propertyType,
-				NotNull:      notNull,
-				Mandatory:    true,
+				Type:      jsonType,
+				NotNull:   notNull,
+				Mandatory: true,
 			},
 		},
 	}

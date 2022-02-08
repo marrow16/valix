@@ -15,33 +15,56 @@ const (
 	MessagePropertyObjectValidatorError = "CurrentProperty object validator error - does not allow object or array!"
 )
 
-var PropertyType = newPropertyTypesEnum()
+type JsonType int
 
-func newPropertyTypesEnum() *propertyType {
-	return &propertyType{
-		String:  "string",
-		Number:  "number",
-		Int:     "int",
-		Boolean: "boolean",
-		Object:  "object",
-		Array:   "array",
+const (
+	JsonAny JsonType = iota
+	JsonString
+	JsonNumber
+	JsonInteger
+	JsonBoolean
+	JsonObject
+	JsonArray
+)
+
+func (jt JsonType) String() string {
+	result := "undefined"
+	switch jt {
+	case JsonString:
+		result = "string"
+		break
+	case JsonNumber:
+		result = "number"
+		break
+	case JsonInteger:
+		result = "integer"
+		break
+	case JsonBoolean:
+		result = "boolean"
+		break
+	case JsonObject:
+		result = "object"
+		break
+	case JsonArray:
+		result = "array"
+		break
+	case JsonAny:
+		result = "any"
+		break
 	}
-}
-
-type propertyType struct {
-	String  string
-	Number  string
-	Int     string
-	Boolean string
-	Object  string
-	Array   string
+	return result
 }
 
 type PropertyValidator struct {
-	PropertyType string
-	NotNull      bool
-	Mandatory    bool
-	// Constraints are checked in the order they are specified
+	// Type specifies the property type to be checked (i.e. one of Type)
+	//
+	// If this value is not one of Type (or an empty string), then the property type is not checked
+	Type JsonType
+	// NotNull specifies that the value of the property may not be null
+	NotNull bool
+	// Mandatory specifies that the property must be present
+	Mandatory bool
+	// Constraints is a slice of Constraint items and are checked in the order they are specified
 	Constraints Constraints
 	// ObjectValidator is checked, if specified, after all Constraints are checked
 	ObjectValidator *Validator
@@ -62,32 +85,32 @@ func (pv *PropertyValidator) validate(actualValue interface{}, vcx *ValidatorCon
 }
 
 func (pv *PropertyValidator) checkType(actualValue interface{}, vcx *ValidatorContext) bool {
-	ok := checkValueType(actualValue, pv.PropertyType)
+	ok := checkValueType(actualValue, pv.Type)
 	if !ok {
-		vcx.AddViolationForCurrent(fmt.Sprintf(MessageValueExpectedType, pv.PropertyType))
+		vcx.AddViolationForCurrent(fmt.Sprintf(MessageValueExpectedType, pv.Type))
 	}
 	return ok
 }
 
-func checkValueType(value interface{}, t string) bool {
+func checkValueType(value interface{}, t JsonType) bool {
 	ok := true
 	switch t {
-	case PropertyType.String:
+	case JsonString:
 		_, ok = value.(string)
 		break
-	case PropertyType.Boolean:
+	case JsonBoolean:
 		_, ok = value.(bool)
 		break
-	case PropertyType.Number:
+	case JsonNumber:
 		ok = checkNumeric(value, false)
 		break
-	case PropertyType.Int:
+	case JsonInteger:
 		ok = checkNumeric(value, true)
 		break
-	case PropertyType.Object:
+	case JsonObject:
 		_, ok = value.(map[string]interface{})
 		break
-	case PropertyType.Array:
+	case JsonArray:
 		_, ok = value.([]interface{})
 		break
 	}
@@ -99,7 +122,7 @@ func checkNumeric(value interface{}, isInt bool) bool {
 	if fVal, fOk := value.(float64); fOk {
 		ok = !isInt || (math.Trunc(fVal) == fVal)
 	} else if nVal, nOk := value.(json.Number); nOk {
-		// using json.Number.Float64() to parse - as this still allows for e notation (e.g. "0.1e1" is a valid int)
+		// using json.JsonNumber.Float64() to parse - as this still allows for e notation (e.g. "0.1e1" is a valid int)
 		if f, err := nVal.Float64(); err == nil {
 			ok = !isInt || (math.Trunc(f) == f)
 		}

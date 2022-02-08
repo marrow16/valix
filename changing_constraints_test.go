@@ -7,7 +7,7 @@ import (
 )
 
 func TestStringTrimConstraint(t *testing.T) {
-	validator := buildFooValidator(PropertyType.String, &StringTrim{}, true)
+	validator := buildFooValidator(JsonString, &StringTrim{}, true)
 	obj := map[string]interface{}{
 		"foo": "   \t",
 	}
@@ -19,7 +19,7 @@ func TestStringTrimConstraint(t *testing.T) {
 }
 
 func TestStringTrimConstraintWithCutset(t *testing.T) {
-	validator := buildFooValidator(PropertyType.String, &StringTrim{Cutset: "AC"}, true)
+	validator := buildFooValidator(JsonString, &StringTrim{Cutset: "AC"}, true)
 	obj := map[string]interface{}{
 		"foo": "AAABCCC",
 	}
@@ -34,9 +34,9 @@ func TestStringTrimConstraintWithFollowingLengthConstraint(t *testing.T) {
 	validator := &Validator{
 		Properties: Properties{
 			"foo": {
-				PropertyType: PropertyType.String,
-				NotNull:      true,
-				Mandatory:    true,
+				Type:      JsonString,
+				NotNull:   true,
+				Mandatory: true,
 				Constraints: Constraints{
 					&StringTrim{},
 					&StringLength{Maximum: 1},
@@ -55,7 +55,7 @@ func TestStringTrimConstraintWithFollowingLengthConstraint(t *testing.T) {
 }
 
 func TestStringNormalizeUnicodeConstraint(t *testing.T) {
-	validator := buildFooValidator(PropertyType.String, &StringNormalizeUnicode{Form: norm.NFC}, true)
+	validator := buildFooValidator(JsonString, &StringNormalizeUnicode{Form: norm.NFC}, true)
 	obj := map[string]interface{}{
 		"foo": "\u0063\u0327", // is 'c' (u+0063) followed by combining cedilla (U+0327)
 	}
@@ -73,9 +73,9 @@ func TestNormalizeUnicodeConstraintWithFollowingLengthConstraint(t *testing.T) {
 	validator := &Validator{
 		Properties: Properties{
 			"foo": {
-				PropertyType: PropertyType.String,
-				NotNull:      true,
-				Mandatory:    true,
+				Type:      JsonString,
+				NotNull:   true,
+				Mandatory: true,
 				Constraints: Constraints{
 					&StringNormalizeUnicode{Form: norm.NFC},
 					&StringLength{Maximum: 1, UseRuneLen: true},

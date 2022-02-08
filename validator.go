@@ -15,7 +15,7 @@ const (
 	MessageRequestBodyNotJsonObject      = "Request body must not be a JSON object"
 	MessageRequestBodyExpectedJsonArray  = "Request body expected to be JSON array"
 	MessageRequestBodyExpectedJsonObject = "Request body must be a JSON object"
-	MessageArrayElementMustBeObject      = "Array element [%d] must be an object"
+	MessageArrayElementMustBeObject      = "JsonArray element [%d] must be an object"
 	MessageMissingProperty               = "Missing property '%s'"
 	MessageUnknownProperty               = "Unknown property '%s'"
 )
@@ -34,10 +34,15 @@ type Validator struct {
 	// Constraints is an optional slice of Constraint items to be checked on the object/array
 	//
 	// * These are checked in the order specified and prior to property validator & unknown property checks
-	Constraints    Constraints
-	AllowArray     bool
+	Constraints Constraints
+	// AllowArray denotes, when true (default is false), that this validator will allow a JSON array - where each
+	// item in the array can be validated as an object
+	AllowArray bool
+	// DisallowObject denotes, when set to true, that this validator will disallow JSON objects - i.e. that it
+	// expects JSON arrays (in which case the AllowArray should also be set to true)
 	DisallowObject bool
-	AllowNull      bool
+	// AllowNullJson forces RequestValidate to accept a request body that is null JSON (i.e. a body containing just `null`)
+	AllowNullJson bool
 	// UseNumber forces RequestValidate method to use json.Number when decoding request body
 	UseNumber bool
 }
@@ -58,7 +63,7 @@ func (v *Validator) RequestValidate(r *http.Request) (bool, []*Violation, interf
 			obj = nil
 			vcx.AddViolation(NewBadRequestViolation(MessageUnableToDecode))
 		} else if obj == nil {
-			if !v.AllowNull {
+			if !v.AllowNullJson {
 				vcx.AddViolation(NewBadRequestViolation(MessageRequestBodyNotJsonNull))
 			}
 		} else {

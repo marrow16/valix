@@ -207,7 +207,7 @@ func TestContext_AncestorPath(t *testing.T) {
 	ap, apok = vcx.AncestorPath(0)
 	require.True(t, apok)
 	require.Equal(t, "", *ap)
-	// CheckFunc ancestor too far is no ok...
+	// check ancestor too far is no ok...
 	ap, apok = vcx.AncestorPath(1)
 	require.False(t, apok)
 	require.Nil(t, ap)
@@ -387,7 +387,7 @@ func TestContext_AncestorValue(t *testing.T) {
 											AllowArray: true,
 											Properties: Properties{
 												"qux": {
-													PropertyType: PropertyType.Boolean,
+													Type: JsonBoolean,
 													Constraints: Constraints{
 														finalTestConstraint,
 													},
@@ -405,7 +405,7 @@ func TestContext_AncestorValue(t *testing.T) {
 	}
 
 	ok, violations := v.Validate(o)
-	// CheckFunc that validator actually hit our test constraint...
+	// check that validator actually hit our test constraint...
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
 	require.Equal(t, testMsg, violations[0].Message)
@@ -426,9 +426,9 @@ func TestContext_SetCurrentValue(t *testing.T) {
 				ObjectValidator: &Validator{
 					Properties: Properties{
 						"bar": {
-							PropertyType: PropertyType.Boolean,
-							Mandatory:    true,
-							NotNull:      true,
+							Type:      JsonBoolean,
+							Mandatory: true,
+							NotNull:   true,
 							Constraints: Constraints{
 								NewCustomConstraint(func(value interface{}, vcx *ValidatorContext, cc *CustomConstraint) (bool, string) {
 									vcx.SetCurrentValue(false)
@@ -442,13 +442,13 @@ func TestContext_SetCurrentValue(t *testing.T) {
 		},
 	}
 
-	// CheckFunc that validator actually hit our test constraint...
+	// check that validator actually hit our test constraint...
 	ok, violations := v.Validate(o)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
 	require.Equal(t, testMsg, violations[0].Message)
 
-	// and CheckFunc that foo.bar got set to false...
+	// and check that foo.bar got set to false...
 	foo := o["foo"].(map[string]interface{})
 	fooBar := foo["bar"].(bool)
 	require.False(t, fooBar)
@@ -470,9 +470,9 @@ func TestContext_SetCurrentValueInArray(t *testing.T) {
 	v := Validator{
 		Properties: Properties{
 			"foo": {
-				PropertyType: PropertyType.Array,
-				Mandatory:    true,
-				NotNull:      true,
+				Type:      JsonArray,
+				Mandatory: true,
+				NotNull:   true,
 				ObjectValidator: &Validator{
 					AllowArray: true,
 					Constraints: Constraints{
@@ -483,7 +483,7 @@ func TestContext_SetCurrentValueInArray(t *testing.T) {
 					},
 					Properties: Properties{
 						"bar": {
-							PropertyType: PropertyType.Boolean,
+							Type: JsonBoolean,
 						},
 					},
 				},
@@ -491,14 +491,14 @@ func TestContext_SetCurrentValueInArray(t *testing.T) {
 		},
 	}
 
-	// CheckFunc that validator actually hit our test constraint...
+	// check that validator actually hit our test constraint...
 	ok, violations := v.Validate(o)
 	require.False(t, ok)
 	require.Equal(t, 2, len(violations))
 	require.Equal(t, testMsg, violations[0].Message)
 	require.Equal(t, testMsg, violations[1].Message)
 
-	// and CheckFunc the values of each foo item were changed...
+	// and check the values of each foo item were changed...
 	foo := o["foo"].([]interface{})
 	require.Equal(t, testValue, foo[0])
 	require.Equal(t, testValue, foo[1])
@@ -516,7 +516,7 @@ func TestContext_SetCurrentValueOnRootFails(t *testing.T) {
 		},
 	}
 
-	// CheckFunc that validator actually hit our test constraint...
+	// check that validator actually hit our test constraint...
 	ok, violations := v.Validate(o)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
