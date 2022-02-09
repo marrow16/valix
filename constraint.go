@@ -24,9 +24,49 @@ type CustomConstraint struct {
 func NewCustomConstraint(check Check, message string) *CustomConstraint {
 	return &CustomConstraint{CheckFunc: check, Message: message}
 }
-func (v *CustomConstraint) Check(value interface{}, vcx *ValidatorContext) (bool, string) {
-	return v.CheckFunc(value, vcx, v)
+func (c *CustomConstraint) Check(value interface{}, vcx *ValidatorContext) (bool, string) {
+	return c.CheckFunc(value, vcx, c)
 }
-func (v *CustomConstraint) GetMessage() string {
-	return v.Message
+func (c *CustomConstraint) GetMessage() string {
+	return c.Message
+}
+
+// ConstraintSet is a constraint that contains other constraints
+//
+// The contained constraints are checked sequentially but the overall
+// set stops on the first failing constraint
+type ConstraintSet struct {
+	// Constraints is the slice of constraints within the set
+	Constraints Constraints
+	// Message is the violation message to be used if any of the constraints fail
+	//
+	// If the message is empty, the message from the failing contained constraint is used
+	Message string
+}
+
+func (c *ConstraintSet) Check(value interface{}, vcx *ValidatorContext) (bool, string) {
+	for _, cc := range c.Constraints {
+		// don't use the `value` arg because contained constraints could change it...
+		if ok, msg := cc.Check(vcx.CurrentValue(), vcx); !ok {
+			if c.Message == "" {
+				return false, msg
+			} else {
+				return false, c.GetMessage()
+			}
+		}
+		if !vcx.continueAll || !vcx.continuePty() {
+			break
+		}
+	}
+	return true, ""
+}
+func (c *ConstraintSet) GetMessage() string {
+	if c.Message == "" {
+		for _, sc := range c.Constraints {
+			if msg := sc.GetMessage(); msg != "" {
+				return msg
+			}
+		}
+	}
+	return c.Message
 }
