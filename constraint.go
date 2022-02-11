@@ -24,9 +24,13 @@ type CustomConstraint struct {
 func NewCustomConstraint(check Check, message string) *CustomConstraint {
 	return &CustomConstraint{CheckFunc: check, Message: message}
 }
+
+// Check implements the Constraint.Check and calls the CustomConstraint.CheckFunc
 func (c *CustomConstraint) Check(value interface{}, vcx *ValidatorContext) (bool, string) {
 	return c.CheckFunc(value, vcx, c)
 }
+
+// GetMessage implements the Constraint.GetMessage
 func (c *CustomConstraint) GetMessage() string {
 	return c.Message
 }
@@ -44,15 +48,15 @@ type ConstraintSet struct {
 	Message string
 }
 
+// Check implements the Constraint.Check and checks the constraints within the set
 func (c *ConstraintSet) Check(value interface{}, vcx *ValidatorContext) (bool, string) {
 	for _, cc := range c.Constraints {
 		// don't use the `value` arg because contained constraints could change it...
 		if ok, msg := cc.Check(vcx.CurrentValue(), vcx); !ok {
 			if c.Message == "" {
 				return false, msg
-			} else {
-				return false, c.GetMessage()
 			}
+			return false, c.GetMessage()
 		}
 		if !vcx.continueAll || !vcx.continuePty() {
 			break
@@ -60,6 +64,8 @@ func (c *ConstraintSet) Check(value interface{}, vcx *ValidatorContext) (bool, s
 	}
 	return true, ""
 }
+
+// GetMessage implements the Constraint.GetMessage
 func (c *ConstraintSet) GetMessage() string {
 	if c.Message == "" {
 		for _, sc := range c.Constraints {

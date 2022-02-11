@@ -84,7 +84,7 @@ func TestMissingPropertyDetection(t *testing.T) {
 	ok, violations := personValidator.Validate(o)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(MessageMissingProperty, "age"), violations[0].Message)
+	require.Equal(t, fmt.Sprintf(messageMissingProperty, "age"), violations[0].Message)
 	require.Equal(t, "", violations[0].Path)
 	require.Equal(t, "", violations[0].Property)
 }
@@ -98,7 +98,7 @@ func TestUnknownPropertyDetection(t *testing.T) {
 	ok, violations := personValidator.Validate(o)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(MessageUnknownProperty, "unknown_property"), violations[0].Message)
+	require.Equal(t, fmt.Sprintf(messageUnknownProperty, "unknown_property"), violations[0].Message)
 	require.Equal(t, "", violations[0].Path)
 	require.Equal(t, "", violations[0].Property)
 }
@@ -135,7 +135,7 @@ func TestValidationOfArrayFailsWithNonObjectElement(t *testing.T) {
 	ok, violations := personValidator.ValidateArrayOf(a)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(MessageArrayElementMustBeObject, 1), violations[0].Message)
+	require.Equal(t, fmt.Sprintf(messageArrayElementMustBeObject, 1), violations[0].Message)
 	require.Equal(t, "", violations[0].Path)
 	require.Equal(t, "", violations[0].Property)
 }
@@ -222,7 +222,7 @@ func TestRequestValidationWithJsonNullBody(t *testing.T) {
 	ok, violations, obj := personValidator.RequestValidate(req)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, MessageRequestBodyNotJsonNull, violations[0].Message)
+	require.Equal(t, messageRequestBodyNotJsonNull, violations[0].Message)
 	require.True(t, violations[0].BadRequest)
 	require.Nil(t, obj)
 }
@@ -235,7 +235,7 @@ func TestRequestValidationWithNoBody(t *testing.T) {
 	ok, violations, obj := personValidator.RequestValidate(req)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, MessageRequestBodyEmpty, violations[0].Message)
+	require.Equal(t, messageRequestBodyEmpty, violations[0].Message)
 	require.True(t, violations[0].BadRequest)
 	require.Nil(t, obj)
 }
@@ -250,7 +250,7 @@ func TestRequestValidationFailsWithArrayWhenArrayNotAllowed(t *testing.T) {
 	ok, violations, obj := v.RequestValidate(req)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, MessageRequestBodyNotJsonArray, violations[0].Message)
+	require.Equal(t, messageRequestBodyNotJsonArray, violations[0].Message)
 	require.False(t, violations[0].BadRequest)
 	require.NotNil(t, obj)
 }
@@ -265,7 +265,7 @@ func TestRequestValidationFailsWithObjectWhenObjectNotAllowed(t *testing.T) {
 	ok, violations, obj := v.RequestValidate(req)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, MessageRequestBodyExpectedJsonArray, violations[0].Message)
+	require.Equal(t, messageRequestBodyExpectedJsonArray, violations[0].Message)
 	require.False(t, violations[0].BadRequest)
 	require.NotNil(t, obj)
 }
@@ -280,7 +280,7 @@ func TestRequestValidationFailsWhenExpectingObject(t *testing.T) {
 	ok, violations, obj := v.RequestValidate(req)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, MessageRequestBodyExpectedJsonObject, violations[0].Message)
+	require.Equal(t, messageRequestBodyExpectedJsonObject, violations[0].Message)
 	require.True(t, violations[0].BadRequest)
 	require.NotNil(t, obj)
 }
@@ -295,7 +295,7 @@ func TestRequestValidationFailsWhenObjectDisallowed(t *testing.T) {
 	ok, violations, obj := v.RequestValidate(req)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, MessageRequestBodyNotJsonObject, violations[0].Message)
+	require.Equal(t, messageRequestBodyNotJsonObject, violations[0].Message)
 	require.False(t, violations[0].BadRequest)
 	require.NotNil(t, obj)
 }
@@ -309,7 +309,7 @@ func TestRequestValidationWithBadJson(t *testing.T) {
 	ok, violations, obj := personValidator.RequestValidate(req)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, MessageUnableToDecode, violations[0].Message)
+	require.Equal(t, messageUnableToDecode, violations[0].Message)
 	require.True(t, violations[0].BadRequest)
 	require.Nil(t, obj)
 }
@@ -377,7 +377,7 @@ func TestPropertyValueObjectValidatorFailsForObjectOrArray(t *testing.T) {
 	ok, violations := v.Validate(o)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, MessageValueMustBeObjectOrArray, violations[0].Message)
+	require.Equal(t, messageValueMustBeObjectOrArray, violations[0].Message)
 }
 
 func TestPropertyValueObjectValidatorFailsForObjectOnly(t *testing.T) {
@@ -396,7 +396,7 @@ func TestPropertyValueObjectValidatorFailsForObjectOnly(t *testing.T) {
 	ok, violations := v.Validate(o)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, MessageValueMustBeObject, violations[0].Message)
+	require.Equal(t, messageValueMustBeObject, violations[0].Message)
 }
 
 func TestPropertyValueObjectValidatorFailsForArrayOnly(t *testing.T) {
@@ -415,7 +415,7 @@ func TestPropertyValueObjectValidatorFailsForArrayOnly(t *testing.T) {
 	ok, violations := v.Validate(o)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, MessageValueMustBeArray, violations[0].Message)
+	require.Equal(t, messageValueMustBeArray, violations[0].Message)
 }
 
 func TestPropertyValueObjectValidatorFailsForNeitherObjectNorArray(t *testing.T) {
@@ -434,7 +434,7 @@ func TestPropertyValueObjectValidatorFailsForNeitherObjectNorArray(t *testing.T)
 	ok, violations := v.Validate(o)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, MessagePropertyObjectValidatorError, violations[0].Message)
+	require.Equal(t, messagePropertyObjectValidatorError, violations[0].Message)
 }
 
 func TestSubPropertyValidation(t *testing.T) {
@@ -537,7 +537,7 @@ func TestCheckPropertyTypeString(t *testing.T) {
 	ok, violations := v.Validate(o)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(MessageValueExpectedType, JsonString), violations[0].Message)
+	require.Equal(t, fmt.Sprintf(messageValueExpectedType, JsonString), violations[0].Message)
 
 	o["foo"] = true
 	ok, _ = v.Validate(o)
@@ -567,7 +567,7 @@ func TestCheckPropertyTypeNumber(t *testing.T) {
 	ok, violations := v.Validate(o)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(MessageValueExpectedType, JsonNumber), violations[0].Message)
+	require.Equal(t, fmt.Sprintf(messageValueExpectedType, JsonNumber), violations[0].Message)
 
 	o["foo"] = true
 	ok, _ = v.Validate(o)
@@ -601,7 +601,7 @@ func TestCheckPropertyTypeBoolean(t *testing.T) {
 	ok, violations := v.Validate(o)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(MessageValueExpectedType, JsonBoolean), violations[0].Message)
+	require.Equal(t, fmt.Sprintf(messageValueExpectedType, JsonBoolean), violations[0].Message)
 
 	o["foo"] = 1.0
 	ok, _ = v.Validate(o)
@@ -635,7 +635,7 @@ func TestCheckPropertyTypeObject(t *testing.T) {
 	ok, violations := v.Validate(o)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(MessageValueExpectedType, JsonObject), violations[0].Message)
+	require.Equal(t, fmt.Sprintf(messageValueExpectedType, JsonObject), violations[0].Message)
 
 	o["foo"] = 1.0
 	ok, _ = v.Validate(o)
@@ -665,7 +665,7 @@ func TestCheckPropertyTypeArray(t *testing.T) {
 	ok, violations := v.Validate(o)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(MessageValueExpectedType, JsonArray), violations[0].Message)
+	require.Equal(t, fmt.Sprintf(messageValueExpectedType, JsonArray), violations[0].Message)
 
 	o["foo"] = 1.0
 	ok, _ = v.Validate(o)
@@ -716,7 +716,7 @@ func TestValidatorStops(t *testing.T) {
 	ok, violations = v.Validate(o)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, MessageValueCannotBeNull, violations[0].Message)
+	require.Equal(t, messageValueCannotBeNull, violations[0].Message)
 }
 
 func TestValidatorManuallyAddedViolation(t *testing.T) {

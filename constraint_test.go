@@ -53,12 +53,12 @@ func TestCustomConstraint(t *testing.T) {
 	require.Equal(t, testMsg, violations[0].Message)
 
 	obj["foo"] = "Ba"
-	ok, violations = validator.Validate(obj)
+	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
 }
 
 func TestConstraintSet(t *testing.T) {
-	const msg = "String value must be between 16 and 64 chars; must be letters (upper or lower), digits or underscores; must start with an uppercase letter"
+	const msg = "String value length must be between 16 and 64 chars; must be letters (upper or lower), digits or underscores; must start with an uppercase letter"
 	set := &ConstraintSet{
 		Constraints: Constraints{
 			&StringTrim{},
@@ -66,7 +66,7 @@ func TestConstraintSet(t *testing.T) {
 			&StringLength{Minimum: 16, Maximum: 64},
 			NewCustomConstraint(func(value interface{}, vcx *ValidatorContext, this *CustomConstraint) (bool, string) {
 				if str, ok := value.(string); ok {
-					if str[0] < 'A' || str[0] > 'Z' {
+					if len(str) == 0 || str[0] < 'A' || str[0] > 'Z' {
 						return false, this.GetMessage()
 					}
 				}
@@ -99,7 +99,7 @@ func TestConstraintSet(t *testing.T) {
 
 	// this should be ok (even though longer than 64 it gets trimmed)...
 	obj["foo"] = " Abcdefghijklmnopqrstuvwxyz0123456789_ABCDEFGHIJKLMNOPQRSTUVWXYZ      "
-	ok, violations = validator.Validate(obj)
+	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
 
 	// some more not oks...
@@ -177,7 +177,7 @@ func TestConstraintSetNoMsg(t *testing.T) {
 
 	// this should be ok (even though longer than 64 it gets trimmed)...
 	obj["foo"] = " Abcdefghijklmnopqrstuvwxyz0123456789_ABCDEFGHIJKLMNOPQRSTUVWXYZ      "
-	ok, violations = validator.Validate(obj)
+	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
 
 	// some more not oks...
@@ -252,7 +252,7 @@ func TestConstraintSetCeases(t *testing.T) {
 
 	// this should be ok (even though longer than 64 it gets trimmed)...
 	obj["foo"] = " Abcdefghijklmnopqrstuvwxyz0123456789_ABCDEFGHIJKLMNOPQRSTUVWXYZ      "
-	ok, violations = validator.Validate(obj)
+	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
 
 	// some more not oks...

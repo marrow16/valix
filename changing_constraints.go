@@ -20,6 +20,7 @@ type StringTrim struct {
 	baseNoMsg
 }
 
+// Check implements Constraint.Check
 func (c *StringTrim) Check(value interface{}, vcx *ValidatorContext) (bool, string) {
 	if str, ok := value.(string); ok {
 		if c.Cutset == "" {
@@ -40,6 +41,7 @@ type StringNormalizeUnicode struct {
 	baseNoMsg
 }
 
+// Check implements Constraint.Check
 func (c *StringNormalizeUnicode) Check(value interface{}, vcx *ValidatorContext) (bool, string) {
 	if str, ok := value.(string); ok {
 		vcx.SetCurrentValue(c.Form.String(str))
