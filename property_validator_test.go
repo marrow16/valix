@@ -26,27 +26,27 @@ func TestTypeCheckString(t *testing.T) {
 	ok, violations = validator.Validate(obj)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(MessageValueExpectedType, JsonString), violations[0].Message)
+	require.Equal(t, fmt.Sprintf(messageValueExpectedType, JsonString), violations[0].Message)
 	obj["foo"] = 1
 	ok, violations = validator.Validate(obj)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(MessageValueExpectedType, JsonString), violations[0].Message)
+	require.Equal(t, fmt.Sprintf(messageValueExpectedType, JsonString), violations[0].Message)
 	obj["foo"] = 1.1
 	ok, violations = validator.Validate(obj)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(MessageValueExpectedType, JsonString), violations[0].Message)
+	require.Equal(t, fmt.Sprintf(messageValueExpectedType, JsonString), violations[0].Message)
 	obj["foo"] = []interface{}{}
 	ok, violations = validator.Validate(obj)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(MessageValueExpectedType, JsonString), violations[0].Message)
+	require.Equal(t, fmt.Sprintf(messageValueExpectedType, JsonString), violations[0].Message)
 	obj["foo"] = map[string]interface{}{}
 	ok, violations = validator.Validate(obj)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(MessageValueExpectedType, JsonString), violations[0].Message)
+	require.Equal(t, fmt.Sprintf(messageValueExpectedType, JsonString), violations[0].Message)
 }
 
 func TestTypeCheckNumber(t *testing.T) {
@@ -76,22 +76,22 @@ func TestTypeCheckNumber(t *testing.T) {
 	ok, violations = validator.Validate(obj)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(MessageValueExpectedType, JsonNumber), violations[0].Message)
+	require.Equal(t, fmt.Sprintf(messageValueExpectedType, JsonNumber), violations[0].Message)
 	obj["foo"] = "xxx"
 	ok, violations = validator.Validate(obj)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(MessageValueExpectedType, JsonNumber), violations[0].Message)
+	require.Equal(t, fmt.Sprintf(messageValueExpectedType, JsonNumber), violations[0].Message)
 	obj["foo"] = []interface{}{}
 	ok, violations = validator.Validate(obj)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(MessageValueExpectedType, JsonNumber), violations[0].Message)
+	require.Equal(t, fmt.Sprintf(messageValueExpectedType, JsonNumber), violations[0].Message)
 	obj["foo"] = map[string]interface{}{}
 	ok, violations = validator.Validate(obj)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(MessageValueExpectedType, JsonNumber), violations[0].Message)
+	require.Equal(t, fmt.Sprintf(messageValueExpectedType, JsonNumber), violations[0].Message)
 }
 
 func TestTypeCheckInteger(t *testing.T) {
@@ -121,32 +121,32 @@ func TestTypeCheckInteger(t *testing.T) {
 	ok, violations = validator.Validate(obj)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(MessageValueExpectedType, JsonInteger), violations[0].Message)
+	require.Equal(t, fmt.Sprintf(messageValueExpectedType, JsonInteger), violations[0].Message)
 	obj["foo"] = json.Number("1.1")
 	ok, violations = validator.Validate(obj)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(MessageValueExpectedType, JsonInteger), violations[0].Message)
+	require.Equal(t, fmt.Sprintf(messageValueExpectedType, JsonInteger), violations[0].Message)
 	obj["foo"] = true
 	ok, violations = validator.Validate(obj)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(MessageValueExpectedType, JsonInteger), violations[0].Message)
+	require.Equal(t, fmt.Sprintf(messageValueExpectedType, JsonInteger), violations[0].Message)
 	obj["foo"] = "xxx"
 	ok, violations = validator.Validate(obj)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(MessageValueExpectedType, JsonInteger), violations[0].Message)
+	require.Equal(t, fmt.Sprintf(messageValueExpectedType, JsonInteger), violations[0].Message)
 	obj["foo"] = []interface{}{}
 	ok, violations = validator.Validate(obj)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(MessageValueExpectedType, JsonInteger), violations[0].Message)
+	require.Equal(t, fmt.Sprintf(messageValueExpectedType, JsonInteger), violations[0].Message)
 	obj["foo"] = map[string]interface{}{}
 	ok, violations = validator.Validate(obj)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(MessageValueExpectedType, JsonInteger), violations[0].Message)
+	require.Equal(t, fmt.Sprintf(messageValueExpectedType, JsonInteger), violations[0].Message)
 }
 
 func TestTypeCheckBoolean(t *testing.T) {
@@ -168,32 +168,32 @@ func TestTypeCheckBoolean(t *testing.T) {
 	ok, violations = validator.Validate(obj)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(MessageValueExpectedType, JsonBoolean), violations[0].Message)
+	require.Equal(t, fmt.Sprintf(messageValueExpectedType, JsonBoolean), violations[0].Message)
 	obj["foo"] = 1
 	ok, violations = validator.Validate(obj)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(MessageValueExpectedType, JsonBoolean), violations[0].Message)
+	require.Equal(t, fmt.Sprintf(messageValueExpectedType, JsonBoolean), violations[0].Message)
 	obj["foo"] = 0
 	ok, violations = validator.Validate(obj)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(MessageValueExpectedType, JsonBoolean), violations[0].Message)
+	require.Equal(t, fmt.Sprintf(messageValueExpectedType, JsonBoolean), violations[0].Message)
 	obj["foo"] = "xxx"
 	ok, violations = validator.Validate(obj)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(MessageValueExpectedType, JsonBoolean), violations[0].Message)
+	require.Equal(t, fmt.Sprintf(messageValueExpectedType, JsonBoolean), violations[0].Message)
 	obj["foo"] = []interface{}{}
 	ok, violations = validator.Validate(obj)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(MessageValueExpectedType, JsonBoolean), violations[0].Message)
+	require.Equal(t, fmt.Sprintf(messageValueExpectedType, JsonBoolean), violations[0].Message)
 	obj["foo"] = map[string]interface{}{}
 	ok, violations = validator.Validate(obj)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(MessageValueExpectedType, JsonBoolean), violations[0].Message)
+	require.Equal(t, fmt.Sprintf(messageValueExpectedType, JsonBoolean), violations[0].Message)
 }
 
 func TestTypeCheckObject(t *testing.T) {
@@ -215,27 +215,27 @@ func TestTypeCheckObject(t *testing.T) {
 	ok, violations = validator.Validate(obj)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(MessageValueExpectedType, JsonObject), violations[0].Message)
+	require.Equal(t, fmt.Sprintf(messageValueExpectedType, JsonObject), violations[0].Message)
 	obj["foo"] = 1
 	ok, violations = validator.Validate(obj)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(MessageValueExpectedType, JsonObject), violations[0].Message)
+	require.Equal(t, fmt.Sprintf(messageValueExpectedType, JsonObject), violations[0].Message)
 	obj["foo"] = 0
 	ok, violations = validator.Validate(obj)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(MessageValueExpectedType, JsonObject), violations[0].Message)
+	require.Equal(t, fmt.Sprintf(messageValueExpectedType, JsonObject), violations[0].Message)
 	obj["foo"] = "xxx"
 	ok, violations = validator.Validate(obj)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(MessageValueExpectedType, JsonObject), violations[0].Message)
+	require.Equal(t, fmt.Sprintf(messageValueExpectedType, JsonObject), violations[0].Message)
 	obj["foo"] = []interface{}{}
 	ok, violations = validator.Validate(obj)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(MessageValueExpectedType, JsonObject), violations[0].Message)
+	require.Equal(t, fmt.Sprintf(messageValueExpectedType, JsonObject), violations[0].Message)
 }
 
 func TestTypeCheckArray(t *testing.T) {
@@ -257,22 +257,22 @@ func TestTypeCheckArray(t *testing.T) {
 	ok, violations = validator.Validate(obj)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(MessageValueExpectedType, JsonArray), violations[0].Message)
+	require.Equal(t, fmt.Sprintf(messageValueExpectedType, JsonArray), violations[0].Message)
 	obj["foo"] = 1
 	ok, violations = validator.Validate(obj)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(MessageValueExpectedType, JsonArray), violations[0].Message)
+	require.Equal(t, fmt.Sprintf(messageValueExpectedType, JsonArray), violations[0].Message)
 	obj["foo"] = true
 	ok, violations = validator.Validate(obj)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(MessageValueExpectedType, JsonArray), violations[0].Message)
+	require.Equal(t, fmt.Sprintf(messageValueExpectedType, JsonArray), violations[0].Message)
 	obj["foo"] = "xxx"
 	ok, violations = validator.Validate(obj)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(MessageValueExpectedType, JsonArray), violations[0].Message)
+	require.Equal(t, fmt.Sprintf(messageValueExpectedType, JsonArray), violations[0].Message)
 }
 
 func TestTypeCheckAny(t *testing.T) {

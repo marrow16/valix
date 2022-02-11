@@ -7,23 +7,31 @@ import (
 )
 
 const (
-	MessageValueCannotBeNull            = "Value cannot be null"
-	MessageValueExpectedType            = "Value expected to be of type %s"
-	MessageValueMustBeObject            = "Value must be an object"
-	MessageValueMustBeArray             = "Value must be an array"
-	MessageValueMustBeObjectOrArray     = "Value must be an object or array"
-	MessagePropertyObjectValidatorError = "CurrentProperty object validator error - does not allow object or array!"
+	messageValueCannotBeNull            = "Value cannot be null"
+	messageValueExpectedType            = "Value expected to be of type %s"
+	messageValueMustBeObject            = "Value must be an object"
+	messageValueMustBeArray             = "Value must be an array"
+	messageValueMustBeObjectOrArray     = "Value must be an object or array"
+	messagePropertyObjectValidatorError = "CurrentProperty object validator error - does not allow object or array!"
 )
 
+// JsonType is the type for JSON values
 type JsonType int
 
 const (
+	// JsonAny matches any JSON value type
 	JsonAny JsonType = iota
+	// JsonString checks JSON value type is a string
 	JsonString
+	// JsonNumber checks JSON value type is a number
 	JsonNumber
+	// JsonInteger checks JSON value type is a number (that is or can be expressed as an int)
 	JsonInteger
+	// JsonBoolean checks JSON value type is a boolean
 	JsonBoolean
+	// JsonObject checks JSON value type is an object
 	JsonObject
+	// JsonArray checks JSON value type is an array
 	JsonArray
 )
 
@@ -55,6 +63,7 @@ func (jt JsonType) String() string {
 	return result
 }
 
+// PropertyValidator is the individual validator for properties
 type PropertyValidator struct {
 	// Type specifies the property type to be checked (i.e. one of Type)
 	//
@@ -73,7 +82,7 @@ type PropertyValidator struct {
 func (pv *PropertyValidator) validate(actualValue interface{}, vcx *ValidatorContext) {
 	if actualValue == nil {
 		if pv.NotNull {
-			vcx.AddViolationForCurrent(MessageValueCannotBeNull)
+			vcx.AddViolationForCurrent(messageValueCannotBeNull)
 		}
 	} else if pv.checkType(actualValue, vcx) {
 		// don't pass the actualValue down further - because it may change!
@@ -87,7 +96,7 @@ func (pv *PropertyValidator) validate(actualValue interface{}, vcx *ValidatorCon
 func (pv *PropertyValidator) checkType(actualValue interface{}, vcx *ValidatorContext) bool {
 	ok := checkValueType(actualValue, pv.Type)
 	if !ok {
-		vcx.AddViolationForCurrent(fmt.Sprintf(MessageValueExpectedType, pv.Type))
+		vcx.AddViolationForCurrent(fmt.Sprintf(messageValueExpectedType, pv.Type))
 	}
 	return ok
 }
@@ -137,21 +146,21 @@ func (pv *PropertyValidator) checkObjectValidation(vcx *ValidatorContext) {
 		if !pv.ObjectValidator.DisallowObject && pv.ObjectValidator.AllowArray {
 			// can be object or array...
 			if !pv.subValidateObjectOrArray(vcx.CurrentValue(), vcx) {
-				vcx.AddViolationForCurrent(MessageValueMustBeObjectOrArray)
+				vcx.AddViolationForCurrent(messageValueMustBeObjectOrArray)
 			}
 		} else if !pv.ObjectValidator.DisallowObject {
 			// can only be an object...
 			if !pv.subValidateObject(vcx.CurrentValue(), vcx) {
-				vcx.AddViolationForCurrent(MessageValueMustBeObject)
+				vcx.AddViolationForCurrent(messageValueMustBeObject)
 			}
 		} else if pv.ObjectValidator.AllowArray {
 			// can only be an array...
 			if !pv.subValidateArray(vcx.CurrentValue(), vcx) {
-				vcx.AddViolationForCurrent(MessageValueMustBeArray)
+				vcx.AddViolationForCurrent(messageValueMustBeArray)
 			}
 		} else {
 			// something seriously wrong here because the object validator doesn't allow an object or an array!...
-			vcx.AddViolationForCurrent(MessagePropertyObjectValidatorError)
+			vcx.AddViolationForCurrent(messagePropertyObjectValidatorError)
 			vcx.Stop()
 		}
 	}

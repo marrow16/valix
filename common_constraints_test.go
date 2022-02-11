@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"golang.org/x/text/unicode/norm"
 	"regexp"
+	"strings"
 	"testing"
 	"time"
 	"unicode"
@@ -24,11 +25,11 @@ func TestStringNotEmpty(t *testing.T) {
 	require.Equal(t, messageNotEmptyString, violations[0].Message)
 
 	obj["foo"] = "bar"
-	ok, violations = validator.Validate(obj)
+	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
 
 	obj["foo"] = nil
-	ok, violations = validator.Validate(obj)
+	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
 }
 
@@ -45,11 +46,11 @@ func TestStringNotBlank(t *testing.T) {
 	require.Equal(t, messageNotBlankString, violations[0].Message)
 
 	obj["foo"] = " bar \t\r\n"
-	ok, violations = validator.Validate(obj)
+	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
 
 	obj["foo"] = nil
-	ok, violations = validator.Validate(obj)
+	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
 }
 
@@ -66,11 +67,11 @@ func TestStringNoControlChars(t *testing.T) {
 	require.Equal(t, messageNoControlChars, violations[0].Message)
 
 	obj["foo"] = "Abc"
-	ok, violations = validator.Validate(obj)
+	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
 
 	obj["foo"] = nil
-	ok, violations = validator.Validate(obj)
+	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
 }
 
@@ -89,11 +90,40 @@ func TestStringPattern(t *testing.T) {
 	require.Equal(t, messageInvalidPattern, violations[0].Message)
 
 	obj["foo"] = "db15398d-328f-4d16-be2f-f38e8f2d0a79"
-	ok, violations = validator.Validate(obj)
+	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
 
 	obj["foo"] = nil
-	ok, violations = validator.Validate(obj)
+	ok, _ = validator.Validate(obj)
+	require.True(t, ok)
+}
+
+func TestStringValidToken(t *testing.T) {
+	validTokens := []string{"AAA", "BBB", "CCC"}
+	validator := buildFooValidator(JsonAny,
+		&StringValidToken{
+			Tokens: validTokens,
+		}, false)
+	obj := jsonObject(`{
+		"foo": "xxx"
+	}`)
+
+	ok, violations := validator.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, fmt.Sprintf(messageInvalidToken, strings.Join(validTokens, "\",\"")), violations[0].Message)
+
+	obj["foo"] = validTokens[0]
+	ok, _ = validator.Validate(obj)
+	require.True(t, ok)
+
+	obj["foo"] = nil
+	ok, _ = validator.Validate(obj)
+	require.True(t, ok)
+
+	// check with invalid type (constraint should ignore)...
+	obj["foo"] = true
+	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
 }
 
@@ -114,7 +144,7 @@ func TestStringCharactersConstraint(t *testing.T) {
 	require.Equal(t, messageInvalidCharacters, violations[0].Message)
 
 	obj["foo"] = "ABC"
-	ok, violations = validator.Validate(obj)
+	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
 }
 
@@ -138,7 +168,7 @@ func TestStringCharactersConstraintWithDisallows(t *testing.T) {
 	require.Equal(t, messageInvalidCharacters, violations[0].Message)
 
 	obj["foo"] = "GHI"
-	ok, violations = validator.Validate(obj)
+	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
 }
 
@@ -165,7 +195,7 @@ func TestStringCharactersConstraintWithPlanes(t *testing.T) {
 				UnicodeBMP, UnicodeSMP, UnicodeSIP,
 			},
 		}, false)
-	ok, violations = validator.Validate(obj)
+	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
 }
 
@@ -208,7 +238,7 @@ func TestStringValidUnicodeNormalizationK(t *testing.T) {
 	require.Equal(t, messageUnicodeNormalizationNFKC, violations[0].Message)
 
 	obj["foo"] = "\u00e7" // u+00E7 is 'c' with cedilla
-	ok, violations = validator.Validate(obj)
+	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
 
 	validator = buildFooValidator(JsonString,
@@ -232,11 +262,11 @@ func TestStringMinLength(t *testing.T) {
 	require.Equal(t, fmt.Sprintf(messageStringMinLen, 2), violations[0].Message)
 
 	obj["foo"] = "Ab"
-	ok, violations = validator.Validate(obj)
+	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
 
 	obj["foo"] = nil
-	ok, violations = validator.Validate(obj)
+	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
 }
 
@@ -254,7 +284,7 @@ func TestStringMinLengthWithRuneLength(t *testing.T) {
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
 	require.Equal(t, fmt.Sprintf(messageStringMinLen, 2), violations[0].Message)
-	ok, violations = vWithoutUnicode.Validate(obj)
+	ok, _ = vWithoutUnicode.Validate(obj)
 	require.True(t, ok)
 }
 
@@ -271,11 +301,11 @@ func TestStringMaxLength(t *testing.T) {
 	require.Equal(t, fmt.Sprintf(messageStringMaxLen, 2), violations[0].Message)
 
 	obj["foo"] = "Ab"
-	ok, violations = validator.Validate(obj)
+	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
 
 	obj["foo"] = nil
-	ok, violations = validator.Validate(obj)
+	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
 }
 
@@ -316,11 +346,11 @@ func TestStringLength(t *testing.T) {
 	require.Equal(t, fmt.Sprintf(messageStringMinMaxLen, 2, 3), violations[0].Message)
 
 	obj["foo"] = "Abc"
-	ok, violations = validator.Validate(obj)
+	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
 
 	obj["foo"] = nil
-	ok, violations = validator.Validate(obj)
+	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
 
 	// and without maximum length...
@@ -375,11 +405,11 @@ func TestLengthWithString(t *testing.T) {
 	require.Equal(t, fmt.Sprintf(messageMinMax, 2, 3), violations[0].Message)
 
 	obj["foo"] = "Abc"
-	ok, violations = validator.Validate(obj)
+	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
 
 	obj["foo"] = nil
-	ok, violations = validator.Validate(obj)
+	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
 
 	// and without max...
@@ -424,11 +454,11 @@ func TestLengthWithObject(t *testing.T) {
 		"bar": nil,
 		"baz": nil,
 	}
-	ok, violations = validator.Validate(obj)
+	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
 
 	obj["foo"] = nil
-	ok, violations = validator.Validate(obj)
+	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
 }
 
@@ -451,11 +481,11 @@ func TestLengthWithArray(t *testing.T) {
 	require.Equal(t, fmt.Sprintf(messageMinMax, 2, 3), violations[0].Message)
 
 	obj["foo"] = []interface{}{"foo", "bar", "baz"}
-	ok, violations = validator.Validate(obj)
+	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
 
 	obj["foo"] = nil
-	ok, violations = validator.Validate(obj)
+	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
 }
 
@@ -491,11 +521,11 @@ func TestPositive(t *testing.T) {
 	require.Equal(t, messagePositive, violations[0].Message)
 
 	obj["foo"] = 1.0
-	ok, violations = validator.Validate(obj)
+	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
 
 	obj["foo"] = nil
-	ok, violations = validator.Validate(obj)
+	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
 
 	// test with int...
@@ -505,7 +535,7 @@ func TestPositive(t *testing.T) {
 	require.Equal(t, 1, len(violations))
 	require.Equal(t, messagePositive, violations[0].Message)
 	obj["foo"] = 1
-	ok, violations = validator.Validate(obj)
+	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
 
 	// test with json number...
@@ -515,7 +545,7 @@ func TestPositive(t *testing.T) {
 	require.Equal(t, 1, len(violations))
 	require.Equal(t, messagePositive, violations[0].Message)
 	obj["foo"] = json.Number("1")
-	ok, violations = validator.Validate(obj)
+	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
 }
 
@@ -532,15 +562,15 @@ func TestPositiveOrZero(t *testing.T) {
 	require.Equal(t, messagePositiveOrZero, violations[0].Message)
 
 	obj["foo"] = 0.0
-	ok, violations = validator.Validate(obj)
+	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
 
 	obj["foo"] = 1.0
-	ok, violations = validator.Validate(obj)
+	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
 
 	obj["foo"] = nil
-	ok, violations = validator.Validate(obj)
+	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
 
 	// test with int..
@@ -550,7 +580,7 @@ func TestPositiveOrZero(t *testing.T) {
 	require.Equal(t, 1, len(violations))
 	require.Equal(t, messagePositiveOrZero, violations[0].Message)
 	obj["foo"] = 0
-	ok, violations = validator.Validate(obj)
+	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
 
 	// test with json number...
@@ -560,7 +590,7 @@ func TestPositiveOrZero(t *testing.T) {
 	require.Equal(t, 1, len(violations))
 	require.Equal(t, messagePositiveOrZero, violations[0].Message)
 	obj["foo"] = json.Number("0")
-	ok, violations = validator.Validate(obj)
+	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
 }
 
@@ -583,11 +613,11 @@ func TestNegative(t *testing.T) {
 	require.Equal(t, messageNegative, violations[0].Message)
 
 	obj["foo"] = -1.0
-	ok, violations = validator.Validate(obj)
+	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
 
 	obj["foo"] = nil
-	ok, violations = validator.Validate(obj)
+	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
 
 	// test with int...
@@ -597,7 +627,7 @@ func TestNegative(t *testing.T) {
 	require.Equal(t, 1, len(violations))
 	require.Equal(t, messageNegative, violations[0].Message)
 	obj["foo"] = -1
-	ok, violations = validator.Validate(obj)
+	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
 
 	// test with json number...
@@ -607,7 +637,7 @@ func TestNegative(t *testing.T) {
 	require.Equal(t, 1, len(violations))
 	require.Equal(t, messageNegative, violations[0].Message)
 	obj["foo"] = json.Number("-1")
-	ok, violations = validator.Validate(obj)
+	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
 }
 
@@ -624,15 +654,15 @@ func TestNegativeOrZero(t *testing.T) {
 	require.Equal(t, messageNegativeOrZero, violations[0].Message)
 
 	obj["foo"] = 0.0
-	ok, violations = validator.Validate(obj)
+	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
 
 	obj["foo"] = -1.0
-	ok, violations = validator.Validate(obj)
+	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
 
 	obj["foo"] = nil
-	ok, violations = validator.Validate(obj)
+	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
 
 	// test with int...
@@ -642,7 +672,7 @@ func TestNegativeOrZero(t *testing.T) {
 	require.Equal(t, 1, len(violations))
 	require.Equal(t, messageNegativeOrZero, violations[0].Message)
 	obj["foo"] = 0
-	ok, violations = validator.Validate(obj)
+	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
 
 	// test with json number...
@@ -652,7 +682,7 @@ func TestNegativeOrZero(t *testing.T) {
 	require.Equal(t, 1, len(violations))
 	require.Equal(t, messageNegativeOrZero, violations[0].Message)
 	obj["foo"] = json.Number("0")
-	ok, violations = validator.Validate(obj)
+	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
 }
 
@@ -670,11 +700,11 @@ func TestMinimum(t *testing.T) {
 	require.Equal(t, testMsg, violations[0].Message)
 
 	obj["foo"] = 2.0
-	ok, violations = validator.Validate(obj)
+	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
 
 	obj["foo"] = nil
-	ok, violations = validator.Validate(obj)
+	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
 
 	// test with int...
@@ -684,7 +714,7 @@ func TestMinimum(t *testing.T) {
 	require.Equal(t, 1, len(violations))
 	require.Equal(t, testMsg, violations[0].Message)
 	obj["foo"] = 2
-	ok, violations = validator.Validate(obj)
+	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
 
 	// test with json number...
@@ -694,7 +724,7 @@ func TestMinimum(t *testing.T) {
 	require.Equal(t, 1, len(violations))
 	require.Equal(t, testMsg, violations[0].Message)
 	obj["foo"] = json.Number("2")
-	ok, violations = validator.Validate(obj)
+	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
 }
 
@@ -712,11 +742,11 @@ func TestMaximum(t *testing.T) {
 	require.Equal(t, testMsg, violations[0].Message)
 
 	obj["foo"] = 2.0
-	ok, violations = validator.Validate(obj)
+	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
 
 	obj["foo"] = nil
-	ok, violations = validator.Validate(obj)
+	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
 
 	// test with int...
@@ -726,7 +756,7 @@ func TestMaximum(t *testing.T) {
 	require.Equal(t, 1, len(violations))
 	require.Equal(t, testMsg, violations[0].Message)
 	obj["foo"] = 2
-	ok, violations = validator.Validate(obj)
+	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
 
 	// test with json number...
@@ -736,7 +766,7 @@ func TestMaximum(t *testing.T) {
 	require.Equal(t, 1, len(violations))
 	require.Equal(t, testMsg, violations[0].Message)
 	obj["foo"] = json.Number("2")
-	ok, violations = validator.Validate(obj)
+	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
 }
 
@@ -760,11 +790,11 @@ func TestRange(t *testing.T) {
 	require.Equal(t, testMsg, violations[0].Message)
 
 	obj["foo"] = 2.0
-	ok, violations = validator.Validate(obj)
+	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
 
 	obj["foo"] = nil
-	ok, violations = validator.Validate(obj)
+	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
 
 	// test with int...
@@ -779,7 +809,7 @@ func TestRange(t *testing.T) {
 	require.Equal(t, 1, len(violations))
 	require.Equal(t, testMsg, violations[0].Message)
 	obj["foo"] = 2
-	ok, violations = validator.Validate(obj)
+	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
 
 	// test with json number...
@@ -794,7 +824,7 @@ func TestRange(t *testing.T) {
 	require.Equal(t, 1, len(violations))
 	require.Equal(t, testMsg, violations[0].Message)
 	obj["foo"] = json.Number("2")
-	ok, violations = validator.Validate(obj)
+	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
 }
 
@@ -821,7 +851,7 @@ func TestArrayOf(t *testing.T) {
 	obj = jsonObject(`{
 		"foo": ["ok", "ok2"]
 	}`)
-	ok, violations = validator.Validate(obj)
+	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
 
 	validator = buildFooValidator(JsonArray,
@@ -836,7 +866,7 @@ func TestArrayOf(t *testing.T) {
 	obj = jsonObject(`{
 		"foo": [null, "ok2"]
 	}`)
-	ok, violations = validator.Validate(obj)
+	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
 }
 
@@ -853,7 +883,7 @@ func TestStringValidUuid(t *testing.T) {
 	require.Equal(t, fmt.Sprintf(messageUuidMinVersion, 4), violations[0].Message)
 
 	obj["foo"] = "db15398d-328f-4d16-be2f-f38e8f2d0a79"
-	ok, violations = validator.Validate(obj)
+	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
 	obj["foo"] = "db15398d-328f-3d16-be2f-f38e8f2d0a79"
 	ok, violations = validator.Validate(obj)
@@ -892,7 +922,7 @@ func TestStringValidISODatetime(t *testing.T) {
 	require.Equal(t, messageValidISODatetime+messageDatetimeFormatFull, violations[0].Message)
 
 	obj["foo"] = "2022-02-02T18:19:20.123+01:00"
-	ok, violations = validator.Validate(obj)
+	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
 
 	obj["foo"] = "2022-13-02T18:19:20.12345+01:00"
@@ -992,7 +1022,7 @@ func TestStringValidISODate(t *testing.T) {
 	require.Equal(t, messageValidISODate, violations[0].Message)
 
 	obj["foo"] = "2022-02-02"
-	ok, violations = validator.Validate(obj)
+	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
 
 	obj["foo"] = "2022-13-02"
@@ -1033,7 +1063,7 @@ func TestDatetimeFuture(t *testing.T) {
 	require.Equal(t, messageDatetimeFuture, violations[0].Message)
 
 	obj["foo"] = time.Now().Add(time.Minute).Format("2006-01-02T15:04:05.000000000-07:00")
-	ok, violations = validator.Validate(obj)
+	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
 
 	// check with actual time.Time...
@@ -1073,7 +1103,7 @@ func TestDatetimeFutureOrPresent(t *testing.T) {
 	require.Equal(t, messageDatetimeFutureOrPresent, violations[0].Message)
 
 	obj["foo"] = time.Now().Add(time.Minute).Format("2006-01-02T15:04:05.000000000-07:00")
-	ok, violations = validator.Validate(obj)
+	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
 
 	// check with actual time.Time...
@@ -1113,7 +1143,7 @@ func TestDatetimePast(t *testing.T) {
 	require.Equal(t, messageDatetimePast, violations[0].Message)
 
 	obj["foo"] = time.Now().Add(0 - time.Minute).Format("2006-01-02T15:04:05.000000000-07:00")
-	ok, violations = validator.Validate(obj)
+	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
 
 	// check with actual time.Time...
@@ -1153,7 +1183,7 @@ func TestDatetimePastOrPresent(t *testing.T) {
 	require.Equal(t, messageDatetimePastOrPresent, violations[0].Message)
 
 	obj["foo"] = time.Now().Add(0 - time.Minute).Format("2006-01-02T15:04:05.000000000-07:00")
-	ok, violations = validator.Validate(obj)
+	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
 
 	// check with actual time.Time...

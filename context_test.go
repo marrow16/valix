@@ -271,7 +271,7 @@ func TestContext_AncestorProperty(t *testing.T) {
 	ap, apok = vcx.AncestorProperty(4)
 	require.True(t, apok)
 	require.Nil(t, ap)
-	ap, apok = vcx.AncestorProperty(5)
+	_, apok = vcx.AncestorProperty(5)
 	require.False(t, apok)
 }
 
@@ -297,9 +297,9 @@ func TestContext_AncestorPropertyName(t *testing.T) {
 	ap, apok = vcx.AncestorPropertyName(3)
 	require.True(t, apok)
 	require.Equal(t, "foo", *ap)
-	ap, apok = vcx.AncestorPropertyName(4)
+	_, apok = vcx.AncestorPropertyName(4)
 	require.False(t, apok)
-	ap, apok = vcx.AncestorPropertyName(5)
+	_, apok = vcx.AncestorPropertyName(5)
 	require.False(t, apok)
 }
 
@@ -325,9 +325,9 @@ func TestContext_AncestorArrayIndex(t *testing.T) {
 	ai, apok = vcx.AncestorArrayIndex(3)
 	require.True(t, apok)
 	require.Equal(t, 0, *ai)
-	ai, apok = vcx.AncestorArrayIndex(4)
+	_, apok = vcx.AncestorArrayIndex(4)
 	require.False(t, apok)
-	ai, apok = vcx.AncestorArrayIndex(5)
+	_, apok = vcx.AncestorArrayIndex(5)
 	require.False(t, apok)
 }
 
@@ -364,7 +364,7 @@ func TestContext_AncestorValue(t *testing.T) {
 		av, ok = vcx.AncestorValue(4)
 		require.True(t, ok)
 		require.Equal(t, o, av)
-		av, ok = vcx.AncestorValue(5)
+		_, ok = vcx.AncestorValue(5)
 		require.False(t, ok)
 		return false, cc.GetMessage()
 	}, testMsg)

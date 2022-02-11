@@ -15,6 +15,7 @@ const (
 	messageNotBlankString           = "String value must not be a blank string"
 	messageNoControlChars           = "String value must not contain control characters"
 	messageInvalidPattern           = "String value must have valid pattern"
+	messageInvalidToken             = "String value must be valid token - \"%s\""
 	messageInvalidCharacters        = "String Value must not have invalid characters"
 	messageStringMinLen             = "String value length must be at least %d characters"
 	messageStringMaxLen             = "String value length must not exceed %d characters"
@@ -41,6 +42,7 @@ const (
 	messageUuidMinVersion           = "Value must be a valid UUID (minimum version %d)"
 	messageUuidCorrectVer           = "Value must be a valid UUID (version %d)"
 	uuidRegexpPattern               = "^([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})$"
+	messageValidCardNumber          = "Value must be a valid card number"
 )
 
 var (
@@ -55,6 +57,7 @@ type StringNotEmpty struct {
 	Message string
 }
 
+// Check implements Constraint.Check
 func (c *StringNotEmpty) Check(value interface{}, vcx *ValidatorContext) (bool, string) {
 	if str, ok := value.(string); ok {
 		if len(str) == 0 {
@@ -63,6 +66,8 @@ func (c *StringNotEmpty) Check(value interface{}, vcx *ValidatorContext) (bool, 
 	}
 	return true, ""
 }
+
+// GetMessage implements the Constraint.GetMessage
 func (c *StringNotEmpty) GetMessage() string {
 	return defaultMessage(c.Message, messageNotEmptyString)
 }
@@ -76,6 +81,7 @@ type StringNotBlank struct {
 	Message string
 }
 
+// Check implements Constraint.Check
 func (c *StringNotBlank) Check(value interface{}, vcx *ValidatorContext) (bool, string) {
 	if str, ok := value.(string); ok {
 		if len(strings.Trim(str, " \t\n\r")) == 0 {
@@ -84,6 +90,8 @@ func (c *StringNotBlank) Check(value interface{}, vcx *ValidatorContext) (bool, 
 	}
 	return true, ""
 }
+
+// GetMessage implements the Constraint.GetMessage
 func (c *StringNotBlank) GetMessage() string {
 	return defaultMessage(c.Message, messageNotBlankString)
 }
@@ -96,6 +104,7 @@ type StringNoControlCharacters struct {
 	Message string
 }
 
+// Check implements Constraint.Check
 func (c *StringNoControlCharacters) Check(value interface{}, vcx *ValidatorContext) (bool, string) {
 	if str, ok := value.(string); ok {
 		for _, ch := range str {
@@ -106,6 +115,8 @@ func (c *StringNoControlCharacters) Check(value interface{}, vcx *ValidatorConte
 	}
 	return true, ""
 }
+
+// GetMessage implements the Constraint.GetMessage
 func (c *StringNoControlCharacters) GetMessage() string {
 	return defaultMessage(c.Message, messageNoControlChars)
 }
@@ -120,6 +131,7 @@ type StringPattern struct {
 	Message string
 }
 
+// Check implements Constraint.Check
 func (c *StringPattern) Check(value interface{}, vcx *ValidatorContext) (bool, string) {
 	if str, ok := value.(string); ok {
 		if !c.Regexp.MatchString(str) {
@@ -128,8 +140,38 @@ func (c *StringPattern) Check(value interface{}, vcx *ValidatorContext) (bool, s
 	}
 	return true, ""
 }
+
+// GetMessage implements the Constraint.GetMessage
 func (c *StringPattern) GetMessage() string {
 	return defaultMessage(c.Message, messageInvalidPattern)
+}
+
+// StringValidToken checks that a string matches one of a pre-defined list of tokens
+type StringValidToken struct {
+	// Tokens is the set of allowed tokens for the string
+	Tokens []string
+	// the violation message to be used if the constraint fails (see Violation.Message)
+	//
+	// (if the Message is an empty string then the default violation message is used)
+	Message string
+}
+
+// Check implements Constraint.Check
+func (c *StringValidToken) Check(value interface{}, vcx *ValidatorContext) (bool, string) {
+	if str, ok := value.(string); ok {
+		for _, t := range c.Tokens {
+			if str == t {
+				return true, ""
+			}
+		}
+		return false, c.GetMessage()
+	}
+	return true, ""
+}
+
+// GetMessage implements the Constraint.GetMessage
+func (c *StringValidToken) GetMessage() string {
+	return defaultMessage(c.Message, fmt.Sprintf(messageInvalidToken, strings.Join(c.Tokens, "\",\"")))
 }
 
 var _Bmp = &unicode.RangeTable{
@@ -176,6 +218,7 @@ type StringCharacters struct {
 	Message string
 }
 
+// Check implements Constraint.Check
 func (c *StringCharacters) Check(value interface{}, vcx *ValidatorContext) (bool, string) {
 	if str, ok := value.(string); ok {
 		runes := []rune(str)
@@ -199,6 +242,8 @@ func (c *StringCharacters) Check(value interface{}, vcx *ValidatorContext) (bool
 	}
 	return true, ""
 }
+
+// GetMessage implements the Constraint.GetMessage
 func (c *StringCharacters) GetMessage() string {
 	return defaultMessage(c.Message, messageInvalidCharacters)
 }
@@ -215,6 +260,7 @@ type StringMinLength struct {
 	Message string
 }
 
+// Check implements Constraint.Check
 func (c *StringMinLength) Check(value interface{}, vcx *ValidatorContext) (bool, string) {
 	if str, ok := value.(string); ok {
 		l := len(str)
@@ -227,6 +273,8 @@ func (c *StringMinLength) Check(value interface{}, vcx *ValidatorContext) (bool,
 	}
 	return true, ""
 }
+
+// GetMessage implements the Constraint.GetMessage
 func (c *StringMinLength) GetMessage() string {
 	return defaultMessage(c.Message, fmt.Sprintf(messageStringMinLen, c.Value))
 }
@@ -243,6 +291,7 @@ type StringMaxLength struct {
 	Message string
 }
 
+// Check implements Constraint.Check
 func (c *StringMaxLength) Check(value interface{}, vcx *ValidatorContext) (bool, string) {
 	if str, ok := value.(string); ok {
 		l := len(str)
@@ -255,6 +304,8 @@ func (c *StringMaxLength) Check(value interface{}, vcx *ValidatorContext) (bool,
 	}
 	return true, ""
 }
+
+// GetMessage implements the Constraint.GetMessage
 func (c *StringMaxLength) GetMessage() string {
 	return defaultMessage(c.Message,
 		fmt.Sprintf(messageStringMaxLen, c.Value))
@@ -274,6 +325,7 @@ type StringLength struct {
 	Message string
 }
 
+// Check implements Constraint.Check
 func (c *StringLength) Check(value interface{}, vcx *ValidatorContext) (bool, string) {
 	if str, ok := value.(string); ok {
 		l := len(str)
@@ -288,6 +340,8 @@ func (c *StringLength) Check(value interface{}, vcx *ValidatorContext) (bool, st
 	}
 	return true, ""
 }
+
+// GetMessage implements the Constraint.GetMessage
 func (c *StringLength) GetMessage() string {
 	if c.Minimum == c.Maximum {
 		return defaultMessage(c.Message,
@@ -313,6 +367,7 @@ type StringValidUnicodeNormalization struct {
 	Message string
 }
 
+// Check implements Constraint.Check
 func (c *StringValidUnicodeNormalization) Check(value interface{}, vcx *ValidatorContext) (bool, string) {
 	if str, ok := value.(string); ok {
 		if !c.Form.IsNormalString(str) {
@@ -321,6 +376,8 @@ func (c *StringValidUnicodeNormalization) Check(value interface{}, vcx *Validato
 	}
 	return true, ""
 }
+
+// GetMessage implements the Constraint.GetMessage
 func (c *StringValidUnicodeNormalization) GetMessage() string {
 	switch c.Form {
 	case norm.NFKC:
@@ -349,6 +406,7 @@ type Length struct {
 	Message string
 }
 
+// Check implements Constraint.Check
 func (c *Length) Check(value interface{}, vcx *ValidatorContext) (bool, string) {
 	if str, okS := value.(string); okS {
 		if len(str) < c.Minimum {
@@ -371,6 +429,8 @@ func (c *Length) Check(value interface{}, vcx *ValidatorContext) (bool, string) 
 	}
 	return true, ""
 }
+
+// GetMessage implements the Constraint.GetMessage
 func (c *Length) GetMessage() string {
 	if c.Minimum == c.Maximum {
 		return defaultMessage(c.Message,
@@ -392,6 +452,7 @@ type Positive struct {
 	Message string
 }
 
+// Check implements Constraint.Check
 func (c *Positive) Check(value interface{}, vcx *ValidatorContext) (bool, string) {
 	if f, ok := value.(float64); ok {
 		if f <= 0 {
@@ -408,6 +469,8 @@ func (c *Positive) Check(value interface{}, vcx *ValidatorContext) (bool, string
 	}
 	return true, ""
 }
+
+// GetMessage implements the Constraint.GetMessage
 func (c *Positive) GetMessage() string {
 	return defaultMessage(c.Message, messagePositive)
 }
@@ -420,6 +483,7 @@ type PositiveOrZero struct {
 	Message string
 }
 
+// Check implements Constraint.Check
 func (c *PositiveOrZero) Check(value interface{}, vcx *ValidatorContext) (bool, string) {
 	if f, ok := value.(float64); ok {
 		if f < 0 {
@@ -436,6 +500,8 @@ func (c *PositiveOrZero) Check(value interface{}, vcx *ValidatorContext) (bool, 
 	}
 	return true, ""
 }
+
+// GetMessage implements the Constraint.GetMessage
 func (c *PositiveOrZero) GetMessage() string {
 	return defaultMessage(c.Message, messagePositiveOrZero)
 }
@@ -448,6 +514,7 @@ type Negative struct {
 	Message string
 }
 
+// Check implements Constraint.Check
 func (c *Negative) Check(value interface{}, vcx *ValidatorContext) (bool, string) {
 	if f, ok := value.(float64); ok {
 		if f >= 0 {
@@ -464,6 +531,8 @@ func (c *Negative) Check(value interface{}, vcx *ValidatorContext) (bool, string
 	}
 	return true, ""
 }
+
+// GetMessage implements the Constraint.GetMessage
 func (c *Negative) GetMessage() string {
 	return defaultMessage(c.Message, messageNegative)
 }
@@ -476,6 +545,7 @@ type NegativeOrZero struct {
 	Message string
 }
 
+// Check implements Constraint.Check
 func (c *NegativeOrZero) Check(value interface{}, vcx *ValidatorContext) (bool, string) {
 	if f, ok := value.(float64); ok {
 		if f > 0 {
@@ -492,6 +562,8 @@ func (c *NegativeOrZero) Check(value interface{}, vcx *ValidatorContext) (bool, 
 	}
 	return true, ""
 }
+
+// GetMessage implements the Constraint.GetMessage
 func (c *NegativeOrZero) GetMessage() string {
 	return defaultMessage(c.Message, messageNegativeOrZero)
 }
@@ -506,6 +578,7 @@ type Minimum struct {
 	Message string
 }
 
+// Check implements Constraint.Check
 func (c *Minimum) Check(value interface{}, vcx *ValidatorContext) (bool, string) {
 	if f, ok := value.(float64); ok {
 		if f < c.Value {
@@ -522,6 +595,8 @@ func (c *Minimum) Check(value interface{}, vcx *ValidatorContext) (bool, string)
 	}
 	return true, ""
 }
+
+// GetMessage implements the Constraint.GetMessage
 func (c *Minimum) GetMessage() string {
 	return defaultMessage(c.Message, fmt.Sprintf(messageGte, c.Value))
 }
@@ -536,6 +611,7 @@ type Maximum struct {
 	Message string
 }
 
+// Check implements Constraint.Check
 func (c *Maximum) Check(value interface{}, vcx *ValidatorContext) (bool, string) {
 	if f, ok := value.(float64); ok {
 		if f > c.Value {
@@ -552,6 +628,8 @@ func (c *Maximum) Check(value interface{}, vcx *ValidatorContext) (bool, string)
 	}
 	return true, ""
 }
+
+// GetMessage implements the Constraint.GetMessage
 func (c *Maximum) GetMessage() string {
 	return defaultMessage(c.Message, fmt.Sprintf(messageLte, c.Value))
 }
@@ -568,6 +646,7 @@ type Range struct {
 	Message string
 }
 
+// Check implements Constraint.Check
 func (c *Range) Check(value interface{}, vcx *ValidatorContext) (bool, string) {
 	if f, ok := value.(float64); ok {
 		if f < c.Minimum {
@@ -592,6 +671,8 @@ func (c *Range) Check(value interface{}, vcx *ValidatorContext) (bool, string) {
 	}
 	return true, ""
 }
+
+// GetMessage implements the Constraint.GetMessage
 func (c *Range) GetMessage() string {
 	return defaultMessage(c.Message,
 		fmt.Sprintf(messageRange, c.Minimum, c.Maximum))
@@ -609,6 +690,7 @@ type ArrayOf struct {
 	Message string
 }
 
+// Check implements Constraint.Check
 func (c *ArrayOf) Check(value interface{}, vcx *ValidatorContext) (bool, string) {
 	if a, ok := value.([]interface{}); ok {
 		for _, elem := range a {
@@ -623,6 +705,8 @@ func (c *ArrayOf) Check(value interface{}, vcx *ValidatorContext) (bool, string)
 	}
 	return true, ""
 }
+
+// GetMessage implements the Constraint.GetMessage
 func (c *ArrayOf) GetMessage() string {
 	if c.AllowNullElement {
 		return defaultMessage(c.Message, fmt.Sprintf(messageArrayElementTypeOrNull, c.Type))
@@ -643,6 +727,7 @@ type StringValidUuid struct {
 	Message string
 }
 
+// Check implements Constraint.Check
 func (c *StringValidUuid) Check(value interface{}, vcx *ValidatorContext) (bool, string) {
 	if str, ok := value.(string); ok {
 		if !uuidRegexp.MatchString(str) {
@@ -658,6 +743,8 @@ func (c *StringValidUuid) Check(value interface{}, vcx *ValidatorContext) (bool,
 	}
 	return true, ""
 }
+
+// GetMessage implements the Constraint.GetMessage
 func (c *StringValidUuid) GetMessage() string {
 	if c.SpecificVersion > 0 {
 		return defaultMessage(c.Message, fmt.Sprintf(messageUuidCorrectVer, c.SpecificVersion))
@@ -688,7 +775,6 @@ const (
 	messageDatetimeFutureOrPresent = "Value must be a valid date/time in the future or present"
 	messageDatetimePast            = "Value must be a valid date/time in the past"
 	messageDatetimePastOrPresent   = "Value must be a valid date/time in the past or present"
-	messageValidCardNumber         = "Value must be a valid card number"
 )
 
 var (
@@ -711,6 +797,7 @@ type StringValidISODatetime struct {
 	Message string
 }
 
+// Check implements Constraint.Check
 func (c *StringValidISODatetime) Check(value interface{}, vcx *ValidatorContext) (bool, string) {
 	if str, ok := value.(string); ok {
 		useRegex := iso8601FullRegex
@@ -744,6 +831,8 @@ func (c *StringValidISODatetime) Check(value interface{}, vcx *ValidatorContext)
 	}
 	return true, ""
 }
+
+// GetMessage implements the Constraint.GetMessage
 func (c *StringValidISODatetime) GetMessage() string {
 	if c.NoOffset && c.NoMillis {
 		return defaultMessage(c.Message, messageValidISODatetime+messageDatetimeFormatMin)
@@ -763,6 +852,7 @@ type StringValidISODate struct {
 	Message string
 }
 
+// Check implements Constraint.Check
 func (c *StringValidISODate) Check(value interface{}, vcx *ValidatorContext) (bool, string) {
 	if str, ok := value.(string); ok {
 		if !iso8601DateOnlyRegex.MatchString(str) {
@@ -775,6 +865,8 @@ func (c *StringValidISODate) Check(value interface{}, vcx *ValidatorContext) (bo
 	}
 	return true, ""
 }
+
+// GetMessage implements the Constraint.GetMessage
 func (c *StringValidISODate) GetMessage() string {
 	return defaultMessage(c.Message, messageValidISODate)
 }
@@ -787,6 +879,7 @@ type DatetimeFuture struct {
 	Message string
 }
 
+// Check implements Constraint.Check
 func (c *DatetimeFuture) Check(value interface{}, vcx *ValidatorContext) (bool, string) {
 	if str, ok := value.(string); ok {
 		if dt, ok2 := stringToTime(str); !ok2 || !dt.After(time.Now()) {
@@ -797,6 +890,8 @@ func (c *DatetimeFuture) Check(value interface{}, vcx *ValidatorContext) (bool, 
 	}
 	return true, ""
 }
+
+// GetMessage implements the Constraint.GetMessage
 func (c *DatetimeFuture) GetMessage() string {
 	return defaultMessage(c.Message, messageDatetimeFuture)
 }
@@ -809,6 +904,7 @@ type DatetimeFutureOrPresent struct {
 	Message string
 }
 
+// Check implements Constraint.Check
 func (c *DatetimeFutureOrPresent) Check(value interface{}, vcx *ValidatorContext) (bool, string) {
 	if str, ok := value.(string); ok {
 		if dt, ok2 := stringToTime(str); !ok2 || dt.Before(time.Now()) {
@@ -819,6 +915,8 @@ func (c *DatetimeFutureOrPresent) Check(value interface{}, vcx *ValidatorContext
 	}
 	return true, ""
 }
+
+// GetMessage implements the Constraint.GetMessage
 func (c *DatetimeFutureOrPresent) GetMessage() string {
 	return defaultMessage(c.Message, messageDatetimeFutureOrPresent)
 }
@@ -831,6 +929,7 @@ type DatetimePast struct {
 	Message string
 }
 
+// Check implements Constraint.Check
 func (c *DatetimePast) Check(value interface{}, vcx *ValidatorContext) (bool, string) {
 	if str, ok := value.(string); ok {
 		if dt, ok2 := stringToTime(str); !ok2 || !dt.Before(time.Now()) {
@@ -841,6 +940,8 @@ func (c *DatetimePast) Check(value interface{}, vcx *ValidatorContext) (bool, st
 	}
 	return true, ""
 }
+
+// GetMessage implements the Constraint.GetMessage
 func (c *DatetimePast) GetMessage() string {
 	return defaultMessage(c.Message, messageDatetimePast)
 }
@@ -853,6 +954,7 @@ type DatetimePastOrPresent struct {
 	Message string
 }
 
+// Check implements Constraint.Check
 func (c *DatetimePastOrPresent) Check(value interface{}, vcx *ValidatorContext) (bool, string) {
 	if str, ok := value.(string); ok {
 		if dt, ok2 := stringToTime(str); !ok2 || dt.After(time.Now()) {
@@ -863,6 +965,8 @@ func (c *DatetimePastOrPresent) Check(value interface{}, vcx *ValidatorContext) 
 	}
 	return true, ""
 }
+
+// GetMessage implements the Constraint.GetMessage
 func (c *DatetimePastOrPresent) GetMessage() string {
 	return defaultMessage(c.Message, messageDatetimePastOrPresent)
 }
@@ -876,6 +980,7 @@ type StringValidCardNumber struct {
 	Message string
 }
 
+// Check implements Constraint.Check
 func (c *StringValidCardNumber) Check(value interface{}, vcx *ValidatorContext) (bool, string) {
 	const digitMinChar = '0'
 	const digitMaxChar = '9'
@@ -906,6 +1011,8 @@ func (c *StringValidCardNumber) Check(value interface{}, vcx *ValidatorContext) 
 	}
 	return true, ""
 }
+
+// GetMessage implements the Constraint.GetMessage
 func (c *StringValidCardNumber) GetMessage() string {
 	return defaultMessage(c.Message, messageValidCardNumber)
 }

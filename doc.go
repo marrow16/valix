@@ -1,6 +1,5 @@
-// Package valix
+// Package valix - Go package for validating requests
 /*
-- Go package for validating requests
 
 Check requests in the form of *http.Request, `map[string]interface{}` or `[]interface{}`
 
