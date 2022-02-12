@@ -21,8 +21,8 @@ type StringTrim struct {
 }
 
 // Check implements Constraint.Check
-func (c *StringTrim) Check(value interface{}, vcx *ValidatorContext) (bool, string) {
-	if str, ok := value.(string); ok {
+func (c *StringTrim) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
+	if str, ok := v.(string); ok {
 		if c.Cutset == "" {
 			vcx.SetCurrentValue(strings.Trim(str, " \t"))
 		} else {
@@ -42,8 +42,8 @@ type StringNormalizeUnicode struct {
 }
 
 // Check implements Constraint.Check
-func (c *StringNormalizeUnicode) Check(value interface{}, vcx *ValidatorContext) (bool, string) {
-	if str, ok := value.(string); ok {
+func (c *StringNormalizeUnicode) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
+	if str, ok := v.(string); ok {
 		vcx.SetCurrentValue(c.Form.String(str))
 	}
 	return true, c.GetMessage()
