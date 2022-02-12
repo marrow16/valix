@@ -58,8 +58,8 @@ type StringNotEmpty struct {
 }
 
 // Check implements Constraint.Check
-func (c *StringNotEmpty) Check(value interface{}, vcx *ValidatorContext) (bool, string) {
-	if str, ok := value.(string); ok {
+func (c *StringNotEmpty) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
+	if str, ok := v.(string); ok {
 		if len(str) == 0 {
 			return false, c.GetMessage()
 		}
@@ -82,8 +82,8 @@ type StringNotBlank struct {
 }
 
 // Check implements Constraint.Check
-func (c *StringNotBlank) Check(value interface{}, vcx *ValidatorContext) (bool, string) {
-	if str, ok := value.(string); ok {
+func (c *StringNotBlank) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
+	if str, ok := v.(string); ok {
 		if len(strings.Trim(str, " \t\n\r")) == 0 {
 			return false, c.GetMessage()
 		}
@@ -105,8 +105,8 @@ type StringNoControlCharacters struct {
 }
 
 // Check implements Constraint.Check
-func (c *StringNoControlCharacters) Check(value interface{}, vcx *ValidatorContext) (bool, string) {
-	if str, ok := value.(string); ok {
+func (c *StringNoControlCharacters) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
+	if str, ok := v.(string); ok {
 		for _, ch := range str {
 			if ch < 32 {
 				return false, c.GetMessage()
@@ -132,8 +132,8 @@ type StringPattern struct {
 }
 
 // Check implements Constraint.Check
-func (c *StringPattern) Check(value interface{}, vcx *ValidatorContext) (bool, string) {
-	if str, ok := value.(string); ok {
+func (c *StringPattern) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
+	if str, ok := v.(string); ok {
 		if !c.Regexp.MatchString(str) {
 			return false, c.GetMessage()
 		}
@@ -157,8 +157,8 @@ type StringValidToken struct {
 }
 
 // Check implements Constraint.Check
-func (c *StringValidToken) Check(value interface{}, vcx *ValidatorContext) (bool, string) {
-	if str, ok := value.(string); ok {
+func (c *StringValidToken) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
+	if str, ok := v.(string); ok {
 		for _, t := range c.Tokens {
 			if str == t {
 				return true, ""
@@ -219,8 +219,8 @@ type StringCharacters struct {
 }
 
 // Check implements Constraint.Check
-func (c *StringCharacters) Check(value interface{}, vcx *ValidatorContext) (bool, string) {
-	if str, ok := value.(string); ok {
+func (c *StringCharacters) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
+	if str, ok := v.(string); ok {
 		runes := []rune(str)
 		allowedCount := -1
 		for i, r := range runes {
@@ -261,8 +261,8 @@ type StringMinLength struct {
 }
 
 // Check implements Constraint.Check
-func (c *StringMinLength) Check(value interface{}, vcx *ValidatorContext) (bool, string) {
-	if str, ok := value.(string); ok {
+func (c *StringMinLength) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
+	if str, ok := v.(string); ok {
 		l := len(str)
 		if c.UseRuneLen {
 			l = len([]rune(str))
@@ -292,8 +292,8 @@ type StringMaxLength struct {
 }
 
 // Check implements Constraint.Check
-func (c *StringMaxLength) Check(value interface{}, vcx *ValidatorContext) (bool, string) {
-	if str, ok := value.(string); ok {
+func (c *StringMaxLength) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
+	if str, ok := v.(string); ok {
 		l := len(str)
 		if c.UseRuneLen {
 			l = len([]rune(str))
@@ -326,8 +326,8 @@ type StringLength struct {
 }
 
 // Check implements Constraint.Check
-func (c *StringLength) Check(value interface{}, vcx *ValidatorContext) (bool, string) {
-	if str, ok := value.(string); ok {
+func (c *StringLength) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
+	if str, ok := v.(string); ok {
 		l := len(str)
 		if c.UseRuneLen {
 			l = len([]rune(str))
@@ -368,8 +368,8 @@ type StringValidUnicodeNormalization struct {
 }
 
 // Check implements Constraint.Check
-func (c *StringValidUnicodeNormalization) Check(value interface{}, vcx *ValidatorContext) (bool, string) {
-	if str, ok := value.(string); ok {
+func (c *StringValidUnicodeNormalization) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
+	if str, ok := v.(string); ok {
 		if !c.Form.IsNormalString(str) {
 			return false, c.GetMessage()
 		}
@@ -407,20 +407,20 @@ type Length struct {
 }
 
 // Check implements Constraint.Check
-func (c *Length) Check(value interface{}, vcx *ValidatorContext) (bool, string) {
-	if str, okS := value.(string); okS {
+func (c *Length) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
+	if str, okS := v.(string); okS {
 		if len(str) < c.Minimum {
 			return false, c.GetMessage()
 		} else if c.Maximum > 0 && len(str) > c.Maximum {
 			return false, c.GetMessage()
 		}
-	} else if m, okM := value.(map[string]interface{}); okM {
+	} else if m, okM := v.(map[string]interface{}); okM {
 		if len(m) < c.Minimum {
 			return false, c.GetMessage()
 		} else if c.Maximum > 0 && len(m) > c.Maximum {
 			return false, c.GetMessage()
 		}
-	} else if a, okA := value.([]interface{}); okA {
+	} else if a, okA := v.([]interface{}); okA {
 		if len(a) < c.Minimum {
 			return false, c.GetMessage()
 		} else if c.Maximum > 0 && len(a) > c.Maximum {
@@ -453,16 +453,16 @@ type Positive struct {
 }
 
 // Check implements Constraint.Check
-func (c *Positive) Check(value interface{}, vcx *ValidatorContext) (bool, string) {
-	if f, ok := value.(float64); ok {
+func (c *Positive) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
+	if f, ok := v.(float64); ok {
 		if f <= 0 {
 			return false, c.GetMessage()
 		}
-	} else if i, ok2 := value.(int); ok2 {
+	} else if i, ok2 := v.(int); ok2 {
 		if i <= 0 {
 			return false, c.GetMessage()
 		}
-	} else if n, ok3 := value.(json.Number); ok3 {
+	} else if n, ok3 := v.(json.Number); ok3 {
 		if fv, fe := n.Float64(); fe == nil && fv <= 0 {
 			return false, c.GetMessage()
 		}
@@ -484,16 +484,16 @@ type PositiveOrZero struct {
 }
 
 // Check implements Constraint.Check
-func (c *PositiveOrZero) Check(value interface{}, vcx *ValidatorContext) (bool, string) {
-	if f, ok := value.(float64); ok {
+func (c *PositiveOrZero) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
+	if f, ok := v.(float64); ok {
 		if f < 0 {
 			return false, c.GetMessage()
 		}
-	} else if i, ok2 := value.(int); ok2 {
+	} else if i, ok2 := v.(int); ok2 {
 		if i < 0 {
 			return false, c.GetMessage()
 		}
-	} else if n, ok3 := value.(json.Number); ok3 {
+	} else if n, ok3 := v.(json.Number); ok3 {
 		if fv, fe := n.Float64(); fe == nil && fv < 0 {
 			return false, c.GetMessage()
 		}
@@ -515,16 +515,16 @@ type Negative struct {
 }
 
 // Check implements Constraint.Check
-func (c *Negative) Check(value interface{}, vcx *ValidatorContext) (bool, string) {
-	if f, ok := value.(float64); ok {
+func (c *Negative) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
+	if f, ok := v.(float64); ok {
 		if f >= 0 {
 			return false, c.GetMessage()
 		}
-	} else if i, ok2 := value.(int); ok2 {
+	} else if i, ok2 := v.(int); ok2 {
 		if i >= 0 {
 			return false, c.GetMessage()
 		}
-	} else if n, ok3 := value.(json.Number); ok3 {
+	} else if n, ok3 := v.(json.Number); ok3 {
 		if fv, fe := n.Float64(); fe == nil && fv >= 0 {
 			return false, c.GetMessage()
 		}
@@ -546,16 +546,16 @@ type NegativeOrZero struct {
 }
 
 // Check implements Constraint.Check
-func (c *NegativeOrZero) Check(value interface{}, vcx *ValidatorContext) (bool, string) {
-	if f, ok := value.(float64); ok {
+func (c *NegativeOrZero) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
+	if f, ok := v.(float64); ok {
 		if f > 0 {
 			return false, c.GetMessage()
 		}
-	} else if i, ok2 := value.(int); ok2 {
+	} else if i, ok2 := v.(int); ok2 {
 		if i > 0 {
 			return false, c.GetMessage()
 		}
-	} else if n, ok3 := value.(json.Number); ok3 {
+	} else if n, ok3 := v.(json.Number); ok3 {
 		if fv, fe := n.Float64(); fe == nil && fv > 0 {
 			return false, c.GetMessage()
 		}
@@ -579,16 +579,16 @@ type Minimum struct {
 }
 
 // Check implements Constraint.Check
-func (c *Minimum) Check(value interface{}, vcx *ValidatorContext) (bool, string) {
-	if f, ok := value.(float64); ok {
+func (c *Minimum) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
+	if f, ok := v.(float64); ok {
 		if f < c.Value {
 			return false, c.GetMessage()
 		}
-	} else if i, ok2 := value.(int); ok2 {
+	} else if i, ok2 := v.(int); ok2 {
 		if float64(i) < c.Value {
 			return false, c.GetMessage()
 		}
-	} else if n, ok3 := value.(json.Number); ok3 {
+	} else if n, ok3 := v.(json.Number); ok3 {
 		if fv, fe := n.Float64(); fe == nil && fv < c.Value {
 			return false, c.GetMessage()
 		}
@@ -612,16 +612,16 @@ type Maximum struct {
 }
 
 // Check implements Constraint.Check
-func (c *Maximum) Check(value interface{}, vcx *ValidatorContext) (bool, string) {
-	if f, ok := value.(float64); ok {
+func (c *Maximum) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
+	if f, ok := v.(float64); ok {
 		if f > c.Value {
 			return false, c.GetMessage()
 		}
-	} else if i, ok2 := value.(int); ok2 {
+	} else if i, ok2 := v.(int); ok2 {
 		if float64(i) > c.Value {
 			return false, c.GetMessage()
 		}
-	} else if n, ok3 := value.(json.Number); ok3 {
+	} else if n, ok3 := v.(json.Number); ok3 {
 		if fv, fe := n.Float64(); fe == nil && fv > c.Value {
 			return false, c.GetMessage()
 		}
@@ -647,20 +647,20 @@ type Range struct {
 }
 
 // Check implements Constraint.Check
-func (c *Range) Check(value interface{}, vcx *ValidatorContext) (bool, string) {
-	if f, ok := value.(float64); ok {
+func (c *Range) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
+	if f, ok := v.(float64); ok {
 		if f < c.Minimum {
 			return false, c.GetMessage()
 		} else if f > c.Maximum {
 			return false, c.GetMessage()
 		}
-	} else if i, ok2 := value.(int); ok2 {
+	} else if i, ok2 := v.(int); ok2 {
 		if float64(i) < c.Minimum {
 			return false, c.GetMessage()
 		} else if float64(i) > c.Maximum {
 			return false, c.GetMessage()
 		}
-	} else if n, ok3 := value.(json.Number); ok3 {
+	} else if n, ok3 := v.(json.Number); ok3 {
 		if fv, fe := n.Float64(); fe == nil {
 			if fv < c.Minimum {
 				return false, c.GetMessage()
@@ -691,8 +691,8 @@ type ArrayOf struct {
 }
 
 // Check implements Constraint.Check
-func (c *ArrayOf) Check(value interface{}, vcx *ValidatorContext) (bool, string) {
-	if a, ok := value.([]interface{}); ok {
+func (c *ArrayOf) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
+	if a, ok := v.([]interface{}); ok {
 		for _, elem := range a {
 			if elem == nil {
 				if !c.AllowNullElement {
@@ -728,8 +728,8 @@ type StringValidUuid struct {
 }
 
 // Check implements Constraint.Check
-func (c *StringValidUuid) Check(value interface{}, vcx *ValidatorContext) (bool, string) {
-	if str, ok := value.(string); ok {
+func (c *StringValidUuid) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
+	if str, ok := v.(string); ok {
 		if !uuidRegexp.MatchString(str) {
 			return false, c.GetMessage()
 		}
@@ -798,8 +798,8 @@ type StringValidISODatetime struct {
 }
 
 // Check implements Constraint.Check
-func (c *StringValidISODatetime) Check(value interface{}, vcx *ValidatorContext) (bool, string) {
-	if str, ok := value.(string); ok {
+func (c *StringValidISODatetime) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
+	if str, ok := v.(string); ok {
 		useRegex := iso8601FullRegex
 		useLayout := iso8601FullLayout
 		if c.NoOffset && c.NoMillis {
@@ -853,8 +853,8 @@ type StringValidISODate struct {
 }
 
 // Check implements Constraint.Check
-func (c *StringValidISODate) Check(value interface{}, vcx *ValidatorContext) (bool, string) {
-	if str, ok := value.(string); ok {
+func (c *StringValidISODate) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
+	if str, ok := v.(string); ok {
 		if !iso8601DateOnlyRegex.MatchString(str) {
 			return false, c.GetMessage()
 		}
@@ -880,12 +880,12 @@ type DatetimeFuture struct {
 }
 
 // Check implements Constraint.Check
-func (c *DatetimeFuture) Check(value interface{}, vcx *ValidatorContext) (bool, string) {
-	if str, ok := value.(string); ok {
+func (c *DatetimeFuture) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
+	if str, ok := v.(string); ok {
 		if dt, ok2 := stringToTime(str); !ok2 || !dt.After(time.Now()) {
 			return false, c.GetMessage()
 		}
-	} else if dt, ok2 := value.(time.Time); ok2 && !dt.After(time.Now()) {
+	} else if dt, ok2 := v.(time.Time); ok2 && !dt.After(time.Now()) {
 		return false, c.GetMessage()
 	}
 	return true, ""
@@ -905,12 +905,12 @@ type DatetimeFutureOrPresent struct {
 }
 
 // Check implements Constraint.Check
-func (c *DatetimeFutureOrPresent) Check(value interface{}, vcx *ValidatorContext) (bool, string) {
-	if str, ok := value.(string); ok {
+func (c *DatetimeFutureOrPresent) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
+	if str, ok := v.(string); ok {
 		if dt, ok2 := stringToTime(str); !ok2 || dt.Before(time.Now()) {
 			return false, c.GetMessage()
 		}
-	} else if dt, ok2 := value.(time.Time); ok2 && dt.Before(time.Now()) {
+	} else if dt, ok2 := v.(time.Time); ok2 && dt.Before(time.Now()) {
 		return false, c.GetMessage()
 	}
 	return true, ""
@@ -930,12 +930,12 @@ type DatetimePast struct {
 }
 
 // Check implements Constraint.Check
-func (c *DatetimePast) Check(value interface{}, vcx *ValidatorContext) (bool, string) {
-	if str, ok := value.(string); ok {
+func (c *DatetimePast) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
+	if str, ok := v.(string); ok {
 		if dt, ok2 := stringToTime(str); !ok2 || !dt.Before(time.Now()) {
 			return false, c.GetMessage()
 		}
-	} else if dt, ok2 := value.(time.Time); ok2 && !dt.Before(time.Now()) {
+	} else if dt, ok2 := v.(time.Time); ok2 && !dt.Before(time.Now()) {
 		return false, c.GetMessage()
 	}
 	return true, ""
@@ -955,12 +955,12 @@ type DatetimePastOrPresent struct {
 }
 
 // Check implements Constraint.Check
-func (c *DatetimePastOrPresent) Check(value interface{}, vcx *ValidatorContext) (bool, string) {
-	if str, ok := value.(string); ok {
+func (c *DatetimePastOrPresent) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
+	if str, ok := v.(string); ok {
 		if dt, ok2 := stringToTime(str); !ok2 || dt.After(time.Now()) {
 			return false, c.GetMessage()
 		}
-	} else if dt, ok2 := value.(time.Time); ok2 && dt.After(time.Now()) {
+	} else if dt, ok2 := v.(time.Time); ok2 && dt.After(time.Now()) {
 		return false, c.GetMessage()
 	}
 	return true, ""
@@ -981,10 +981,10 @@ type StringValidCardNumber struct {
 }
 
 // Check implements Constraint.Check
-func (c *StringValidCardNumber) Check(value interface{}, vcx *ValidatorContext) (bool, string) {
+func (c *StringValidCardNumber) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
 	const digitMinChar = '0'
 	const digitMaxChar = '9'
-	if str, ok := value.(string); ok {
+	if str, ok := v.(string); ok {
 		l := len(str)
 		if l < 14 || l > 19 {
 			return false, c.GetMessage()

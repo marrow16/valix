@@ -53,46 +53,55 @@ type Validator struct {
 // RequestValidate Performs validation on the request body of the supplied http.Request
 func (v *Validator) RequestValidate(r *http.Request) (bool, []*Violation, interface{}) {
 	vcx := newValidatorContext(r)
-	var obj interface{} = nil
-	if r.Body == nil {
-		vcx.AddViolation(NewBadRequestViolation(messageRequestBodyEmpty))
-	} else {
-		decoder := json.NewDecoder(r.Body)
-		if v.UseNumber {
-			decoder.UseNumber()
-		}
-		obj = reflect.Interface
-		if err := decoder.Decode(&obj); err != nil {
-			obj = nil
-			vcx.AddViolation(NewBadRequestViolation(messageUnableToDecode))
-		} else if obj == nil {
-			if !v.AllowNullJson {
-				vcx.AddViolation(NewBadRequestViolation(messageRequestBodyNotJsonNull))
-			}
-		} else {
-			// determine whether body is a map (object) or an array...
-			if arr, isArr := obj.([]interface{}); isArr {
-				if v.AllowArray {
-					v.validateArrayOf(arr, vcx)
-				} else {
-					vcx.AddViolation(NewEmptyViolation(messageRequestBodyNotJsonArray))
-				}
-			} else if m, isMap := obj.(map[string]interface{}); isMap {
-				if v.DisallowObject {
-					if v.AllowArray {
-						vcx.AddViolation(NewEmptyViolation(messageRequestBodyExpectedJsonArray))
-					} else {
-						vcx.AddViolation(NewEmptyViolation(messageRequestBodyNotJsonObject))
-					}
-				} else {
-					v.validate(m, vcx)
-				}
-			} else {
-				vcx.AddViolation(NewBadRequestViolation(messageRequestBodyExpectedJsonObject))
-			}
-		}
+	ok, obj := v.decodeRequestBody(r, vcx)
+	if ok {
+		v.requestBodyValidate(vcx, obj)
 	}
 	return vcx.ok, vcx.violations, obj
+}
+
+func (v *Validator) decodeRequestBody(r *http.Request, vcx *ValidatorContext) (bool, interface{}) {
+	if r.Body == nil {
+		vcx.AddViolation(NewBadRequestViolation(messageRequestBodyEmpty))
+		return false, nil
+	}
+	decoder := json.NewDecoder(r.Body)
+	if v.UseNumber {
+		decoder.UseNumber()
+	}
+	var obj interface{} = reflect.Interface
+	if err := decoder.Decode(&obj); err != nil {
+		vcx.AddViolation(NewBadRequestViolation(messageUnableToDecode))
+		return false, nil
+	}
+	return true, obj
+}
+
+func (v *Validator) requestBodyValidate(vcx *ValidatorContext, obj interface{}) {
+	if obj != nil {
+		// determine whether body is a map (object) or an array...
+		if arr, isArr := obj.([]interface{}); isArr {
+			if v.AllowArray {
+				v.validateArrayOf(arr, vcx)
+			} else {
+				vcx.AddViolation(NewEmptyViolation(messageRequestBodyNotJsonArray))
+			}
+		} else if m, isMap := obj.(map[string]interface{}); isMap {
+			if v.DisallowObject {
+				if v.AllowArray {
+					vcx.AddViolation(NewEmptyViolation(messageRequestBodyExpectedJsonArray))
+				} else {
+					vcx.AddViolation(NewEmptyViolation(messageRequestBodyNotJsonObject))
+				}
+			} else {
+				v.validate(m, vcx)
+			}
+		} else {
+			vcx.AddViolation(NewBadRequestViolation(messageRequestBodyExpectedJsonObject))
+		}
+	} else if !v.AllowNullJson {
+		vcx.AddViolation(NewBadRequestViolation(messageRequestBodyNotJsonNull))
+	}
 }
 
 // Validate performs validation on the supplied object
