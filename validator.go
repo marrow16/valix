@@ -87,12 +87,10 @@ func (v *Validator) requestBodyValidate(vcx *ValidatorContext, obj interface{}) 
 				vcx.AddViolation(NewEmptyViolation(messageRequestBodyNotJsonArray))
 			}
 		} else if m, isMap := obj.(map[string]interface{}); isMap {
-			if v.DisallowObject {
-				if v.AllowArray {
-					vcx.AddViolation(NewEmptyViolation(messageRequestBodyExpectedJsonArray))
-				} else {
-					vcx.AddViolation(NewEmptyViolation(messageRequestBodyNotJsonObject))
-				}
+			if v.DisallowObject && v.AllowArray {
+				vcx.AddViolation(NewEmptyViolation(messageRequestBodyExpectedJsonArray))
+			} else if v.DisallowObject {
+				vcx.AddViolation(NewEmptyViolation(messageRequestBodyNotJsonObject))
 			} else {
 				v.validate(m, vcx)
 			}
