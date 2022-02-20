@@ -7,6 +7,18 @@
 
 Valix - Go package for validating requests
 
+## Contents
+* [Overview](#overview)
+* [Installation](#installation)
+* [Concepts](#concepts)
+* [Examples](#examples)
+* [Constraints](#constraints)
+  * [Common Constraints](#common-constraints)
+  * [Constraint Sets](#constraint-sets)
+  * [Custom Constraints](#custom-constraints)
+  * [Constraints Registry](#constraints-registry)
+* [Validation Tags](#validation-tags) 
+
 ## Overview
 
 Validate requests in the form of `*http.Request`, `map[string]interface{}` or `[]interface{}`
@@ -36,32 +48,67 @@ At validation (of a JSON object as example) the following steps are performed:
   * If the property value is an object or array (and `PropertyValidator.ObjectValidator` is specified) - check the value using the validator (see top of this process)
 
 The validator does **_not_** stop on the first problem it finds - it finds all problems and returns them as a list (slice) of 'violations'.  Each violation has a message plus the name and path of the property that failed.
-Although custom constraints can be defined that will either stop the entire validation or cease further validation constraints on the current property)
+However, custom constraints can be defined that will either stop the entire validation or cease further validation constraints on the current property
 
 Valix comes with a rich set of common constraints (see [Common Constraints](#common-constraints))
 
 ## Examples
-Validators can be expressed effectively as, for example:
+Validators can be created from existing structs - adding `v8n` tags (in conjunction with existing `json` tags), for example:
 ```go
 package main
 
 import (
-	"github.com/marrow16/valix"
+    "github.com/marrow16/valix"
+)
+
+type AddPerson struct {
+    Name string `json:"name" v8n:"notNull,mandatory,constraints:[StringNoControlCharacters{},StringLength{Minimum: 1, Maximum: 255}]"`
+    Age int `json:"age" v8n:"type:Integer,notNull,mandatory,constraint:PositiveOrZero{}"`
+}
+var AddPersonValidator = valix.MustCompileValidatorFor(AddPerson{}, nil)
+```
+(see [Validation Tags](#validation-tags) for documentation on `v8n` tags)
+
+Or in slightly more abbreviated form (using `&` to denote constraint tokens):
+```go
+package main
+
+import (
+    "github.com/marrow16/valix"
+)
+
+type AddPerson struct {
+    Name string `json:"name" v8n:"notNull,mandatory,&StringNoControlCharacters{},&StringLength{Minimum: 1, Maximum: 255}"`
+    Age int `json:"age" v8n:"type:Integer,notNull,mandatory,&PositiveOrZero{}"`
+}
+var AddPersonValidator = valix.MustCompileValidatorFor(AddPerson{}, nil)
+```
+
+The `valix.MustCompileValidatorFor()` function panics if the validator cannot be compiled.  If you do not want a panic but would rather see the compilation error instead then use the `valix.ValidatorFor()` function instead.  
+
+
+Alternatively, Validators can be expressed effectively without a struct, for example:
+```go
+package main
+
+import (
+    "github.com/marrow16/valix"
 )
 
 var personValidator = &valix.Validator{
     IgnoreUnknownProperties: false,
     Properties: valix.Properties{
         "name": {
-            PropertyType: valix.JsonString,
+            Type:         valix.JsonString,
             NotNull:      true,
             Mandatory:    true,
             Constraints:  valix.Constraints{
+                &valix.StringNoControlCharacters{},
                 &valix.StringLength{Minimum: 1, Maximum: 255},
             },
         },
         "age": {
-            PropertyType: valix.JsonInteger,
+            Type:         valix.JsonInteger,
             NotNull:      true,
             Mandatory:    true,
             Constraints:  valix.Constraints{
@@ -215,11 +262,11 @@ var myValidator = &valix.Validator{
     IgnoreUnknownProperties: false,
     Properties: valix.Properties{
         "foo": {
-            PropertyType: valix.JsonString,
+            Type:         valix.JsonString,
             NotNull:      true,
             Mandatory:    true,
             Constraints:  valix.Constraints{
-                NewCustomConstraint(func(value interface{}, ctx *ValidatorContext, cc *CustomConstraint) (bool, string) {
+                valix.NewCustomConstraint(func(value interface{}, ctx *valix.ValidatorContext, cc *valix.CustomConstraint) (bool, string) {
                     if str, ok := value.(string); ok {
                         return !strings.Contains(str, "foo"), cc.GetMessage()
                     }
@@ -243,7 +290,7 @@ import (
 type NoFoo struct {
 }
 
-func (c *NoFoo) Check(value interface{}, vcx *ValidatorContext) (bool, string) {
+func (c *NoFoo) Check(value interface{}, vcx *valix.ValidatorContext) (bool, string) {
     if str, ok := value.(string); ok {
         return !strings.Contains(str, "foo"), c.GetMessage()
     }
@@ -254,3 +301,49 @@ func (c *NoFoo) GetMessage() string {
     return "Value must not contain \"foo\""
 }
 ```
+
+### Constraints Registry
+
+All of the Valix common constraints are loaded into a registry - the registry enables the `v8n` tags to reference these.
+
+If you want to make your own custom constraint available for use in `v8n` tags, it must also be registered.  For example:
+
+```go
+package main
+
+import (
+    "strings"
+    "github.com/marrow16/valix"
+)
+
+func init() {
+    valix.RegisterConstraint(&NoFoo{})
+}
+
+// and the constraint can now be used in `v8n` tag...
+type MyRequest struct {
+    Name string `json:"name" v8n:"&NoFoo{}"`
+}
+```
+
+## Validation Tags
+Valix can read tags from struct fields when building validators.  These are the `v8n` tags, in the format:
+```go
+type example struct {
+    Field string `v8n:"token[,token, ...]"`
+}
+```
+Where the tokens correspond to various property validation options - as listed here:
+
+| Token                              | Purpose                                                                                                                                                                                                                                                                                                                               |
+|------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `type:_type_`                      | Specifies (overrides) the type expected for the JSON property value <br/>Where `_type_` must be one of (case-insensitive): `string`, `number`, `integer`, `boolean`, `object`, `array` or `any`                                                                                                                                       |
+| `notNull`                          | Specifies the JSON value for the property cannot be null                                                                                                                                                                                                                                                                              |
+| `mandatory`                        | Specifies the JSON property must be present                                                                                                                                                                                                                                                                                           |
+| `optional`                         | Specifies the JSON property does not have to be present                                                                                                                                                                                                                                                                               |
+| `constraint:_name_{fields}`        | Adds a constraint to the property (this token can be specified multiple times within the `v8n` tag.  The `_name_` must be a Valix common constraint or a previously registered constraint.<br/>The constraint `fields` can optionally be set example:<br/>&nbsp;&nbsp;&nbsp;&nbsp;`constraint:StringLength{Minimum: 1, Maximum: 255}` |
+| `constraints:[_name{},...]`        | Adds multiple constraints to the property                                                                                                                                                                                                                                                                                             |
+| `&_constraint_name_{fields}`       | Adds a constraint to the property (shorthand way of specifying constraint without `constraint:` or `constraints[]` prefix)                                                                                                                                                                                                            |
+| `obj.ignoreUnknownProperties`      | Sets an object (or array of objects) to ignore unknown properties (ignoring unknown properties means that the validator will not fail if an unknown property is found)                                                                                                                                                                |
+| `obj.unknownProperties:true/false` | Sets whether an object (or array of objects) is to ignore or not ignore unknown properties                                                                                                                                                                                                                                            |
+| `obj.constraint:_name_{}`          | Sets a constraint on an entire object (or each object in an array of objects)                                                                                                                                                                                                                                                         |

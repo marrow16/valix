@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"strings"
 )
 
 const (
@@ -19,8 +20,9 @@ const (
 type JsonType int
 
 const (
+	JsonTypeUndefined JsonType = iota
 	// JsonAny matches any JSON value type
-	JsonAny JsonType = iota
+	JsonAny
 	// JsonString checks JSON value type is a string
 	JsonString
 	// JsonNumber checks JSON value type is a number
@@ -35,29 +37,68 @@ const (
 	JsonArray
 )
 
+const (
+	jsonTypeTokenUndefined = "undefined"
+	jsonTypeTokenString    = "string"
+	jsonTypeTokenNumber    = "number"
+	jsonTypeTokenInteger   = "integer"
+	jsonTypeTokenBoolean   = "boolean"
+	jsonTypeTokenObject    = "object"
+	jsonTypeTokenArray     = "array"
+	jsonTypeTokenAny       = "any"
+)
+
 func (jt JsonType) String() string {
-	result := "undefined"
+	result := jsonTypeTokenUndefined
 	switch jt {
 	case JsonString:
-		result = "string"
+		result = jsonTypeTokenString
 		break
 	case JsonNumber:
-		result = "number"
+		result = jsonTypeTokenNumber
 		break
 	case JsonInteger:
-		result = "integer"
+		result = jsonTypeTokenInteger
 		break
 	case JsonBoolean:
-		result = "boolean"
+		result = jsonTypeTokenBoolean
 		break
 	case JsonObject:
-		result = "object"
+		result = jsonTypeTokenObject
 		break
 	case JsonArray:
-		result = "array"
+		result = jsonTypeTokenArray
 		break
 	case JsonAny:
-		result = "any"
+		result = jsonTypeTokenAny
+		break
+	}
+	return result
+}
+
+func JsonTypeFromString(str string) JsonType {
+	result := JsonTypeUndefined
+	switch strings.ToLower(str) {
+	case jsonTypeTokenString:
+		result = JsonString
+		break
+	case jsonTypeTokenNumber:
+		result = JsonNumber
+		break
+	case jsonTypeTokenInteger:
+		result = JsonInteger
+		break
+	case jsonTypeTokenBoolean:
+		result = JsonBoolean
+		break
+	case jsonTypeTokenObject:
+		result = JsonObject
+		break
+	case jsonTypeTokenArray:
+		result = JsonArray
+		break
+	case jsonTypeTokenAny:
+		result = JsonAny
 		break
 	}
 	return result

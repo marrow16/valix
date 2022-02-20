@@ -830,7 +830,7 @@ func TestRange(t *testing.T) {
 
 func TestArrayOf(t *testing.T) {
 	validator := buildFooValidator(JsonArray,
-		&ArrayOf{Type: JsonString, AllowNullElement: false}, false)
+		&ArrayOf{Type: "string", AllowNullElement: false}, false)
 	obj := jsonObject(`{
 		"foo": ["ok", false]
 	}`)
@@ -855,7 +855,7 @@ func TestArrayOf(t *testing.T) {
 	require.True(t, ok)
 
 	validator = buildFooValidator(JsonArray,
-		&ArrayOf{Type: JsonString, AllowNullElement: true}, false)
+		&ArrayOf{Type: "string", AllowNullElement: true}, false)
 	obj = jsonObject(`{
 		"foo": [1, "ok2"]
 	}`)
