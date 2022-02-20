@@ -46,7 +46,7 @@ const (
 )
 
 var (
-	uuidRegexp = *regexp.MustCompile(uuidRegexpPattern)
+	uuidRegexp = regexp.MustCompile(uuidRegexpPattern)
 )
 
 // StringNotEmpty to check that string value is not empty (i.e. not "")
@@ -681,7 +681,7 @@ func (c *Range) GetMessage() string {
 // ArrayOf to check each element in an array value is of the correct type
 type ArrayOf struct {
 	// the type to check for each item (use Type values)
-	Type JsonType
+	Type string
 	// whether to allow null items in the array
 	AllowNullElement bool
 	// the violation message to be used if the constraint fails (see Violation.Message)
@@ -693,12 +693,13 @@ type ArrayOf struct {
 // Check implements Constraint.Check
 func (c *ArrayOf) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
 	if a, ok := v.([]interface{}); ok {
+		chkType := JsonTypeFromString(c.Type)
 		for _, elem := range a {
 			if elem == nil {
 				if !c.AllowNullElement {
 					return false, c.GetMessage()
 				}
-			} else if !checkValueType(elem, c.Type) {
+			} else if !checkValueType(elem, chkType) {
 				return false, c.GetMessage()
 			}
 		}

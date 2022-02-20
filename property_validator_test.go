@@ -313,19 +313,38 @@ func TestTypeCheckAny(t *testing.T) {
 
 func TestJsonTypeToString(t *testing.T) {
 	jt := JsonString
-	require.Equal(t, "string", jt.String())
+	require.Equal(t, jsonTypeTokenString, jt.String())
 	jt = JsonNumber
-	require.Equal(t, "number", jt.String())
+	require.Equal(t, jsonTypeTokenNumber, jt.String())
 	jt = JsonInteger
-	require.Equal(t, "integer", jt.String())
+	require.Equal(t, jsonTypeTokenInteger, jt.String())
 	jt = JsonBoolean
-	require.Equal(t, "boolean", jt.String())
+	require.Equal(t, jsonTypeTokenBoolean, jt.String())
 	jt = JsonObject
-	require.Equal(t, "object", jt.String())
+	require.Equal(t, jsonTypeTokenObject, jt.String())
 	jt = JsonArray
-	require.Equal(t, "array", jt.String())
+	require.Equal(t, jsonTypeTokenArray, jt.String())
 	jt = JsonAny
-	require.Equal(t, "any", jt.String())
+	require.Equal(t, jsonTypeTokenAny, jt.String())
 	jt = 99
-	require.Equal(t, "undefined", jt.String())
+	require.Equal(t, jsonTypeTokenUndefined, jt.String())
+}
+
+func TestJsonTypeFromString(t *testing.T) {
+	token := jsonTypeTokenString
+	require.Equal(t, JsonString, JsonTypeFromString(token))
+	token = jsonTypeTokenNumber
+	require.Equal(t, JsonNumber, JsonTypeFromString(token))
+	token = jsonTypeTokenInteger
+	require.Equal(t, JsonInteger, JsonTypeFromString(token))
+	token = jsonTypeTokenBoolean
+	require.Equal(t, JsonBoolean, JsonTypeFromString(token))
+	token = jsonTypeTokenObject
+	require.Equal(t, JsonObject, JsonTypeFromString(token))
+	token = jsonTypeTokenArray
+	require.Equal(t, JsonArray, JsonTypeFromString(token))
+	token = jsonTypeTokenAny
+	require.Equal(t, JsonAny, JsonTypeFromString(token))
+	token = "???"
+	require.Equal(t, JsonTypeUndefined, JsonTypeFromString(token))
 }

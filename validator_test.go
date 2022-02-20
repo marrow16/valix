@@ -2,6 +2,7 @@ package valix
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/stretchr/testify/require"
 	"net/http"
@@ -84,7 +85,7 @@ func TestMissingPropertyDetection(t *testing.T) {
 	ok, violations := personValidator.Validate(o)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(messageMissingProperty, "age"), violations[0].Message)
+	require.Equal(t, fmt.Sprintf(msgMissingProperty, "age"), violations[0].Message)
 	require.Equal(t, "", violations[0].Path)
 	require.Equal(t, "", violations[0].Property)
 }
@@ -98,7 +99,7 @@ func TestUnknownPropertyDetection(t *testing.T) {
 	ok, violations := personValidator.Validate(o)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(messageUnknownProperty, "unknown_property"), violations[0].Message)
+	require.Equal(t, fmt.Sprintf(msgUnknownProperty, "unknown_property"), violations[0].Message)
 	require.Equal(t, "", violations[0].Path)
 	require.Equal(t, "", violations[0].Property)
 }
@@ -135,7 +136,7 @@ func TestValidationOfArrayFailsWithNonObjectElement(t *testing.T) {
 	ok, violations := personValidator.ValidateArrayOf(a)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(messageArrayElementMustBeObject, 1), violations[0].Message)
+	require.Equal(t, fmt.Sprintf(msgArrayElementMustBeObject, 1), violations[0].Message)
 	require.Equal(t, "", violations[0].Path)
 	require.Equal(t, "", violations[0].Property)
 }
@@ -222,7 +223,7 @@ func TestRequestValidationWithJsonNullBody(t *testing.T) {
 	ok, violations, obj := personValidator.RequestValidate(req)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, messageRequestBodyNotJsonNull, violations[0].Message)
+	require.Equal(t, msgRequestBodyNotJsonNull, violations[0].Message)
 	require.True(t, violations[0].BadRequest)
 	require.Nil(t, obj)
 }
@@ -235,7 +236,7 @@ func TestRequestValidationWithNoBody(t *testing.T) {
 	ok, violations, obj := personValidator.RequestValidate(req)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, messageRequestBodyEmpty, violations[0].Message)
+	require.Equal(t, msgRequestBodyEmpty, violations[0].Message)
 	require.True(t, violations[0].BadRequest)
 	require.Nil(t, obj)
 }
@@ -250,7 +251,7 @@ func TestRequestValidationFailsWithArrayWhenArrayNotAllowed(t *testing.T) {
 	ok, violations, obj := v.RequestValidate(req)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, messageRequestBodyNotJsonArray, violations[0].Message)
+	require.Equal(t, msgRequestBodyNotJsonArray, violations[0].Message)
 	require.False(t, violations[0].BadRequest)
 	require.NotNil(t, obj)
 }
@@ -265,7 +266,7 @@ func TestRequestValidationFailsWithObjectWhenObjectNotAllowed(t *testing.T) {
 	ok, violations, obj := v.RequestValidate(req)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, messageRequestBodyExpectedJsonArray, violations[0].Message)
+	require.Equal(t, msgRequestBodyExpectedJsonArray, violations[0].Message)
 	require.False(t, violations[0].BadRequest)
 	require.NotNil(t, obj)
 }
@@ -280,7 +281,7 @@ func TestRequestValidationFailsWhenExpectingObject(t *testing.T) {
 	ok, violations, obj := v.RequestValidate(req)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, messageRequestBodyExpectedJsonObject, violations[0].Message)
+	require.Equal(t, msgRequestBodyExpectedJsonObject, violations[0].Message)
 	require.True(t, violations[0].BadRequest)
 	require.NotNil(t, obj)
 }
@@ -295,7 +296,7 @@ func TestRequestValidationFailsWhenObjectDisallowed(t *testing.T) {
 	ok, violations, obj := v.RequestValidate(req)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, messageRequestBodyNotJsonObject, violations[0].Message)
+	require.Equal(t, msgRequestBodyNotJsonObject, violations[0].Message)
 	require.False(t, violations[0].BadRequest)
 	require.NotNil(t, obj)
 }
@@ -309,7 +310,7 @@ func TestRequestValidationWithBadJson(t *testing.T) {
 	ok, violations, obj := personValidator.RequestValidate(req)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, messageUnableToDecode, violations[0].Message)
+	require.Equal(t, msgUnableToDecodeRequest, violations[0].Message)
 	require.True(t, violations[0].BadRequest)
 	require.Nil(t, obj)
 }
@@ -912,6 +913,369 @@ func TestCeaseFurtherWorks(t *testing.T) {
 	ok, violations := v.Validate(o)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
+}
+
+func TestValidateReader(t *testing.T) {
+	validator := &Validator{
+		IgnoreUnknownProperties: true,
+		DisallowObject:          false,
+		AllowArray:              true,
+	}
+
+	r := strings.NewReader(`{"foo": { "bar": "baz" }}`)
+	ok, violations, obj := validator.ValidateReader(r)
+	require.True(t, ok)
+	require.Equal(t, 0, len(violations))
+	require.NotNil(t, obj)
+
+	validator.IgnoreUnknownProperties = false
+	r = strings.NewReader(`{"foo": { "bar": "baz" }}`)
+	ok, violations, obj = validator.ValidateReader(r)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.False(t, violations[0].BadRequest)
+
+	r = strings.NewReader(`NOT JSON`)
+	ok, violations, obj = validator.ValidateReader(r)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.True(t, violations[0].BadRequest)
+}
+
+func TestValidateReaderCanReadObjectOrArray(t *testing.T) {
+	validator := &Validator{
+		IgnoreUnknownProperties: true,
+		AllowNullJson:           false,
+		DisallowObject:          false,
+		AllowArray:              false,
+	}
+
+	r := strings.NewReader(`{"foo": { "bar": "baz" }}`)
+	ok, violations, obj := validator.ValidateReader(r)
+	require.True(t, ok)
+	require.Equal(t, 0, len(violations))
+	require.NotNil(t, obj)
+	_, ok = obj.(map[string]interface{})
+	require.True(t, ok)
+
+	r = strings.NewReader(`false`)
+	ok, violations, obj = validator.ValidateReader(r)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, msgExpectedJsonObject, violations[0].Message)
+
+	r = strings.NewReader(`null`)
+	ok, violations, obj = validator.ValidateReader(r)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, msgNotJsonNull, violations[0].Message)
+
+	r = strings.NewReader(`[{"foo": "bar"}]`)
+	ok, violations, obj = validator.ValidateReader(r)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, msgNotJsonArray, violations[0].Message)
+
+	validator.AllowArray = true
+	validator.DisallowObject = false
+	r = strings.NewReader(`[{"foo": "bar"}]`)
+	ok, violations, obj = validator.ValidateReader(r)
+	require.True(t, ok)
+	require.Equal(t, 0, len(violations))
+	require.NotNil(t, obj)
+	_, ok = obj.([]interface{})
+	require.True(t, ok)
+
+	validator.AllowArray = true
+	validator.DisallowObject = true
+	r = strings.NewReader(`{"foo": { "bar": "baz" }}`)
+	ok, violations, obj = validator.ValidateReader(r)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, msgExpectedJsonArray, violations[0].Message)
+
+	validator.AllowArray = false
+	validator.DisallowObject = true
+	r = strings.NewReader(`{"foo": { "bar": "baz" }}`)
+	ok, violations, obj = validator.ValidateReader(r)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, msgNotJsonObject, violations[0].Message)
+}
+
+func TestValidateString(t *testing.T) {
+	validator := &Validator{
+		IgnoreUnknownProperties: true,
+		DisallowObject:          false,
+		AllowArray:              true,
+	}
+
+	ok, violations, obj := validator.ValidateString(`{"foo": { "bar": "baz" }}`)
+	require.True(t, ok)
+	require.Equal(t, 0, len(violations))
+	require.NotNil(t, obj)
+
+	validator.IgnoreUnknownProperties = false
+	ok, violations, obj = validator.ValidateString(`{"foo": { "bar": "baz" }}`)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+
+	require.False(t, violations[0].BadRequest)
+
+	ok, violations, obj = validator.ValidateString(`NOT JSON`)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.True(t, violations[0].BadRequest)
+}
+
+type intoTestStruct struct {
+	Foo string `json:"foo"`
+	Bar int    `json:"bar"`
+	Sub struct {
+		Foo    string `json:"foo"`
+		SubSub struct {
+			Foo string `json:"foo"`
+			Bar int    `json:"bar"`
+		} `json:"subSub"`
+	} `json:"sub"`
+}
+
+var validatorForInto = MustCompileValidatorFor(
+	intoTestStruct{},
+	&ValidatorForOptions{
+		IgnoreUnknownProperties: false,
+	})
+
+func TestValidateReaderInto(t *testing.T) {
+	r := strings.NewReader(`{
+		"foo": "blah",
+		"bar": 1,
+		"sub": {
+			"foo": "blah blah",
+			"subSub": {
+				"foo": "blah blah blah",
+				"bar": 2
+			}
+		}
+	}`)
+	myObj := &intoTestStruct{}
+	ok, violations, obj := validatorForInto.ValidateReaderInto(r, myObj)
+	require.True(t, ok)
+	require.Equal(t, 0, len(violations))
+	require.NotNil(t, obj)
+
+	// check that it got read into...
+	require.Equal(t, "blah", myObj.Foo)
+	require.Equal(t, 1, myObj.Bar)
+	require.Equal(t, "blah blah", myObj.Sub.Foo)
+	require.Equal(t, "blah blah blah", myObj.Sub.SubSub.Foo)
+	require.Equal(t, 2, myObj.Sub.SubSub.Bar)
+}
+
+func TestValidateStringInto(t *testing.T) {
+	s := `{
+		"foo": "blah",
+		"bar": 1,
+		"sub": {
+			"foo": "blah blah",
+			"subSub": {
+				"foo": "blah blah blah",
+				"bar": 2
+			}
+		}
+	}`
+	myObj := &intoTestStruct{}
+	ok, violations, obj := validatorForInto.ValidateStringInto(s, myObj)
+	require.True(t, ok)
+	require.Equal(t, 0, len(violations))
+	require.NotNil(t, obj)
+
+	// check that it got read into...
+	require.Equal(t, "blah", myObj.Foo)
+	require.Equal(t, 1, myObj.Bar)
+	require.Equal(t, "blah blah", myObj.Sub.Foo)
+	require.Equal(t, "blah blah blah", myObj.Sub.SubSub.Foo)
+	require.Equal(t, 2, myObj.Sub.SubSub.Bar)
+}
+
+func TestRequestValidateInto(t *testing.T) {
+	body := strings.NewReader(`{
+		"foo": "blah",
+		"bar": 1,
+		"sub": {
+			"foo": "blah blah",
+			"subSub": {
+				"foo": "blah blah blah",
+				"bar": 2
+			}
+		}
+	}`)
+	req, err := http.NewRequest("POST", "", body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	myObj := &intoTestStruct{}
+	ok, violations, obj := validatorForInto.RequestValidateInto(req, myObj)
+	require.True(t, ok)
+	require.Equal(t, 0, len(violations))
+	require.NotNil(t, obj)
+
+	// check that it got read into...
+	require.Equal(t, "blah", myObj.Foo)
+	require.Equal(t, 1, myObj.Bar)
+	require.Equal(t, "blah blah", myObj.Sub.Foo)
+	require.Equal(t, "blah blah blah", myObj.Sub.SubSub.Foo)
+	require.Equal(t, 2, myObj.Sub.SubSub.Bar)
+}
+
+func TestRequestValidateIntoFailsWithBadJsonBody(t *testing.T) {
+	body := strings.NewReader(`NOT JSON`)
+	req, err := http.NewRequest("POST", "", body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	myObj := &intoTestStruct{}
+	ok, violations, obj := validatorForInto.RequestValidateInto(req, myObj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, msgUnableToDecodeRequest, violations[0].Message)
+	require.Nil(t, obj)
+}
+
+func TestRequestValidateIntoFailsWithEmptyBody(t *testing.T) {
+	req, err := http.NewRequest("POST", "", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	myObj := &intoTestStruct{}
+	ok, violations, obj := validatorForInto.RequestValidateInto(req, myObj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, msgRequestBodyEmpty, violations[0].Message)
+	require.Nil(t, obj)
+}
+
+func TestRequestValidateIntoFailsWithErrorReader(t *testing.T) {
+	req, err := http.NewRequest("POST", "", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Body = &mockErrorReaderCloser{}
+	myObj := &intoTestStruct{}
+	ok, violations, obj := validatorForInto.RequestValidateInto(req, myObj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, msgErrorReading, violations[0].Message)
+	require.Nil(t, obj)
+}
+
+func TestRequestValidateIntoFailsWithValidation(t *testing.T) {
+	body := strings.NewReader(`{"xxx": "unexpected property"}`)
+	req, err := http.NewRequest("POST", "", body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	myObj := &intoTestStruct{}
+	ok, violations, obj := validatorForInto.RequestValidateInto(req, myObj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, fmt.Sprintf(msgUnknownProperty, "xxx"), violations[0].Message)
+	require.NotNil(t, obj)
+}
+
+type unknownStruct struct {
+	Foo string `json:"foo"`
+}
+
+func TestRequestValidateIntoFailsWithWhenIntoStructDifferent(t *testing.T) {
+	body := strings.NewReader(`{
+		"foo": "blah",
+		"bar": 1,
+		"sub": {
+			"foo": "blah blah",
+			"subSub": {
+				"foo": "blah blah blah",
+				"bar": 2
+			}
+		}
+	}`)
+	req, err := http.NewRequest("POST", "", body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	myObj := &unknownStruct{}
+	ok, violations, obj := validatorForInto.RequestValidateInto(req, myObj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, msgErrorUnmarshall, violations[0].Message)
+	require.NotNil(t, obj)
+}
+
+func TestValidateReaderIntoFailsWithBadJson(t *testing.T) {
+	r := strings.NewReader(`BAD JSON`)
+	myObj := &intoTestStruct{}
+	ok, violations, obj := validatorForInto.ValidateReaderInto(r, myObj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, msgUnableToDecode, violations[0].Message)
+	require.Nil(t, obj)
+}
+
+func TestValidateReaderIntoFailsValidation(t *testing.T) {
+	r := strings.NewReader(`{"xxx": "unexpected property"}`)
+	myObj := &intoTestStruct{}
+	ok, violations, obj := validatorForInto.ValidateReaderInto(r, myObj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, fmt.Sprintf(msgUnknownProperty, "xxx"), violations[0].Message)
+	require.NotNil(t, obj)
+}
+
+func TestValidateReaderIntoFailsWhenIntoStructDifferent(t *testing.T) {
+	r := strings.NewReader(`{
+		"foo": "blah",
+		"bar": 1,
+		"sub": {
+			"foo": "blah blah",
+			"subSub": {
+				"foo": "blah blah blah",
+				"bar": 2
+			}
+		}
+	}`)
+	myObj := &unknownStruct{}
+	ok, violations, obj := validatorForInto.ValidateReaderInto(r, myObj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, msgErrorUnmarshall, violations[0].Message)
+	require.NotNil(t, obj)
+}
+
+type mockErrorReader struct {
+}
+
+func (m *mockErrorReader) Read(p []byte) (int, error) {
+	return 0, errors.New("whoops")
+}
+
+type mockErrorReaderCloser struct {
+}
+
+func (m *mockErrorReaderCloser) Read(p []byte) (int, error) {
+	return 0, errors.New("whoops")
+}
+func (m *mockErrorReaderCloser) Close() error {
+	return nil
+}
+
+func TestValidateReaderIntoFailsWithErrorReader(t *testing.T) {
+	r := &mockErrorReader{}
+	myObj := &intoTestStruct{}
+	ok, violations, obj := validatorForInto.ValidateReaderInto(r, myObj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, msgErrorReading, violations[0].Message)
+	require.Nil(t, obj)
 }
 
 type myCustomConstraint struct {
