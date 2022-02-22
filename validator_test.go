@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/stretchr/testify/require"
 	"net/http"
-	"sort"
 	"strings"
 	"testing"
 )
@@ -118,7 +117,7 @@ func TestValidationOfArray(t *testing.T) {
 	ok, violations := personValidator.ValidateArrayOf(a)
 	require.False(t, ok)
 	require.Equal(t, 2, len(violations))
-	sortViolationsByPathAndProperty(violations)
+	SortViolationsByPathAndProperty(violations)
 	require.Equal(t, "[0]", violations[0].Path)
 	require.Equal(t, "name", violations[0].Property)
 	require.Equal(t, "[1]", violations[1].Path)
@@ -501,7 +500,7 @@ func TestSubPropertyAsArrayValidation(t *testing.T) {
 	require.False(t, ok)
 	require.Equal(t, 2, len(violations))
 	// because properties are iterated over a map, we can't predict the order - so let's sort them...
-	sortViolationsByPathAndProperty(violations)
+	SortViolationsByPathAndProperty(violations)
 	require.Equal(t, "person", violations[0].Path)
 	require.Equal(t, "age", violations[0].Property)
 	require.Equal(t, messagePositiveOrZero, violations[0].Message)
@@ -522,7 +521,7 @@ func TestSubPropertyAsArrayValidation(t *testing.T) {
 	ok, violations = v.Validate(o)
 	require.False(t, ok)
 	require.Equal(t, 3, len(violations))
-	sortViolationsByPathAndProperty(violations)
+	SortViolationsByPathAndProperty(violations)
 	require.Equal(t, "person[0]", violations[0].Path)
 	require.Equal(t, "age", violations[0].Property)
 	require.Equal(t, "person[1]", violations[1].Path)
@@ -1327,13 +1326,4 @@ func jsonArray(jsonStr string, flags ...bool) []interface{} {
 		panic(err)
 	}
 	return result
-}
-
-func sortViolationsByPathAndProperty(violations []*Violation) {
-	sort.Slice(violations, func(i, j int) bool {
-		if violations[i].Path == violations[j].Path {
-			return violations[i].Property < violations[j].Property
-		}
-		return violations[i].Path < violations[j].Path
-	})
 }
