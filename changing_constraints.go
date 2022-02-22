@@ -12,7 +12,7 @@ func (c baseNoMsg) GetMessage() string {
 	return ""
 }
 
-// StringTrim trims a string value
+// StringTrim constraint trims a string value
 type StringTrim struct {
 	// Cutset is the string containing codepoints to bve trimmed - or if blank, will default
 	// to removing tabs and spaces
@@ -32,7 +32,7 @@ func (c *StringTrim) Check(v interface{}, vcx *ValidatorContext) (bool, string) 
 	return true, c.GetMessage()
 }
 
-// StringNormalizeUnicode sets the unicode normalization of a string value
+// StringNormalizeUnicode constraint sets the unicode normalization of a string value
 type StringNormalizeUnicode struct {
 	// Form is the normalization form required - i.e. norm.NFC, norm.NFKC, norm.NFD or norm.NFKD
 	//

@@ -49,7 +49,7 @@ var (
 	uuidRegexp = regexp.MustCompile(uuidRegexpPattern)
 )
 
-// StringNotEmpty to check that string value is not empty (i.e. not "")
+// StringNotEmpty constraint to check that string value is not empty (i.e. not "")
 type StringNotEmpty struct {
 	// the violation message to be used if the constraint fails (see Violation.Message)
 	//
@@ -72,7 +72,7 @@ func (c *StringNotEmpty) GetMessage() string {
 	return defaultMessage(c.Message, messageNotEmptyString)
 }
 
-// StringNotBlank to check that string value is not blank (i.e. that after removing leading and
+// StringNotBlank constraint to check that string value is not blank (i.e. that after removing leading and
 // trailing whitespace the value is not an empty string)
 type StringNotBlank struct {
 	// the violation message to be used if the constraint fails (see Violation.Message)
@@ -96,7 +96,7 @@ func (c *StringNotBlank) GetMessage() string {
 	return defaultMessage(c.Message, messageNotBlankString)
 }
 
-// StringNoControlCharacters to check that a string does not contain any control characters (i.e. chars < 32)
+// StringNoControlCharacters constraint to check that a string does not contain any control characters (i.e. chars < 32)
 type StringNoControlCharacters struct {
 	// the violation message to be used if the constraint fails (see Violation.Message)
 	//
@@ -121,7 +121,7 @@ func (c *StringNoControlCharacters) GetMessage() string {
 	return defaultMessage(c.Message, messageNoControlChars)
 }
 
-// StringPattern to check that a string matches a given regexp pattern
+// StringPattern constraint to check that a string matches a given regexp pattern
 type StringPattern struct {
 	// the regexp pattern that the string value must match
 	Regexp regexp.Regexp
@@ -146,7 +146,7 @@ func (c *StringPattern) GetMessage() string {
 	return defaultMessage(c.Message, messageInvalidPattern)
 }
 
-// StringValidToken checks that a string matches one of a pre-defined list of tokens
+// StringValidToken constraint checks that a string matches one of a pre-defined list of tokens
 type StringValidToken struct {
 	// Tokens is the set of allowed tokens for the string
 	Tokens []string
@@ -204,7 +204,7 @@ var (
 	UnicodeSIP = _Sip
 )
 
-// StringCharacters to check that a string contains only allowable characters (and does not contain any disallowed characters)
+// StringCharacters constraint to check that a string contains only allowable characters (and does not contain any disallowed characters)
 type StringCharacters struct {
 	// AllowRanges the ranges of characters (runes) that are allowed - each character
 	// must be in at least one of these
@@ -248,7 +248,7 @@ func (c *StringCharacters) GetMessage() string {
 	return defaultMessage(c.Message, messageInvalidCharacters)
 }
 
-// StringMinLength to check that a string has a minimum length
+// StringMinLength constraint to check that a string has a minimum length
 type StringMinLength struct {
 	// the minimum length value
 	Value int
@@ -279,7 +279,7 @@ func (c *StringMinLength) GetMessage() string {
 	return defaultMessage(c.Message, fmt.Sprintf(messageStringMinLen, c.Value))
 }
 
-// StringMaxLength to check that a string has a maximum length
+// StringMaxLength constraint to check that a string has a maximum length
 type StringMaxLength struct {
 	// the maximum length value
 	Value int
@@ -311,7 +311,7 @@ func (c *StringMaxLength) GetMessage() string {
 		fmt.Sprintf(messageStringMaxLen, c.Value))
 }
 
-// StringLength to check that a string has a minimum and maximum length
+// StringLength constraint to check that a string has a minimum and maximum length
 type StringLength struct {
 	// the minimum length
 	Minimum int
@@ -355,7 +355,7 @@ func (c *StringLength) GetMessage() string {
 		fmt.Sprintf(messageStringMinLen, c.Minimum))
 }
 
-// StringValidUnicodeNormalization to check that a string has the correct Unicode normalization form
+// StringValidUnicodeNormalization constraint to check that a string has the correct Unicode normalization form
 type StringValidUnicodeNormalization struct {
 	// Form is the normalization form required - i.e. norm.NFC, norm.NFKC, norm.NFD or norm.NFKD
 	//
@@ -390,7 +390,7 @@ func (c *StringValidUnicodeNormalization) GetMessage() string {
 	return defaultMessage(c.Message, messageUnicodeNormalizationNFC)
 }
 
-// Length to check that a property value has minimum and maximum length
+// Length constraint to check that a property value has minimum and maximum length
 //
 // This constraint can be used for string, object and array property values - however, if
 // checking string lengths where actual Unicode length needs to be checked, it is better
@@ -444,7 +444,7 @@ func (c *Length) GetMessage() string {
 		fmt.Sprintf(messageMinLen, c.Minimum))
 }
 
-// Positive to check that a numeric value is positive (exc. zero)
+// Positive constraint to check that a numeric value is positive (exc. zero)
 type Positive struct {
 	// the violation message to be used if the constraint fails (see Violation.Message)
 	//
@@ -475,7 +475,7 @@ func (c *Positive) GetMessage() string {
 	return defaultMessage(c.Message, messagePositive)
 }
 
-// PositiveOrZero to check that a numeric value is positive or zero
+// PositiveOrZero constraint to check that a numeric value is positive or zero
 type PositiveOrZero struct {
 	// the violation message to be used if the constraint fails (see Violation.Message)
 	//
@@ -506,7 +506,7 @@ func (c *PositiveOrZero) GetMessage() string {
 	return defaultMessage(c.Message, messagePositiveOrZero)
 }
 
-// Negative to check that a numeric value is negative
+// Negative constraint to check that a numeric value is negative
 type Negative struct {
 	// the violation message to be used if the constraint fails (see Violation.Message)
 	//
@@ -537,7 +537,7 @@ func (c *Negative) GetMessage() string {
 	return defaultMessage(c.Message, messageNegative)
 }
 
-// NegativeOrZero to check that a numeric value is negative or zero
+// NegativeOrZero constraint to check that a numeric value is negative or zero
 type NegativeOrZero struct {
 	// the violation message to be used if the constraint fails (see Violation.Message)
 	//
@@ -568,7 +568,7 @@ func (c *NegativeOrZero) GetMessage() string {
 	return defaultMessage(c.Message, messageNegativeOrZero)
 }
 
-// Minimum to check that a numeric value is greater than or equal to a specified minimum
+// Minimum constraint to check that a numeric value is greater than or equal to a specified minimum
 type Minimum struct {
 	// the minimum value
 	Value float64
@@ -601,7 +601,7 @@ func (c *Minimum) GetMessage() string {
 	return defaultMessage(c.Message, fmt.Sprintf(messageGte, c.Value))
 }
 
-// Maximum to check that a numeric value is less than or equal to a specified maximum
+// Maximum constraint to check that a numeric value is less than or equal to a specified maximum
 type Maximum struct {
 	// the maximum value
 	Value float64
@@ -634,7 +634,7 @@ func (c *Maximum) GetMessage() string {
 	return defaultMessage(c.Message, fmt.Sprintf(messageLte, c.Value))
 }
 
-// Range to check that a numeric value is within a specified minimum and maximum range
+// Range constraint to check that a numeric value is within a specified minimum and maximum range
 type Range struct {
 	// the minimum value of the range (inclusive)
 	Minimum float64
@@ -678,7 +678,7 @@ func (c *Range) GetMessage() string {
 		fmt.Sprintf(messageRange, c.Minimum, c.Maximum))
 }
 
-// ArrayOf to check each element in an array value is of the correct type
+// ArrayOf constraint to check each element in an array value is of the correct type
 type ArrayOf struct {
 	// the type to check for each item (use Type values)
 	Type string
@@ -716,7 +716,7 @@ func (c *ArrayOf) GetMessage() string {
 		fmt.Sprintf(messageArrayElementType, c.Type))
 }
 
-// StringValidUuid to check that a string value is a valid UUID
+// StringValidUuid constraint to check that a string value is a valid UUID
 type StringValidUuid struct {
 	// the minimum UUID version (optional - if zero this is not checked)
 	MinVersion uint8
@@ -786,7 +786,7 @@ var (
 	iso8601DateOnlyRegex = regexp.MustCompile(iso8601DateOnlyPattern)
 )
 
-// StringValidISODatetime checks that a string value is a valid ISO8601 Date/time format
+// StringValidISODatetime constraint checks that a string value is a valid ISO8601 Date/time format
 type StringValidISODatetime struct {
 	// NoOffset specifies, if set to true, that time offsets are not permitted
 	NoOffset bool
@@ -845,7 +845,7 @@ func (c *StringValidISODatetime) GetMessage() string {
 	return defaultMessage(c.Message, messageValidISODatetime+messageDatetimeFormatFull)
 }
 
-// StringValidISODate checks that a string value is a valid ISO8601 Date format (excluding time)
+// StringValidISODate constraint checks that a string value is a valid ISO8601 Date format (excluding time)
 type StringValidISODate struct {
 	// the violation message to be used if the constraint fails (see Violation.Message)
 	//
@@ -872,7 +872,7 @@ func (c *StringValidISODate) GetMessage() string {
 	return defaultMessage(c.Message, messageValidISODate)
 }
 
-// DatetimeFuture checks that a datetime/date (represented as string or time.Time) is in the future
+// DatetimeFuture constraint checks that a datetime/date (represented as string or time.Time) is in the future
 type DatetimeFuture struct {
 	// the violation message to be used if the constraint fails (see Violation.Message)
 	//
@@ -897,7 +897,7 @@ func (c *DatetimeFuture) GetMessage() string {
 	return defaultMessage(c.Message, messageDatetimeFuture)
 }
 
-// DatetimeFutureOrPresent checks that a datetime/date (represented as string or time.Time) is in the future or present
+// DatetimeFutureOrPresent constraint checks that a datetime/date (represented as string or time.Time) is in the future or present
 type DatetimeFutureOrPresent struct {
 	// the violation message to be used if the constraint fails (see Violation.Message)
 	//
@@ -922,7 +922,7 @@ func (c *DatetimeFutureOrPresent) GetMessage() string {
 	return defaultMessage(c.Message, messageDatetimeFutureOrPresent)
 }
 
-// DatetimePast checks that a datetime/date (represented as string or time.Time) is in the past
+// DatetimePast constraint checks that a datetime/date (represented as string or time.Time) is in the past
 type DatetimePast struct {
 	// the violation message to be used if the constraint fails (see Violation.Message)
 	//
@@ -947,7 +947,7 @@ func (c *DatetimePast) GetMessage() string {
 	return defaultMessage(c.Message, messageDatetimePast)
 }
 
-// DatetimePastOrPresent checks that a datetime/date (represented as string or time.Time) is in the past or present
+// DatetimePastOrPresent constraint checks that a datetime/date (represented as string or time.Time) is in the past or present
 type DatetimePastOrPresent struct {
 	// the violation message to be used if the constraint fails (see Violation.Message)
 	//
@@ -972,7 +972,7 @@ func (c *DatetimePastOrPresent) GetMessage() string {
 	return defaultMessage(c.Message, messageDatetimePastOrPresent)
 }
 
-// StringValidCardNumber checks that a string contains a valid card number according
+// StringValidCardNumber constraint checks that a string contains a valid card number according
 // to Luhn Algorithm and checking that card number is 14 to 19 digits
 type StringValidCardNumber struct {
 	// the violation message to be used if the constraint fails (see Violation.Message)

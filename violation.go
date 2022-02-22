@@ -1,5 +1,7 @@
 package valix
 
+import "sort"
+
 // Violation contains information about an encountered validation violation
 type Violation struct {
 	// Property is the name of the property that failed validation
@@ -49,4 +51,14 @@ func NewBadRequestViolation(msg string) *Violation {
 		Message:    msg,
 		BadRequest: true,
 	}
+}
+
+// SortViolationsByPathAndProperty is a utility function for sorting violations
+func SortViolationsByPathAndProperty(violations []*Violation) {
+	sort.Slice(violations, func(i, j int) bool {
+		if violations[i].Path == violations[j].Path {
+			return violations[i].Property < violations[j].Property
+		}
+		return violations[i].Path < violations[j].Path
+	})
 }

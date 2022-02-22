@@ -12,6 +12,8 @@ Valix - Go package for validating requests
 * [Installation](#installation)
 * [Concepts](#concepts)
 * [Examples](#examples)
+  * [Creating Validators](#creating-validators)
+  * [Using Validators](#using-validators)
 * [Constraints](#constraints)
   * [Common Constraints](#common-constraints)
   * [Constraint Sets](#constraint-sets)
@@ -53,6 +55,9 @@ However, custom constraints can be defined that will either stop the entire vali
 Valix comes with a rich set of common constraints (see [Common Constraints](#common-constraints))
 
 ## Examples
+
+### Creating Validators
+
 Validators can be created from existing structs - adding `v8n` tags (in conjunction with existing `json` tags), for example:
 ```go
 package main
@@ -61,11 +66,11 @@ import (
     "github.com/marrow16/valix"
 )
 
-type AddPerson struct {
+type AddPersonRequest struct {
     Name string `json:"name" v8n:"notNull,mandatory,constraints:[StringNoControlCharacters{},StringLength{Minimum: 1, Maximum: 255}]"`
     Age int `json:"age" v8n:"type:Integer,notNull,mandatory,constraint:PositiveOrZero{}"`
 }
-var AddPersonValidator = valix.MustCompileValidatorFor(AddPerson{}, nil)
+var AddPersonRequestValidator = valix.MustCompileValidatorFor(AddPersonRequest{}, nil)
 ```
 (see [Validation Tags](#validation-tags) for documentation on `v8n` tags)
 
@@ -77,11 +82,11 @@ import (
     "github.com/marrow16/valix"
 )
 
-type AddPerson struct {
+type AddPersonRequest struct {
     Name string `json:"name" v8n:"notNull,mandatory,&StringNoControlCharacters{},&StringLength{Minimum: 1, Maximum: 255}"`
     Age int `json:"age" v8n:"type:Integer,notNull,mandatory,&PositiveOrZero{}"`
 }
-var AddPersonValidator = valix.MustCompileValidatorFor(AddPerson{}, nil)
+var AddPersonRequestValidator = valix.MustCompileValidatorFor(AddPersonRequest{}, nil)
 ```
 
 The `valix.MustCompileValidatorFor()` function panics if the validator cannot be compiled.  If you do not want a panic but would rather see the compilation error instead then use the `valix.ValidatorFor()` function instead.  
@@ -95,7 +100,7 @@ import (
     "github.com/marrow16/valix"
 )
 
-var personValidator = &valix.Validator{
+var CreatePersonRequestValidator = &valix.Validator{
     IgnoreUnknownProperties: false,
     Properties: valix.Properties{
         "name": {
@@ -118,35 +123,219 @@ var personValidator = &valix.Validator{
     },
 }
 ```
-and then, given a `*http.Request` containing a body of:
-```json
-{
-  "name": "",
-  "age": -1
-}
-```
-which is invalid and can easily be validated by, for example:
+
+### Using Validators
+
+Once a validator has been created (using previous examples in [Creating Validators](#creating-validators)), they can be used in several ways:
+
+#### Validating a request into a struct
+
+A request `*http.Request` can be validated into a struct: 
 ```go
 package main
 
-import "net/http"
+import (
+    "encoding/json"
+    "net/http"
 
-func AddPerson(writer http.ResponseWriter, request *http.Request) error {
-    ok, violations, obj := personValidator.RequestValidate(request)
+    "github.com/marrow16/valix"
+)
+
+func AddPersonHandler(w http.ResponseWriter, r *http.Request) {
+    addPersonReq := &AddPersonRequest{}
+    ok, violations, _ := CreatePersonRequestValidator.RequestValidateInto(r, addPersonReq)
     if !ok {
-        // write an error response with full info - using violations
-        // information 
+        // write an error response with full info - using violations information
+        valix.SortViolationsByPathAndProperty(violations)
+        errResponse := map[string]interface{}{
+            "$error": "Request invalid",
+            "$details": violations,
+        }
+        w.WriteHeader(http.StatusUnprocessableEntity)
+        w.Header().Set("Content-Type", "application/json")
+        _ = json.NewEncoder(w).Encode(errResponse)
+        return
     }
-    // the 'obj' will now be a validated map[string]interface{} 
-    return nil
+    // the addPersonReq will now be a validated struct
+    w.Header().Set("Content-Type", "application/json")
+    _ = json.NewEncoder(w).Encode(addPersonReq)
 }
 ```
-The above violations would be:
 
-| Index | .Property | .Path | .Message                                               |
-|------:|-----------|-------|--------------------------------------------------------|
-|     0 | `"name"`  | `""`  | `"Value length must be between 1 and 255 (inclusive)"` |
-|     1 | `"age"`   | `""`  | `"Value must be positive or zero"`                     |
+#### Validating a string or reader into a struct
+
+A string, representing JSON, can be validated into a struct:
+```go
+package main
+
+import (
+    "testing"
+
+    "github.com/marrow16/valix"
+    "github.com/stretchr/testify/require"
+)
+
+func TestValidateStringIntoStruct(t *testing.T) {
+    str := `{
+        "name": "",
+        "age": -1
+    }`
+    req := &AddPersonRequest{}
+    ok, violations, _ := AddPersonRequestValidator.ValidateStringInto(str, req)
+    
+    require.False(t, ok)
+    require.Equal(t, 2, len(violations))
+    valix.SortViolationsByPathAndProperty(violations)
+    require.Equal(t, "Value must be positive or zero", violations[0].Message)
+    require.Equal(t, "age", violations[0].Property)
+    require.Equal(t, "", violations[0].Path)
+    require.Equal(t, "String value length must be between 1 and 255 (inclusive)", violations[1].Message)
+    require.Equal(t, "name", violations[1].Property)
+    require.Equal(t, "", violations[1].Path)
+    
+    str = `{
+        "name": "Bilbo Baggins",
+        "age": 25
+    }`
+    ok, violations, _ = AddPersonRequestValidator.ValidateStringInto(str, req)
+    
+    require.True(t, ok)
+    require.Equal(t, 0, len(violations))
+    require.Equal(t, "Bilbo Baggins", req.Name)
+    require.Equal(t, 25, req.Age)
+}
+```
+Also, a reader `io.Reader` can be validated into a struct using the `.ValidateReaderIntoStruct()` method of the validator:
+```go
+package main
+
+import (
+    "strings"
+    "testing"
+
+    "github.com/marrow16/valix"
+    "github.com/stretchr/testify/require"
+)
+
+func TestValidateReaderIntoStruct(t *testing.T) {
+	reader := strings.NewReader(`{
+		"name": "",
+		"age": -1
+	}`)
+	req := &AddPersonRequest{}
+
+	ok, violations, _ := AddPersonRequestValidator.ValidateReaderInto(reader, req)
+
+	require.False(t, ok)
+	require.Equal(t, 2, len(violations))
+	valix.SortViolationsByPathAndProperty(violations)
+	require.Equal(t, "Value must be positive or zero", violations[0].Message)
+	require.Equal(t, "age", violations[0].Property)
+	require.Equal(t, "", violations[0].Path)
+	require.Equal(t, "String value length must be between 1 and 255 (inclusive)", violations[1].Message)
+	require.Equal(t, "name", violations[1].Property)
+	require.Equal(t, "", violations[1].Path)
+
+	reader = strings.NewReader(`{
+		"name": "Bilbo Baggins",
+		"age": 25
+	}`)
+	ok, violations, _ = AddPersonRequestValidator.ValidateReaderInto(reader, req)
+
+	require.True(t, ok)
+	require.Equal(t, 0, len(violations))
+	require.Equal(t, "Bilbo Baggins", req.Name)
+	require.Equal(t, 25, req.Age)
+}
+```
+
+#### Validating a map
+Validators can also validate a `map[string]interface{}` representation of a JSON object:
+```go
+package main
+
+import (
+    "testing"
+
+    "github.com/marrow16/valix"
+    "github.com/stretchr/testify/require"
+)
+
+func TestValidateMap(t *testing.T) {
+    req := map[string]interface{}{
+        "name": "",
+        "age": -1,
+    }
+  
+    ok, violations := AddPersonRequestValidator.Validate(req)
+    require.False(t, ok)
+    require.Equal(t, 2, len(violations))
+    valix.SortViolationsByPathAndProperty(violations)
+    require.Equal(t, "Value must be positive or zero", violations[0].Message)
+    require.Equal(t, "age", violations[0].Property)
+    require.Equal(t, "", violations[0].Path)
+    require.Equal(t, "String value length must be between 1 and 255 (inclusive)", violations[1].Message)
+    require.Equal(t, "name", violations[1].Property)
+    require.Equal(t, "", violations[1].Path)
+  
+    req = map[string]interface{}{
+        "name": "Bilbo Baggins",
+        "age": 25,
+    }
+    ok, _ = AddPersonRequestValidator.Validate(req)
+    require.True(t, ok)
+}
+```
+
+#### Validating a slice
+Validators can also validate a slice `[]interface{}` representation of a JSON object, where each object element in the slice is validated:
+```go
+package main
+
+import (
+    "testing"
+
+    "github.com/marrow16/valix"
+    "github.com/stretchr/testify/require"
+)
+
+func TestValidateSlice(t *testing.T) {
+    req := []interface{}{
+        map[string]interface{}{
+            "name": "",
+            "age":  -1,
+        },
+        map[string]interface{}{
+            "name": "Bilbo Baggins",
+            "age":  25,
+        },
+    }
+  
+    ok, violations := AddPersonRequestValidator.ValidateArrayOf(req)
+    require.False(t, ok)
+    require.Equal(t, 2, len(violations))
+    valix.SortViolationsByPathAndProperty(violations)
+    require.Equal(t, "Value must be positive or zero", violations[0].Message)
+    require.Equal(t, "age", violations[0].Property)
+    require.Equal(t, "[0]", violations[0].Path)
+    require.Equal(t, "String value length must be between 1 and 255 (inclusive)", violations[1].Message)
+    require.Equal(t, "name", violations[1].Property)
+    require.Equal(t, "[0]", violations[1].Path)
+  
+    req = []interface{}{
+        map[string]interface{}{
+            "name": "Frodo Baggins",
+            "age":  20,
+        },
+        map[string]interface{}{
+            "name": "Bilbo Baggins",
+            "age":  25,
+        },
+    }
+    ok, _ = AddPersonRequestValidator.ValidateArrayOf(req)
+    require.True(t, ok)
+}
+```
 
 ## Constraints
 
@@ -213,8 +402,8 @@ The following is an example of a constraint set which imposes a complex constrai
 package main
 
 import (
-    "github.com/marrow16/valix"
     "unicode"
+    "github.com/marrow16/valix"
 )
 
 var MySet = &valix.ConstraintSet{
