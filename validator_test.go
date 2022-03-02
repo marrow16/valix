@@ -361,6 +361,34 @@ func TestValidatorStopsOnArrayElement(t *testing.T) {
 	require.Equal(t, testMsg, violations[0].Message)
 }
 
+func TestValidatorStopsOnFirst(t *testing.T) {
+	v := Validator{
+		StopOnFirst: true,
+		Properties: Properties{
+			"foo": {
+				Type:      JsonString,
+				Mandatory: true,
+				NotNull:   true,
+			},
+			"bar": {
+				Type:      JsonNumber,
+				Mandatory: true,
+				NotNull:   true,
+			},
+		},
+	}
+	o := jsonObject(`{"foo": null, "unknown": true}`)
+
+	ok, violations := v.Validate(o)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+
+	v.StopOnFirst = false
+	ok, violations = v.Validate(o)
+	require.False(t, ok)
+	require.Equal(t, 3, len(violations))
+}
+
 func TestPropertyValueObjectValidatorFailsForObjectOrArray(t *testing.T) {
 	v := Validator{
 		Properties: Properties{
@@ -1248,6 +1276,62 @@ func TestValidateReaderIntoFailsWhenIntoStructDifferent(t *testing.T) {
 	require.Equal(t, 1, len(violations))
 	require.Equal(t, msgErrorUnmarshall, violations[0].Message)
 	require.NotNil(t, obj)
+}
+
+func TestValidatorOrderedPropertyChecking(t *testing.T) {
+	v := &Validator{
+		OrderedPropertyChecks: true,
+		Properties: Properties{
+			"aaa": {
+				Type:      JsonString,
+				NotNull:   true,
+				Mandatory: true,
+			},
+			"bbb": {
+				Type:      JsonString,
+				NotNull:   true,
+				Mandatory: true,
+			},
+			"ccc": {
+				Type:      JsonString,
+				NotNull:   true,
+				Mandatory: true,
+			},
+		},
+	}
+	obj := jsonObject(`{"aaa": 1, "ccc": false, "bbb": null}`)
+
+	ok, violations := v.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 3, len(violations))
+	require.Equal(t, "aaa", violations[0].Property)
+	require.Equal(t, "bbb", violations[1].Property)
+	require.Equal(t, "ccc", violations[2].Property)
+
+	// now change the ordering...
+	v.Properties["ccc"].Order = 0
+	v.Properties["bbb"].Order = 1
+	v.Properties["aaa"].Order = 2
+	ok, violations = v.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 3, len(violations))
+	require.Equal(t, "ccc", violations[0].Property)
+	require.Equal(t, "bbb", violations[1].Property)
+	require.Equal(t, "aaa", violations[2].Property)
+
+	// and check stop on first works with ordering...
+	v.StopOnFirst = true
+	ok, violations = v.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, "ccc", violations[0].Property)
+
+	// and validate with no properties (for coverage!)...
+	v.StopOnFirst = false
+	obj = jsonObject(`{}`)
+	ok, violations = v.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 3, len(violations))
 }
 
 type mockErrorReader struct {

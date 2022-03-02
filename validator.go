@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"reflect"
+	"sort"
 	"strings"
 )
 
@@ -59,8 +60,16 @@ type Validator struct {
 	DisallowObject bool
 	// AllowNullJson forces RequestValidate to accept a request body that is null JSON (i.e. a body containing just `null`)
 	AllowNullJson bool
+	// StopOnFirst if set, instructs the validator to stop at the first violation found
+	StopOnFirst bool
 	// UseNumber forces RequestValidate method to use json.Number when decoding request body
 	UseNumber bool
+	// OrderedPropertyChecks determines whether properties should be checked in order - when set to true, properties
+	// are sorted by PropertyValidator.Order and property name
+	//
+	// When this is set to false (default) properties are checked in the order in which they appear in the properties map -
+	// which is unpredictable
+	OrderedPropertyChecks bool
 }
 
 // RequestValidate Performs validation on the request body of the supplied http.Request
@@ -74,12 +83,12 @@ type Validator struct {
 // or as represented by (if the body was a JSON array)
 //   []interface{}
 func (v *Validator) RequestValidate(r *http.Request) (bool, []*Violation, interface{}) {
-	tmpVcx := newValidatorContext(nil)
+	tmpVcx := newValidatorContext(nil, v.StopOnFirst)
 	ok, obj := v.decodeRequestBody(r.Body, tmpVcx)
 	if !ok {
 		return false, tmpVcx.violations, nil
 	}
-	vcx := newValidatorContext(obj)
+	vcx := newValidatorContext(obj, v.StopOnFirst)
 	v.requestBodyValidate(vcx, obj)
 	return vcx.ok, vcx.violations, obj
 }
@@ -136,7 +145,7 @@ func (v *Validator) requestBodyValidate(vcx *ValidatorContext, obj interface{}) 
 // Where the JSON object is represented as an unmarshalled
 //   map[string]interface{}
 func (v *Validator) Validate(obj map[string]interface{}) (bool, []*Violation) {
-	vcx := newValidatorContext(obj)
+	vcx := newValidatorContext(obj, v.StopOnFirst)
 	v.validate(obj, vcx)
 	return vcx.ok, vcx.violations
 }
@@ -148,7 +157,7 @@ func (v *Validator) Validate(obj map[string]interface{}) (bool, []*Violation) {
 // and each item of the slice is expected to be a JSON object represented as an unmarshalled
 //   map[string]interface{}
 func (v *Validator) ValidateArrayOf(arr []interface{}) (bool, []*Violation) {
-	vcx := newValidatorContext(arr)
+	vcx := newValidatorContext(arr, v.StopOnFirst)
 	v.validateArrayOf(arr, vcx)
 	return vcx.ok, vcx.violations
 }
@@ -158,11 +167,11 @@ func (v *Validator) ValidateReader(r io.Reader) (bool, []*Violation, interface{}
 	decoder := v.createDecoder(r)
 	var obj interface{} = reflect.Interface
 	if err := decoder.Decode(&obj); err != nil {
-		vcx := newValidatorContext(nil)
+		vcx := newValidatorContext(nil, v.StopOnFirst)
 		vcx.AddViolation(NewBadRequestViolation(msgUnableToDecode))
 		return vcx.ok, vcx.violations, nil
 	}
-	vcx := newValidatorContext(obj)
+	vcx := newValidatorContext(obj, v.StopOnFirst)
 	v.validateObjectOrArray(vcx, obj)
 	return vcx.ok, vcx.violations, obj
 }
@@ -198,7 +207,7 @@ func (v *Validator) ValidateReaderInto(r io.Reader, value interface{}) (bool, []
 	// we'll need to read the reader twice - first into our representation (for validation) and then into the value
 	buffer, err := ioutil.ReadAll(r)
 	if err != nil {
-		errVcx := newValidatorContext(nil)
+		errVcx := newValidatorContext(nil, false)
 		errVcx.AddViolation(NewBadRequestViolation(msgErrorReading))
 		return false, errVcx.violations, nil
 	}
@@ -206,12 +215,12 @@ func (v *Validator) ValidateReaderInto(r io.Reader, value interface{}) (bool, []
 	decoder := v.createDecoder(initialReader)
 	var obj interface{} = reflect.Interface
 	if dErr := decoder.Decode(&obj); dErr != nil {
-		errVcx := newValidatorContext(nil)
+		errVcx := newValidatorContext(nil, false)
 		errVcx.AddViolation(NewBadRequestViolation(msgUnableToDecode))
 		return false, errVcx.violations, nil
 	}
-	vcx := newValidatorContext(obj)
-	v.requestBodyValidate(vcx, obj)
+	vcx := newValidatorContext(obj, v.StopOnFirst)
+	v.validateObjectOrArray(vcx, obj)
 	if !vcx.ok {
 		return false, vcx.violations, obj
 	}
@@ -243,24 +252,24 @@ func (v *Validator) ValidateStringInto(s string, value interface{}) (bool, []*Vi
 // and, if validation successful, attempts to unmarshall the JSON into the supplied value
 func (v *Validator) RequestValidateInto(req *http.Request, value interface{}) (bool, []*Violation, interface{}) {
 	if req.Body == nil {
-		errVcx := newValidatorContext(nil)
+		errVcx := newValidatorContext(nil, false)
 		errVcx.AddViolation(NewBadRequestViolation(msgRequestBodyEmpty))
 		return false, errVcx.violations, nil
 	}
 	// we'll need to read the reader twice - first into our representation (for validation) and then into the value
 	buffer, err := ioutil.ReadAll(req.Body)
 	if err != nil {
-		errVcx := newValidatorContext(nil)
+		errVcx := newValidatorContext(nil, false)
 		errVcx.AddViolation(NewBadRequestViolation(msgErrorReading))
 		return false, errVcx.violations, nil
 	}
 	initialReader := bytes.NewReader(buffer)
-	tmpVcx := newValidatorContext(nil)
+	tmpVcx := newValidatorContext(nil, v.StopOnFirst)
 	ok, obj := v.decodeRequestBody(initialReader, tmpVcx)
 	if !ok {
 		return false, tmpVcx.violations, nil
 	}
-	vcx := newValidatorContext(obj)
+	vcx := newValidatorContext(obj, v.StopOnFirst)
 	v.requestBodyValidate(vcx, obj)
 	if !vcx.ok {
 		return false, vcx.violations, obj
@@ -290,6 +299,9 @@ func (v *Validator) validate(obj map[string]interface{}, vcx *ValidatorContext) 
 		}
 	}
 	v.checkUnknownProperties(obj, vcx)
+	if !vcx.continueAll {
+		return
+	}
 	v.checkProperties(obj, vcx)
 }
 
@@ -310,20 +322,59 @@ func (v *Validator) validateArrayOf(arr []interface{}, vcx *ValidatorContext) {
 }
 
 func (v *Validator) checkProperties(obj map[string]interface{}, vcx *ValidatorContext) {
-	for propertyName, pv := range v.Properties {
-		if actualValue, pOk := obj[propertyName]; !pOk {
-			if pv.Mandatory {
-				vcx.AddViolationForCurrent(fmt.Sprintf(msgMissingProperty, propertyName))
+	if v.OrderedPropertyChecks {
+		sorted := v.sortedProperties()
+		for _, p := range sorted {
+			if actualValue, pOk := obj[p.name]; !pOk {
+				if p.pv.Mandatory {
+					vcx.AddViolationForCurrent(fmt.Sprintf(msgMissingProperty, p.name))
+				}
+			} else {
+				vcx.pushPathProperty(p.name, actualValue)
+				p.pv.validate(actualValue, vcx)
+				vcx.popPath()
 			}
-		} else {
-			vcx.pushPathProperty(propertyName, actualValue)
-			pv.validate(actualValue, vcx)
-			vcx.popPath()
+			if !vcx.continueAll {
+				return
+			}
 		}
-		if !vcx.continueAll {
-			return
+	} else {
+		for propertyName, pv := range v.Properties {
+			if actualValue, pOk := obj[propertyName]; !pOk {
+				if pv.Mandatory {
+					vcx.AddViolationForCurrent(fmt.Sprintf(msgMissingProperty, propertyName))
+				}
+			} else {
+				vcx.pushPathProperty(propertyName, actualValue)
+				pv.validate(actualValue, vcx)
+				vcx.popPath()
+			}
+			if !vcx.continueAll {
+				return
+			}
 		}
 	}
+}
+
+type orderedProperty struct {
+	name string
+	pv   PropertyValidator
+}
+
+func (v *Validator) sortedProperties() []orderedProperty {
+	result := make([]orderedProperty, len(v.Properties))
+	i := 0
+	for k, pv := range v.Properties {
+		result[i] = orderedProperty{name: k, pv: *pv}
+		i++
+	}
+	sort.Slice(result, func(i, j int) bool {
+		if result[i].pv.Order == result[j].pv.Order {
+			return result[i].name < result[j].name
+		}
+		return result[i].pv.Order < result[j].pv.Order
+	})
+	return result
 }
 
 func (v *Validator) checkUnknownProperties(obj map[string]interface{}, vcx *ValidatorContext) {

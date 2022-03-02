@@ -26,8 +26,6 @@ func TestParseCommasWithBadTags(t *testing.T) {
 
 func TestParseV8nTagSimple(t *testing.T) {
 	tagStr := "type:string,notNull,mandatory,constraints:[StringNotEmpty{Message: \"''''Foo\"}]"
-	//         01234567890123456789012345678901234567890123456789012345678901234567890123
-	//                   1         2         3         4         5         6         7
 	list, err := parseCommas(tagStr)
 	require.Nil(t, err)
 	require.Equal(t, 4, len(list))
@@ -161,6 +159,15 @@ func TestPropertyValidator_AddTagItemConstraint(t *testing.T) {
 	require.NotNil(t, err)
 	require.Equal(t, fmt.Sprintf(msgUnknownConstraint, "UNKNOWN"), err.Error())
 	require.Equal(t, 2, len(pv.Constraints))
+
+	err = pv.addTagItem("&StringValidToken{Tokens:['XXX',\"YYY\",'ZZZ']}")
+	require.Nil(t, err)
+	require.Equal(t, 3, len(pv.Constraints))
+	c := pv.Constraints[2].(*StringValidToken)
+	require.Equal(t, 3, len(c.Tokens))
+	require.Equal(t, "XXX", c.Tokens[0])
+	require.Equal(t, "YYY", c.Tokens[1])
+	require.Equal(t, "ZZZ", c.Tokens[2])
 }
 
 func TestPropertyValidator_AddObjectTagItem_IgnoreUnknownProperties(t *testing.T) {

@@ -1300,6 +1300,28 @@ func TestStringValidCardNumberConstraint(t *testing.T) {
 	}
 }
 
+func TestStringValidEmail(t *testing.T) {
+	validator := buildFooValidator(JsonAny,
+		&StringValidEmail{}, false)
+	obj := map[string]interface{}{
+		"foo": "",
+	}
+	testEmailAddrs := map[string]bool{
+		"":                          false,
+		"123":                       false,
+		"me@example.com":            true,
+		"Bilbo <bilbo@example.com>": true,
+		"me@coffee":                 true,
+	}
+	for ea, expect := range testEmailAddrs {
+		t.Run(fmt.Sprintf("Email:\"%s\"", ea), func(t *testing.T) {
+			obj["foo"] = ea
+			ok, _ := validator.Validate(obj)
+			require.Equal(t, expect, ok)
+		})
+	}
+}
+
 func buildFooValidator(propertyType JsonType, constraint Constraint, notNull bool) *Validator {
 	return &Validator{
 		Properties: Properties{

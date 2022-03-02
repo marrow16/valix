@@ -6,7 +6,7 @@ import (
 )
 
 func TestCreateContext(t *testing.T) {
-	vcx := newValidatorContext(nil)
+	vcx := newValidatorContext(nil, false)
 	require.Nil(t, vcx.CurrentProperty())
 	require.Nil(t, vcx.CurrentPropertyName())
 	require.Nil(t, vcx.CurrentArrayIndex())
@@ -14,7 +14,7 @@ func TestCreateContext(t *testing.T) {
 }
 
 func TestContextPathing(t *testing.T) {
-	vcx := newValidatorContext(nil)
+	vcx := newValidatorContext(nil, false)
 	require.Nil(t, vcx.CurrentProperty())
 	require.Equal(t, "", vcx.CurrentPath())
 
@@ -50,7 +50,7 @@ func TestContextPathing(t *testing.T) {
 }
 
 func TestContextIndexPathing(t *testing.T) {
-	vcx := newValidatorContext(nil)
+	vcx := newValidatorContext(nil, false)
 	require.Nil(t, vcx.CurrentProperty())
 	require.Nil(t, vcx.CurrentPropertyName())
 	require.Nil(t, vcx.CurrentArrayIndex())
@@ -93,7 +93,7 @@ func TestContextIndexPathing(t *testing.T) {
 }
 
 func TestContextIndexPathingFromRoot(t *testing.T) {
-	vcx := newValidatorContext(nil)
+	vcx := newValidatorContext(nil, false)
 	require.Nil(t, vcx.CurrentProperty())
 	require.Nil(t, vcx.CurrentPropertyName())
 	require.Nil(t, vcx.CurrentArrayIndex())
@@ -117,7 +117,7 @@ func TestContextIndexPathingFromRoot(t *testing.T) {
 	require.Nil(t, vcx.CurrentArrayIndex())
 	require.Equal(t, "[0].foo", vcx.CurrentPath())
 
-	vcx = newValidatorContext(nil)
+	vcx = newValidatorContext(nil, false)
 	require.Nil(t, vcx.CurrentProperty())
 	require.Nil(t, vcx.CurrentPropertyName())
 	require.Nil(t, vcx.CurrentArrayIndex())
@@ -131,7 +131,7 @@ func TestContextIndexPathingFromRoot(t *testing.T) {
 }
 
 func TestPathPopNeverFails(t *testing.T) {
-	vcx := newValidatorContext(nil)
+	vcx := newValidatorContext(nil, false)
 
 	// push 4...
 	vcx.pushPathProperty("foo1", nil)
@@ -177,7 +177,7 @@ func TestPathPopNeverFails(t *testing.T) {
 }
 
 func TestContext_CurrentDepth(t *testing.T) {
-	vcx := newValidatorContext(nil)
+	vcx := newValidatorContext(nil, false)
 	require.Equal(t, 0, vcx.CurrentDepth())
 
 	vcx.pushPathProperty("foo", nil)
@@ -198,7 +198,7 @@ func TestContext_CurrentDepth(t *testing.T) {
 }
 
 func TestContext_AncestorPath(t *testing.T) {
-	vcx := newValidatorContext(nil)
+	vcx := newValidatorContext(nil, false)
 	ap, apok := vcx.AncestorPath(0)
 	require.False(t, apok)
 	require.Nil(t, ap)
@@ -229,7 +229,7 @@ func TestContext_AncestorPath(t *testing.T) {
 }
 
 func TestContext_AncestorProperty(t *testing.T) {
-	vcx := newValidatorContext(nil)
+	vcx := newValidatorContext(nil, false)
 	ap, apok := vcx.AncestorProperty(0)
 	require.False(t, apok)
 	require.Nil(t, ap)
@@ -276,7 +276,7 @@ func TestContext_AncestorProperty(t *testing.T) {
 }
 
 func TestContext_AncestorPropertyName(t *testing.T) {
-	vcx := newValidatorContext(nil)
+	vcx := newValidatorContext(nil, false)
 	vcx.pushPathProperty("foo", nil)
 	vcx.pushPathProperty("bar", nil)
 	vcx.pushPathProperty("baz", nil)
@@ -304,7 +304,7 @@ func TestContext_AncestorPropertyName(t *testing.T) {
 }
 
 func TestContext_AncestorArrayIndex(t *testing.T) {
-	vcx := newValidatorContext(nil)
+	vcx := newValidatorContext(nil, false)
 	vcx.pushPathIndex(0, nil)
 	vcx.pushPathIndex(1, nil)
 	vcx.pushPathIndex(2, nil)

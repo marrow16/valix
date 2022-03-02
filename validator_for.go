@@ -12,10 +12,32 @@ const (
 )
 
 type ValidatorForOptions struct {
+	// IgnoreUnknownProperties is whether to ignore unknown properties (default false)
+	//
+	// Set this to `true` if you want to allow unknown properties
 	IgnoreUnknownProperties bool
-	Constraints             Constraints
-	AllowNullJson           bool
-	UseNumber               bool
+	// Constraints is an optional slice of Constraint items to be checked on the object/array
+	//
+	// * These are checked in the order specified and prior to property validator & unknown property checks
+	Constraints Constraints
+	// AllowNullJson forces validator to accept a request body that is null JSON (i.e. a body containing just `null`)
+	AllowNullJson bool
+	// AllowArray denotes, when true (default is false), that this validator will allow a JSON array - where each
+	// item in the array can be validated as an object
+	AllowArray bool
+	// DisallowObject denotes, when set to true, that this validator will disallow JSON objects - i.e. that it
+	// expects JSON arrays (in which case the AllowArray should also be set to true)
+	DisallowObject bool
+	// StopOnFirst if set, instructs the validator to stop at the first violation found
+	StopOnFirst bool
+	// UseNumber forces RequestValidate method to use json.Number when decoding request body
+	UseNumber bool
+	// OrderedPropertyChecks determines whether properties should be checked in order - when set to true, properties
+	// are sorted by PropertyValidator.Order and property name
+	//
+	// When this is set to false (default) properties are checked in the order in which they appear in the properties map -
+	// which is unpredictable
+	OrderedPropertyChecks bool
 }
 
 const (
@@ -67,12 +89,17 @@ func emptyValidatorFromOptions(options *ValidatorForOptions) *Validator {
 		DisallowObject:          false,
 		AllowNullJson:           false,
 		UseNumber:               false,
+		StopOnFirst:             false,
 	}
 	if options != nil {
 		result.IgnoreUnknownProperties = options.IgnoreUnknownProperties
 		result.Constraints = options.Constraints
 		result.AllowNullJson = options.AllowNullJson
 		result.UseNumber = options.UseNumber
+		result.AllowArray = options.AllowArray
+		result.DisallowObject = options.DisallowObject
+		result.StopOnFirst = options.StopOnFirst
+		result.OrderedPropertyChecks = options.OrderedPropertyChecks
 	}
 	return result
 }
