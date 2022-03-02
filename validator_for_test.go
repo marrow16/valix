@@ -280,6 +280,36 @@ func TestValidatorForWithV8nTag(t *testing.T) {
 	require.Equal(t, 3, len(pv.Constraints))
 }
 
+func TestValidatorForWithOrderingTags(t *testing.T) {
+	myStruct := struct {
+		Foo struct {
+			Aaa string `json:"aaa" v8n:"order:3"`
+			Bbb string `json:"bbb" v8n:"order:2"`
+			Ccc string `json:"ccc" v8n:"order:1"`
+		} `json:"foo" v8n:"obj.ordered"`
+	}{}
+	v, err := ValidatorFor(myStruct, nil)
+	require.Nil(t, err)
+	require.NotNil(t, v)
+
+	require.True(t, v.Properties["foo"].ObjectValidator.OrderedPropertyChecks)
+	require.Equal(t, 3, v.Properties["foo"].ObjectValidator.Properties["aaa"].Order)
+	require.Equal(t, 2, v.Properties["foo"].ObjectValidator.Properties["bbb"].Order)
+	require.Equal(t, 1, v.Properties["foo"].ObjectValidator.Properties["ccc"].Order)
+}
+
+func TestValidatorForWithBadOrderTagValue(t *testing.T) {
+	myStruct := struct {
+		Foo struct {
+			Aaa string `json:"aaa" v8n:"order:not_a_number"`
+		} `json:"foo" v8n:"obj.ordered"`
+	}{}
+	v, err := ValidatorFor(myStruct, nil)
+	require.Nil(t, v)
+	require.NotNil(t, err)
+	require.Equal(t, fmt.Sprintf(msgUnknownTagValue, tagItemOrder, "int", "not_a_number"), err.Error())
+}
+
 type subStruct struct {
 	Foo struct {
 		Bar string
@@ -448,4 +478,61 @@ func TestValidatorForDeepStruct(t *testing.T) {
 	require.Equal(t, JsonString, arrSubV.Properties["arrSubArr"].ObjectValidator.Properties["arrSubArrFoo"].Type)
 	require.Equal(t, JsonArray, arrSubV.Properties["arrSubSlice"].Type)
 	require.Nil(t, arrSubV.Properties["arrSubSlice"].ObjectValidator)
+}
+
+type itemInSlice struct {
+	Foo string `json:"foo" v8n:"notNull,mandatory"`
+	Bar int    `json:"bar" v8n:"notNull,mandatory"`
+}
+
+var itemsValidator = MustCompileValidatorFor(itemInSlice{}, &ValidatorForOptions{AllowArray: true})
+
+func TestValidatorForWithSlice(t *testing.T) {
+	s := []itemInSlice{}
+	json := `[
+			{
+				"foo": null
+			},
+			{
+				"bar": null
+			}
+		]`
+
+	ok, violations, _ := itemsValidator.ValidateStringInto(json, s)
+	require.False(t, ok)
+	require.Equal(t, 4, len(violations))
+
+	SortViolationsByPathAndProperty(violations)
+	require.Equal(t, fmt.Sprintf(msgMissingProperty, "bar"), violations[0].Message)
+	require.Equal(t, "[0]", violations[0].Property)
+	require.Equal(t, "", violations[0].Path)
+	require.Equal(t, fmt.Sprintf(msgMissingProperty, "foo"), violations[1].Message)
+	require.Equal(t, "[1]", violations[1].Property)
+	require.Equal(t, "", violations[1].Path)
+	require.Equal(t, messageValueCannotBeNull, violations[2].Message)
+	require.Equal(t, "foo", violations[2].Property)
+	require.Equal(t, "[0]", violations[2].Path)
+	require.Equal(t, messageValueCannotBeNull, violations[3].Message)
+	require.Equal(t, "bar", violations[3].Property)
+	require.Equal(t, "[1]", violations[3].Path)
+}
+
+func TestValidatorForStopsOnFirst(t *testing.T) {
+	v, err := ValidatorFor(itemInSlice{}, &ValidatorForOptions{StopOnFirst: true})
+	require.Nil(t, err)
+	require.NotNil(t, v)
+	json := `{
+				"foo": null,
+				"unknown": true
+			}`
+
+	s := itemInSlice{}
+	ok, violations, _ := v.ValidateStringInto(json, s)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+
+	v.StopOnFirst = false
+	ok, violations, _ = v.ValidateStringInto(json, s)
+	require.False(t, ok)
+	require.Equal(t, 3, len(violations))
 }

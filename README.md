@@ -1,6 +1,5 @@
 # Valix
 [![GoDoc](https://godoc.org/github.com/marrow16/valix?status.svg)](https://pkg.go.dev/github.com/marrow16/valix)
-[![Go Report Card](https://goreportcard.com/badge/github.com/marrow16/valix)](https://goreportcard.com/report/github.com/marrow16/valix)
 [![codecov](https://codecov.io/gh/marrow16/valix/branch/master/graph/badge.svg)](https://codecov.io/gh/marrow16/valix)
 [![Maintainability](https://api.codeclimate.com/v1/badges/1d64bc6c8474c2074f2b/maintainability)](https://codeclimate.com/github/marrow16/valix/maintainability)
 
@@ -10,6 +9,7 @@ Valix - Go package for validating requests
 ## Contents
 * [Overview](#overview)
 * [Installation](#installation)
+* [Features](#features)
 * [Concepts](#concepts)
 * [Examples](#examples)
   * [Creating Validators](#creating-validators)
@@ -33,6 +33,15 @@ To install Valix, use go get:
 To update Valix to the latest version, run:
 
     go get -u github.com/marrow16/valix
+
+## Features
+
+* Deep validation
+* Create validators from structs or define them as code (see [Creating Validators](#creating-validators))
+* Finds all validation violations - not just the first one! (see [Using Validators](#using-validators))
+* Rich set of pre-defined common constraints (see [Common Constraints](#common-constraints))
+* Customisable constraints (see [Custom Constraints](#custom-constraints))
+* 100% tested (see [Codecov.io](https://codecov.io/gh/marrow16/valix))
 
 ## Concepts
 
@@ -123,6 +132,20 @@ var CreatePersonRequestValidator = &valix.Validator{
     },
 }
 ```
+
+####  Additional validator options
+
+Validators can have additional properties that control the overall validation behaviour.  These properties are described as follows:
+
+| Property                  | Description                                                                                                                                                                                                                                                                                                                                        |
+|---------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `AllowArray`              | (default `false`) Allows the validator to accept JSON arrays - and validate each item in the array<br/>Setting this option to `true` whilst leaving the `DisallowObject` option as `false` means that the validator will accept either a JSON array or object                                                                                      |
+| `AllowNullJson`           | Normally, a validator sees Null JSON (i.e. JSON string just containing the word `null`) as a violation - as it represents neither an object nor an array.<br/>Setting this option to `true` disables this behaviour (and results of successful validation may return a `nil` map/slice)<br/>*NB. This option is only used by top-level validators* |
+| `DisallowObject`          | (default `false`) Prevents the validator from accepting JSON objects<br/>Should only be set to `true` when `AllowArray` is also set to `true`                                                                                                                                                                                                      |
+| `IgnoreUnknownProperties` | Normally, a validator will report as a violation any properties not defined within the validator<br/>Setting this option to `true` means the validator will not check for unknown properties                                                                                                                                                       |
+| `StopOnFirst`             | Normally, a validator will find all constraint violations<br/>Setting this option to `true` causes the validator to stop when it finds the first violation<br/>*NB. This option is only used by top-level validators*                                                                                                                              |
+| `UseNumber`               | Validators use `json.NewDecoder()` to decode JSON<br/>Setting this option to `true` instructs the validator to call `Decoder.UseNumber()` prior to decoding<br/>*NB. This option is only used by top-level validators*                                                                                                                             |
+
 
 ### Using Validators
 
@@ -373,6 +396,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
 | `valix.StringPattern`             | Check that a string matches a given regexp pattern                                                                                |
 | `valix.StringTrim`                | Trims a string value                                                                                                              |
 | `valix.StringValidCardNumber`     | Check that a string contains a valid card number (according to Luhn Algorithm)                                                    |
+| `valix.StringValidEmail`          | Check that a string contains a valid email address                                                                                |
 | `valix.StringValidISODate`        | Check that a string value is a valid ISO8601 Date format (excluding time)                                                         |
 | `valix.StringValidISODatetime`    | Check that a string value is a valid ISO8601 Date/time format                                                                     |
 | `valix.StringValidISODate`        | Check that a string value is a valid ISO8601 Date format (excluding time)                                                         |
@@ -526,13 +550,14 @@ Where the tokens correspond to various property validation options - as listed h
 
 | Token                              | Purpose                                                                                                                                                                                                                                                                                                                               |
 |------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `type:_type_`                      | Specifies (overrides) the type expected for the JSON property value <br/>Where `_type_` must be one of (case-insensitive): `string`, `number`, `integer`, `boolean`, `object`, `array` or `any`                                                                                                                                       |
-| `notNull`                          | Specifies the JSON value for the property cannot be null                                                                                                                                                                                                                                                                              |
 | `mandatory`                        | Specifies the JSON property must be present                                                                                                                                                                                                                                                                                           |
+| `notNull`                          | Specifies the JSON value for the property cannot be null                                                                                                                                                                                                                                                                              |
 | `optional`                         | Specifies the JSON property does not have to be present                                                                                                                                                                                                                                                                               |
-| `constraint:_name_{fields}`        | Adds a constraint to the property (this token can be specified multiple times within the `v8n` tag.  The `_name_` must be a Valix common constraint or a previously registered constraint.<br/>The constraint `fields` can optionally be set example:<br/>&nbsp;&nbsp;&nbsp;&nbsp;`constraint:StringLength{Minimum: 1, Maximum: 255}` |
-| `constraints:[_name{},...]`        | Adds multiple constraints to the property                                                                                                                                                                                                                                                                                             |
-| `&_constraint_name_{fields}`       | Adds a constraint to the property (shorthand way of specifying constraint without `constraint:` or `constraints[]` prefix)                                                                                                                                                                                                            |
+| `type:<type>`                      | Specifies (overrides) the type expected for the JSON property value <br/>Where `<type>` must be one of (case-insensitive): `string`, `number`, `integer`, `boolean`, `object`, `array` or `any`                                                                                                                                       |
+| `constraint:<name>{fields}`        | Adds a constraint to the property (this token can be specified multiple times within the `v8n` tag.  The `<name>` must be a Valix common constraint or a previously registered constraint.<br/>The constraint `fields` can optionally be set example:<br/>&nbsp;&nbsp;&nbsp;&nbsp;`constraint:StringLength{Minimum: 1, Maximum: 255}` |
+| `constraints:[<name>{},...]`       | Adds multiple constraints to the property                                                                                                                                                                                                                                                                                             |
+| `&<constraint-name>{fields}`       | Adds a constraint to the property (shorthand way of specifying constraint without `constraint:` or `constraints:[]` prefix)                                                                                                                                                                                                           |
 | `obj.ignoreUnknownProperties`      | Sets an object (or array of objects) to ignore unknown properties (ignoring unknown properties means that the validator will not fail if an unknown property is found)                                                                                                                                                                |
 | `obj.unknownProperties:true/false` | Sets whether an object (or array of objects) is to ignore or not ignore unknown properties                                                                                                                                                                                                                                            |
-| `obj.constraint:_name_{}`          | Sets a constraint on an entire object (or each object in an array of objects)                                                                                                                                                                                                                                                         |
+| `obj.constraint:<name>{}`          | Sets a constraint on an entire object (or each object in an array of objects)                                                                                                                                                                                                                                                         |
+| `obj.ordered`                      | Sets the object validator for a property to check properties in order (see `Validator.OrderedPropertyChecks`)                                                                                                                                                                                                                         |

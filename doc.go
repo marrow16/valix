@@ -3,7 +3,15 @@
 
 Check requests in the form of *http.Request, `map[string]interface{}` or `[]interface{}`
 
-Validators can be expressed effectively as, for example:
+Validators can be created from existing structs, for example:
+	type AddPersonRequest struct {
+		Name string `json:"name" v8n:"notNull,mandatory,&StringNoControlCharacters{},&StringLength{Minimum: 1, Maximum: 255}"`
+		Age int `json:"age" v8n:"type:Integer,notNull,mandatory,&PositiveOrZero{}"`
+	}
+	var AddPersonRequestValidator = valix.MustCompileValidatorFor(AddPersonRequest{}, nil)
+
+
+Or validators can be expressed effectively in code, for example:
 	var personValidator = &valix.Validator{
 		IgnoreUnknownProperties: false,
 		Properties: valix.Properties{

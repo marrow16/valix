@@ -9,6 +9,8 @@ import (
 type ValidatorContext struct {
 	// ok is the final result of the validator
 	ok bool
+	// stopOnFirst is whether the validator has been set to stop on first violation
+	stopOnFirst bool
 	// continueAll is whether entire validation is ok to continue
 	continueAll bool
 	// root is the original starting object (map or slice) for the validator
@@ -19,9 +21,10 @@ type ValidatorContext struct {
 	pathStack []*pathStackItem
 }
 
-func newValidatorContext(root interface{}) *ValidatorContext {
+func newValidatorContext(root interface{}, stopOnFirst bool) *ValidatorContext {
 	return &ValidatorContext{
 		ok:          true,
+		stopOnFirst: stopOnFirst,
 		continueAll: true,
 		root:        root,
 		violations:  []*Violation{},
@@ -41,6 +44,9 @@ func newValidatorContext(root interface{}) *ValidatorContext {
 func (vc *ValidatorContext) AddViolation(v *Violation) {
 	vc.violations = append(vc.violations, v)
 	vc.ok = false
+	if vc.stopOnFirst {
+		vc.continueAll = false
+	}
 }
 
 // AddViolationForCurrent adds a Violation to the validation context for

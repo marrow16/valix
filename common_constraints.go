@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"golang.org/x/text/unicode/norm"
+	"net/mail"
 	"regexp"
 	"strings"
 	"time"
@@ -43,6 +44,7 @@ const (
 	messageUuidCorrectVer           = "Value must be a valid UUID (version %d)"
 	uuidRegexpPattern               = "^([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})$"
 	messageValidCardNumber          = "Value must be a valid card number"
+	messageValidEmail               = "Value must be an email address"
 )
 
 var (
@@ -1035,6 +1037,32 @@ func stringToTime(str string) (*time.Time, bool) {
 	}
 	result, err := time.Parse(parseLayout, str)
 	return &result, err == nil
+}
+
+// StringValidEmail constraint checks that a string contains a valid email address (does not
+// verify the email address!)
+//
+// NB. Uses mail.ParseAddress to check valid email address
+type StringValidEmail struct {
+	// the violation message to be used if the constraint fails (see Violation.Message)
+	//
+	// (if the Message is an empty string then the default violation message is used)
+	Message string
+}
+
+// Check implements Constraint.Check
+func (c *StringValidEmail) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
+	if str, ok := v.(string); ok {
+		if _, err := mail.ParseAddress(str); err != nil {
+			return false, c.GetMessage()
+		}
+	}
+	return true, ""
+}
+
+// GetMessage implements the Constraint.GetMessage
+func (c *StringValidEmail) GetMessage() string {
+	return defaultMessage(c.Message, messageValidEmail)
 }
 
 func defaultMessage(msg string, def string) string {

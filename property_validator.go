@@ -118,6 +118,8 @@ type PropertyValidator struct {
 	Constraints Constraints
 	// ObjectValidator is checked, if specified, after all Constraints are checked
 	ObjectValidator *Validator
+	// Order is the order in which the property is checked (see Validator.OrderedPropertyChecks)
+	Order int
 }
 
 func (pv *PropertyValidator) validate(actualValue interface{}, vcx *ValidatorContext) {

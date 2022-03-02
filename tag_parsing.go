@@ -17,11 +17,13 @@ const (
 	tagItemConstraint        = "constraint"
 	tagItemConstraints       = "constraints"
 	tagItemConstraintsPrefix = tagItemConstraints + ":"
+	tagItemOrder             = "order"
 	// object level tag items...
 	tagItemObjPrefix                  = "obj."
 	tagItemObjIgnoreUnknownProperties = tagItemObjPrefix + "ignoreUnknownProperties"
 	tagItemObjUnknownProperties       = tagItemObjPrefix + "unknownProperties" // true/false
 	tagItemObjConstraint              = tagItemObjPrefix + tagItemConstraint
+	tagItemObjOrdered                 = tagItemObjPrefix + "ordered"
 )
 
 const (
@@ -116,6 +118,13 @@ func (pv *PropertyValidator) addTagItem(tagItem string) (result error) {
 			pv.Type = ty
 		}
 		break
+	case tagItemOrder:
+		if v, err := strconv.ParseInt(tagValue, 10, 32); err != nil {
+			result = errors.New(fmt.Sprintf(msgUnknownTagValue, tagItemOrder, "int", tagValue))
+		} else {
+			pv.Order = int(v)
+		}
+		break
 	case tagItemConstraint:
 		if err := pv.addConstraint(tagValue); err != nil {
 			result = err
@@ -135,6 +144,9 @@ func (pv *PropertyValidator) addTagItem(tagItem string) (result error) {
 		} else {
 			result = errors.New(fmt.Sprintf(msgUnknownTagValue, tagItemObjUnknownProperties, "boolean", tagValue))
 		}
+		break
+	case tagItemObjOrdered:
+		pv.ObjectValidator.OrderedPropertyChecks = true
 		break
 	default:
 		if strings.HasPrefix(tagItem, "&") && strings.HasSuffix(tagItem, "}") {
@@ -261,7 +273,8 @@ func safeSet(fv reflect.Value, valueStr string) (result bool) {
 		}
 		break
 	case regexpKind:
-		if strings.HasPrefix(valueStr, "\"") && strings.HasSuffix(valueStr, "\"") {
+		if (strings.HasPrefix(valueStr, "\"") && strings.HasSuffix(valueStr, "\"")) ||
+			(strings.HasPrefix(valueStr, "'") && strings.HasSuffix(valueStr, "'")) {
 			rxv := reflect.ValueOf(regexp.MustCompile(valueStr[1 : len(valueStr)-1])).Elem()
 			fv.Set(rxv)
 			result = true
