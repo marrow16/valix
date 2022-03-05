@@ -517,6 +517,28 @@ func TestValidatorForWithSlice(t *testing.T) {
 	require.Equal(t, "[1]", violations[3].Path)
 }
 
+func TestNamedConstraintTagsUseCorrectDefaultFields(t *testing.T) {
+	registry.reset()
+	namedTestConstraint1 := &StringNotEmpty{Message: "Message 1"}
+	namedTestConstraint2 := &StringNotEmpty{Message: "Message 2"}
+	registry.registerNamed(true, "StringNotEmpty1", namedTestConstraint1)
+	registry.registerNamed(true, "StringNotEmpty2", namedTestConstraint2)
+	type MyStruct struct {
+		Foo string `json:"foo" v8n:"&StringNotEmpty1{},&StringNotEmpty2{},&StringNotEmpty2{Message: 'Message 3'}"`
+	}
+	v, err := ValidatorFor(MyStruct{}, nil)
+	require.Nil(t, err)
+	require.NotNil(t, v)
+
+	str := `{"foo": ""}`
+	ok, violations, _ := v.ValidateString(str)
+	require.False(t, ok)
+	require.Equal(t, 3, len(violations))
+	require.Equal(t, "Message 1", violations[0].Message)
+	require.Equal(t, "Message 2", violations[1].Message)
+	require.Equal(t, "Message 3", violations[2].Message)
+}
+
 func TestValidatorForStopsOnFirst(t *testing.T) {
 	v, err := ValidatorFor(itemInSlice{}, &ValidatorForOptions{StopOnFirst: true})
 	require.Nil(t, err)
