@@ -216,6 +216,17 @@ func rebuildConstraintWithArgs(cName string, c Constraint, argsStr string) (Cons
 	ty = ty.Elem()
 	newC := reflect.New(ty)
 	var result = newC.Interface().(Constraint)
+	// clone the original constraint fields into new constraint...
+	orgV := reflect.ValueOf(c)
+	for f := 0; f < ty.NumField(); f++ {
+		fn := ty.Field(f).Name
+		fv := orgV.Elem().FieldByName(fn)
+		fld := newC.Elem().FieldByName(fn)
+		if fld.Kind() != reflect.Invalid && fld.CanSet() {
+			fld.Set(fv)
+		}
+	}
+	// now overwrite any specified args into the constraint fields...
 	for argName, argVal := range args {
 		fld := newC.Elem().FieldByName(argName)
 		if fld.Kind() != reflect.Invalid && fld.CanSet() {

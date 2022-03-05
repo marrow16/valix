@@ -241,7 +241,7 @@ func TestRebuildConstraintWithArgsFailsWithNonStructConstraint(t *testing.T) {
 	const testConstraintName = "TEST_CONSTRAINT"
 
 	testConstraint := &dummyNonStructConstraint{}
-	registry.register(testConstraint)
+	registry.register(true, testConstraint)
 	defer func() {
 		registry.reset()
 	}()
@@ -267,7 +267,7 @@ func TestRebuildConstraintWithArgsFailsWithNonPublicField(t *testing.T) {
 	const testConstraintName = "TEST_CONSTRAINT"
 
 	testConstraint := &dummyStructConstraintWithFields{}
-	registry.register(testConstraint)
+	registry.register(true, testConstraint)
 	defer func() {
 		registry.reset()
 	}()
@@ -282,7 +282,7 @@ func TestRebuildConstraintWithArgsFailsWithInvalidArgType(t *testing.T) {
 	const testConstraintName = "TEST_CONSTRAINT"
 
 	testConstraint := &dummyStructConstraintWithFields{}
-	registry.register(testConstraint)
+	registry.register(true, testConstraint)
 	defer func() {
 		registry.reset()
 	}()
@@ -295,7 +295,7 @@ func TestRebuildConstraintWithArgsFailsWithInvalidArgType(t *testing.T) {
 
 func TestBuildConstraintFromTagValueFailsWithBadArgs(t *testing.T) {
 	testConstraint := &dummyStructConstraintWithFields{}
-	registry.register(testConstraint)
+	registry.register(true, testConstraint)
 	defer func() {
 		registry.reset()
 	}()
