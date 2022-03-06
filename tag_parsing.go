@@ -1,7 +1,6 @@
 package valix
 
 import (
-	"errors"
 	"fmt"
 	"reflect"
 	"regexp"
@@ -27,19 +26,20 @@ const (
 )
 
 const (
-	msgV8nPrefix                    = "tag " + tagNameV8n + " - "
-	msgUnknownPropertyType          = msgV8nPrefix + "unknown property type '%s'"
-	msgUnknownTokenInTag            = msgV8nPrefix + "unknown token '%s'"
-	msgConstraintsFormat            = msgV8nPrefix + "must specify constraints in the format '&name{}' (found \"%s\")"
-	msgUnknownConstraint            = msgV8nPrefix + "contains unknown constraint '%s'"
-	msgCannotCreateConstraint       = msgV8nPrefix + "cannot create constraint '%s{}' (on non-struct constraint)"
-	msgConstraintFieldNotAssignable = msgV8nPrefix + "constraint '%s{}' field '%s' is not assignable"
-	msgConstraintFieldInvalidValue  = msgV8nPrefix + "constraint '%s{}' field '%s' cannot be assigned with value specified"
-	msgConstraintArgsParseError     = msgV8nPrefix + "constraint '%s{}' - args parsing error (%s)"
-	msgTagFldMissingColon           = msgV8nPrefix + "constraint '%s{}` field missing ':' separator"
-	msgUnknownTagValue              = msgV8nPrefix + "token '%s' expected %s value (found \"%s\")"
-	msgUnclosed                     = "unclosed parenthesis or quote started at position %d"
-	msgUnopened                     = "unopened parenthesis at position %d"
+	msgV8nPrefix                   = "tag " + tagNameV8n + " - "
+	msgUnknownPropertyType         = msgV8nPrefix + "unknown property type '%s'"
+	msgUnknownTokenInTag           = msgV8nPrefix + "unknown token '%s'"
+	msgConstraintsFormat           = msgV8nPrefix + "must specify constraints in the format '&name{}' (found \"%s\")"
+	msgUnknownConstraint           = msgV8nPrefix + "contains unknown constraint '%s'"
+	msgCannotCreateConstraint      = msgV8nPrefix + "cannot create constraint '%s{}' (on non-struct constraint)"
+	msgConstraintFieldUnknown      = msgV8nPrefix + "constraint '%s{}' field '%s' is unknown or not assignable"
+	msgConstraintFieldInvalidValue = msgV8nPrefix + "constraint '%s{}' field '%s' cannot be assigned with value specified"
+	msgConstraintFieldNotExported  = msgV8nPrefix + "constraint '%s{}' has un-exported field '%s' - so no fields can be specified as args"
+	msgConstraintArgsParseError    = msgV8nPrefix + "constraint '%s{}' - args parsing error (%s)"
+	msgTagFldMissingColon          = msgV8nPrefix + "constraint '%s{}` field missing ':' separator"
+	msgUnknownTagValue             = msgV8nPrefix + "token '%s' expected %s value (found \"%s\")"
+	msgUnclosed                    = "unclosed parenthesis or quote started at position %d"
+	msgUnopened                    = "unopened parenthesis at position %d"
 )
 
 var (
@@ -113,14 +113,14 @@ func (pv *PropertyValidator) addTagItem(tagItem string) (result error) {
 		break
 	case tagItemType:
 		if ty := JsonTypeFromString(tagValue); ty == JsonTypeUndefined {
-			result = errors.New(fmt.Sprintf(msgUnknownPropertyType, tagValue))
+			result = fmt.Errorf(msgUnknownPropertyType, tagValue)
 		} else {
 			pv.Type = ty
 		}
 		break
 	case tagItemOrder:
 		if v, err := strconv.ParseInt(tagValue, 10, 32); err != nil {
-			result = errors.New(fmt.Sprintf(msgUnknownTagValue, tagItemOrder, "int", tagValue))
+			result = fmt.Errorf(msgUnknownTagValue, tagItemOrder, "int", tagValue)
 		} else {
 			pv.Order = int(v)
 		}
@@ -142,7 +142,7 @@ func (pv *PropertyValidator) addTagItem(tagItem string) (result error) {
 		if b, err := strconv.ParseBool(tagValue); err == nil {
 			pv.ObjectValidator.IgnoreUnknownProperties = b
 		} else {
-			result = errors.New(fmt.Sprintf(msgUnknownTagValue, tagItemObjUnknownProperties, "boolean", tagValue))
+			result = fmt.Errorf(msgUnknownTagValue, tagItemObjUnknownProperties, "boolean", tagValue)
 		}
 		break
 	case tagItemObjOrdered:
@@ -155,7 +155,7 @@ func (pv *PropertyValidator) addTagItem(tagItem string) (result error) {
 				result = err
 			}
 		} else {
-			result = errors.New(fmt.Sprintf(msgUnknownTokenInTag, tagName))
+			result = fmt.Errorf(msgUnknownTokenInTag, tagName)
 		}
 	}
 	return
@@ -183,7 +183,7 @@ func buildConstraintFromTagValue(tagValue string) (Constraint, error) {
 	useValue := strings.Trim(tagValue, " ")
 	curlyOpenAt := strings.Index(useValue, "{")
 	if curlyOpenAt == -1 || !strings.HasSuffix(useValue, "}") {
-		return nil, errors.New(fmt.Sprintf(msgConstraintsFormat, tagValue))
+		return nil, fmt.Errorf(msgConstraintsFormat, tagValue)
 	}
 	constraintName := useValue[0:curlyOpenAt]
 	if strings.HasPrefix(constraintName, "&") {
@@ -191,11 +191,15 @@ func buildConstraintFromTagValue(tagValue string) (Constraint, error) {
 	}
 	c, ok := registry.get(constraintName)
 	if !ok {
-		return nil, errors.New(fmt.Sprintf(msgUnknownConstraint, constraintName))
+		return nil, fmt.Errorf(msgUnknownConstraint, constraintName)
 	}
 	// check if the tag value has any args specified...
-	inCurly := strings.Trim(useValue[curlyOpenAt+1:len(useValue)-1], " ")
-	newC, cErr := rebuildConstraintWithArgs(constraintName, c, inCurly)
+	argsStr := strings.Trim(useValue[curlyOpenAt+1:len(useValue)-1], " ")
+	if argsStr == "" {
+		// no args within curly braces, so it's safe to re-use the registered constraint...
+		return c, nil
+	}
+	newC, cErr := rebuildConstraintWithArgs(constraintName, c, argsStr)
 	if cErr != nil {
 		return nil, cErr
 	}
@@ -211,7 +215,7 @@ func rebuildConstraintWithArgs(cName string, c Constraint, argsStr string) (Cons
 	// even though the original constraint implements Constraint - it still needs to be a struct
 	// so that we can reconstruct the struct with args...
 	if ty.Kind() != reflect.Ptr || ty.Elem().Kind() != reflect.Struct {
-		return nil, errors.New(fmt.Sprintf(msgCannotCreateConstraint, cName))
+		return nil, fmt.Errorf(msgCannotCreateConstraint, cName)
 	}
 	ty = ty.Elem()
 	newC := reflect.New(ty)
@@ -224,6 +228,8 @@ func rebuildConstraintWithArgs(cName string, c Constraint, argsStr string) (Cons
 		fld := newC.Elem().FieldByName(fn)
 		if fld.Kind() != reflect.Invalid && fld.CanSet() {
 			fld.Set(fv)
+		} else {
+			return nil, fmt.Errorf(msgConstraintFieldNotExported, cName, fn)
 		}
 	}
 	// now overwrite any specified args into the constraint fields...
@@ -231,10 +237,10 @@ func rebuildConstraintWithArgs(cName string, c Constraint, argsStr string) (Cons
 		fld := newC.Elem().FieldByName(argName)
 		if fld.Kind() != reflect.Invalid && fld.CanSet() {
 			if !safeSet(fld, argVal) {
-				return nil, errors.New(fmt.Sprintf(msgConstraintFieldInvalidValue, cName, argName))
+				return nil, fmt.Errorf(msgConstraintFieldInvalidValue, cName, argName)
 			}
 		} else {
-			return nil, errors.New(fmt.Sprintf(msgConstraintFieldNotAssignable, cName, argName))
+			return nil, fmt.Errorf(msgConstraintFieldUnknown, cName, argName)
 		}
 	}
 	return result, nil
@@ -369,14 +375,14 @@ func itemsToSlice(itemType reflect.Type, arrayStr string) (result reflect.Value,
 func argsStringToArgs(cName string, str string) (map[string]string, error) {
 	rawArgs, err := parseCommas(str)
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf(msgConstraintArgsParseError, cName, err))
+		return nil, fmt.Errorf(msgConstraintArgsParseError, cName, err)
 	}
 	result := map[string]string{}
 	for _, arg := range rawArgs {
 		argName := strings.Trim(arg, " ")
 		cAt := firstValidColonAt(argName)
 		if cAt == -1 {
-			return nil, errors.New(fmt.Sprintf(msgTagFldMissingColon, cName))
+			return nil, fmt.Errorf(msgTagFldMissingColon, cName)
 		}
 		argValue := strings.Trim(argName[cAt+1:], " ")
 		argName = strings.Trim(argName[:cAt], " ")
@@ -420,7 +426,7 @@ func parseCommas(str string) ([]string, error) {
 		}
 	}
 	if stk.inAny() {
-		return nil, errors.New(fmt.Sprintf(msgUnclosed, stk.current.pos))
+		return nil, fmt.Errorf(msgUnclosed, stk.current.pos)
 	}
 	if lastTokenAt < len(runes) {
 		str := string(runes[lastTokenAt:])
@@ -456,7 +462,7 @@ func (ds *delimiterStack) delimiter(ch rune, pos int) error {
 	case ')':
 		if !ds.inQuote() {
 			if ds.current == nil || ds.current.open != '(' {
-				return errors.New(fmt.Sprintf(msgUnopened, pos))
+				return fmt.Errorf(msgUnopened, pos)
 			}
 			ds.pop()
 		}
@@ -464,7 +470,7 @@ func (ds *delimiterStack) delimiter(ch rune, pos int) error {
 	case ']':
 		if !ds.inQuote() {
 			if ds.current == nil || ds.current.open != '[' {
-				return errors.New(fmt.Sprintf(msgUnopened, pos))
+				return fmt.Errorf(msgUnopened, pos)
 			}
 			ds.pop()
 		}
@@ -472,7 +478,7 @@ func (ds *delimiterStack) delimiter(ch rune, pos int) error {
 	case '}':
 		if !ds.inQuote() {
 			if ds.current == nil || ds.current.open != '{' {
-				return errors.New(fmt.Sprintf(msgUnopened, pos))
+				return fmt.Errorf(msgUnopened, pos)
 			}
 			ds.pop()
 		}

@@ -539,6 +539,57 @@ func TestNamedConstraintTagsUseCorrectDefaultFields(t *testing.T) {
 	require.Equal(t, "Message 3", violations[2].Message)
 }
 
+func TestConstraintTagUsingCustomConstraint(t *testing.T) {
+	registry.reset()
+	customConstraint := NewCustomConstraint(func(value interface{}, vcx *ValidatorContext, this *CustomConstraint) (bool, string) {
+		return false, this.GetMessage()
+	}, "My Custom Error")
+	registry.registerNamed(true, "MyCustom", customConstraint)
+	type myStruct struct {
+		Foo string `json:"foo" v8n:"&MyCustom{Message: 'Overridden Message'}"`
+	}
+	v, err := ValidatorFor(myStruct{}, nil)
+	require.Nil(t, err)
+	require.NotNil(t, v)
+
+	str := `{"foo": ""}`
+	ok, violations, _ := v.ValidateString(str)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, "Overridden Message", violations[0].Message)
+}
+
+type definedConstraintWithUnexportedField struct {
+	msg       string
+	TestField string
+}
+
+func (d *definedConstraintWithUnexportedField) Check(value interface{}, vcx *ValidatorContext) (bool, string) {
+	return false, d.GetMessage()
+}
+func (d *definedConstraintWithUnexportedField) GetMessage() string {
+	return d.msg
+}
+
+func TestConstraintTagWithDefinedConstraintWithUnexportedField(t *testing.T) {
+	registry.reset()
+	registry.registerNamed(true, "MyDefined", &definedConstraintWithUnexportedField{msg: "TEST MESSAGE"})
+	type myStruct struct {
+		Foo string `json:"foo" v8n:"&MyDefined{}"`
+	}
+	v, err := ValidatorFor(myStruct{}, nil)
+	require.Nil(t, err)
+	require.NotNil(t, v)
+
+	type myStruct2 struct {
+		Foo string `json:"foo" v8n:"&MyDefined{TestField: 'foo'}"`
+	}
+	v, err = ValidatorFor(myStruct2{}, nil)
+	require.Nil(t, v)
+	require.NotNil(t, err)
+	require.Equal(t, fmt.Sprintf(msgConstraintFieldNotExported, "MyDefined", "msg"), err.Error())
+}
+
 func TestValidatorForStopsOnFirst(t *testing.T) {
 	v, err := ValidatorFor(itemInSlice{}, &ValidatorForOptions{StopOnFirst: true})
 	require.Nil(t, err)

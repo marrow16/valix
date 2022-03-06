@@ -237,7 +237,9 @@ func (d *dummyNonStructConstraint) Check(value interface{}, vcx *ValidatorContex
 func (d *dummyNonStructConstraint) GetMessage() string {
 	return ""
 }
+
 func TestRebuildConstraintWithArgsFailsWithNonStructConstraint(t *testing.T) {
+	registry.reset()
 	const testConstraintName = "TEST_CONSTRAINT"
 
 	testConstraint := &dummyNonStructConstraint{}
@@ -252,8 +254,36 @@ func TestRebuildConstraintWithArgsFailsWithNonStructConstraint(t *testing.T) {
 	require.Nil(t, c)
 }
 
-type dummyStructConstraintWithFields struct {
+type dummyStructConstraintWithUnexportedFields struct {
 	field1 string
+	Field2 int
+}
+
+func (d *dummyStructConstraintWithUnexportedFields) Check(value interface{}, vcx *ValidatorContext) (bool, string) {
+	return true, ""
+}
+func (d *dummyStructConstraintWithUnexportedFields) GetMessage() string {
+	return ""
+}
+
+func TestRebuildConstraintWithArgsFailsWithNonPublicField(t *testing.T) {
+	registry.reset()
+	const testConstraintName = "TEST_CONSTRAINT"
+
+	testConstraint := &dummyStructConstraintWithUnexportedFields{}
+	registry.register(true, testConstraint)
+	defer func() {
+		registry.reset()
+	}()
+
+	c, err := rebuildConstraintWithArgs(testConstraintName, testConstraint, "field1:\"foo\"")
+	require.NotNil(t, err)
+	require.Equal(t, fmt.Sprintf(msgConstraintFieldNotExported, testConstraintName, "field1"), err.Error())
+	require.Nil(t, c)
+}
+
+type dummyStructConstraintWithFields struct {
+	Field1 string
 	Field2 int
 }
 
@@ -263,22 +293,9 @@ func (d *dummyStructConstraintWithFields) Check(value interface{}, vcx *Validato
 func (d *dummyStructConstraintWithFields) GetMessage() string {
 	return ""
 }
-func TestRebuildConstraintWithArgsFailsWithNonPublicField(t *testing.T) {
-	const testConstraintName = "TEST_CONSTRAINT"
-
-	testConstraint := &dummyStructConstraintWithFields{}
-	registry.register(true, testConstraint)
-	defer func() {
-		registry.reset()
-	}()
-
-	c, err := rebuildConstraintWithArgs(testConstraintName, testConstraint, "field1:\"foo\"")
-	require.NotNil(t, err)
-	require.Equal(t, fmt.Sprintf(msgConstraintFieldNotAssignable, testConstraintName, "field1"), err.Error())
-	require.Nil(t, c)
-}
 
 func TestRebuildConstraintWithArgsFailsWithInvalidArgType(t *testing.T) {
+	registry.reset()
 	const testConstraintName = "TEST_CONSTRAINT"
 
 	testConstraint := &dummyStructConstraintWithFields{}
@@ -294,15 +311,16 @@ func TestRebuildConstraintWithArgsFailsWithInvalidArgType(t *testing.T) {
 }
 
 func TestBuildConstraintFromTagValueFailsWithBadArgs(t *testing.T) {
+	registry.reset()
 	testConstraint := &dummyStructConstraintWithFields{}
 	registry.register(true, testConstraint)
 	defer func() {
 		registry.reset()
 	}()
 
-	c, err := buildConstraintFromTagValue("&dummyStructConstraintWithFields{Field2:\"\"}")
+	c, err := buildConstraintFromTagValue("&dummyStructConstraintWithFields{UnknownField:\"\"}")
 	require.NotNil(t, err)
-	require.Equal(t, fmt.Sprintf(msgConstraintFieldInvalidValue, "dummyStructConstraintWithFields", "Field2"), err.Error())
+	require.Equal(t, fmt.Sprintf(msgConstraintFieldUnknown, "dummyStructConstraintWithFields", "UnknownField"), err.Error())
 	require.Nil(t, c)
 }
 
