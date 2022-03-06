@@ -1,14 +1,13 @@
 package valix
 
 import (
-	"errors"
 	"fmt"
 	"reflect"
 	"sync"
 )
 
 const (
-	panicMsgConstraintExists = "Constraint \"%s\" already exists in registry"
+	panicMsgConstraintExists = "constraint \"%s\" already exists in registry"
 )
 
 type constraintsRegistry struct {
@@ -62,7 +61,7 @@ func defaultConstraints() map[string]Constraint {
 func (r *constraintsRegistry) checkOverwriteAllowed(overwrite bool, name string) {
 	if !overwrite {
 		if _, ok := r.namedConstraints[name]; ok {
-			panic(errors.New(fmt.Sprintf(panicMsgConstraintExists, name)))
+			panic(fmt.Errorf(panicMsgConstraintExists, name))
 		}
 	}
 }
