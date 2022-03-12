@@ -31,6 +31,7 @@ const (
 	msgRequestBodyExpectedJsonObject = "Request body expected to be JSON object"
 	msgArrayElementMustBeObject      = "JsonArray element [%d] must be an object"
 	msgMissingProperty               = "Missing property '%s'"
+	msgUnwantedProperty              = "Property '%s' must not be present"
 	msgUnknownProperty               = "Unknown property '%s'"
 )
 
@@ -69,7 +70,17 @@ type Validator struct {
 	//
 	// When this is set to false (default) properties are checked in the order in which they appear in the properties map -
 	// which is unpredictable
+	//
+	// Note: If any of the properties in the validator has PropertyValidator.Order set to a non-zero value
+	// then ordered property checks are also performed
 	OrderedPropertyChecks bool
+	// WhenConditions is the condition tokens that dictate under which conditions this validator is to be checked
+	//
+	// Condition tokens can be set and unset during validation to allow polymorphism of validation
+	// (see ValidatorContext.SetCondition & ValidatorContext.ClearCondition)
+	WhenConditions []string
+	// OasInfo is additional information (for OpenAPI Specification) - used for generating and reading OAS
+	OasInfo *OasInfo
 }
 
 // RequestValidate Performs validation on the request body of the supplied http.Request
@@ -201,6 +212,42 @@ func (v *Validator) validateObjectOrArray(vcx *ValidatorContext, obj interface{}
 	}
 }
 
+type ValidationError struct {
+	Message      string
+	Violations   []*Violation
+	IsBadRequest bool
+}
+
+func (ve *ValidationError) Error() string {
+	return ve.Message
+}
+
+func (v *Validator) ValidateInto(data []byte, value interface{}) error {
+	r := bytes.NewReader(data)
+	ok, violations, _ := v.ValidateReaderInto(r, value)
+	if ok {
+		return nil
+	}
+	isBad := false
+	msg := msgErrorUnmarshall
+	if l := len(violations); l == 1 {
+		msg = violations[0].Message
+		isBad = violations[0].BadRequest
+		if isBad {
+			violations = []*Violation{}
+		}
+	} else if l > 0 {
+		isBad = violations[0].BadRequest
+		SortViolationsByPathAndProperty(violations)
+		msg = violations[0].Message
+	}
+	return &ValidationError{
+		Message:      msg,
+		Violations:   violations,
+		IsBadRequest: isBad,
+	}
+}
+
 // ValidateReaderInto performs validation on the supplied reader (representing JSON)
 // and, if validation successful, attempts to unmarshall the JSON into the supplied value
 func (v *Validator) ValidateReaderInto(r io.Reader, value interface{}) (bool, []*Violation, interface{}) {
@@ -321,18 +368,36 @@ func (v *Validator) validateArrayOf(arr []interface{}, vcx *ValidatorContext) {
 	}
 }
 
+func (v *Validator) IsOrderedPropertyChecks() bool {
+	result := v.OrderedPropertyChecks
+	if !result {
+		for _, pv := range v.Properties {
+			if pv.Order != 0 {
+				result = true
+				break
+			}
+		}
+	}
+	return result
+}
+
 func (v *Validator) checkProperties(obj map[string]interface{}, vcx *ValidatorContext) {
-	if v.OrderedPropertyChecks {
+	if v.IsOrderedPropertyChecks() {
 		sorted := v.sortedProperties()
 		for _, p := range sorted {
-			if actualValue, pOk := obj[p.name]; !pOk {
-				if p.pv.Mandatory {
-					vcx.AddViolationForCurrent(fmt.Sprintf(msgMissingProperty, p.name))
+			actualValue, present := obj[p.name]
+			if present && !vcx.meetsUnwantedConditions(p.pv.UnwantedConditions) {
+				vcx.AddViolationForCurrent(fmt.Sprintf(msgUnwantedProperty, p.name))
+			} else if vcx.meetsWhenConditions(p.pv.WhenConditions) {
+				if !present {
+					if p.pv.Mandatory {
+						vcx.AddViolationForCurrent(fmt.Sprintf(msgMissingProperty, p.name))
+					}
+				} else {
+					vcx.pushPathProperty(p.name, actualValue)
+					p.pv.validate(actualValue, vcx)
+					vcx.popPath()
 				}
-			} else {
-				vcx.pushPathProperty(p.name, actualValue)
-				p.pv.validate(actualValue, vcx)
-				vcx.popPath()
 			}
 			if !vcx.continueAll {
 				return
@@ -340,14 +405,19 @@ func (v *Validator) checkProperties(obj map[string]interface{}, vcx *ValidatorCo
 		}
 	} else {
 		for propertyName, pv := range v.Properties {
-			if actualValue, pOk := obj[propertyName]; !pOk {
-				if pv.Mandatory {
-					vcx.AddViolationForCurrent(fmt.Sprintf(msgMissingProperty, propertyName))
+			actualValue, present := obj[propertyName]
+			if present && !vcx.meetsUnwantedConditions(pv.UnwantedConditions) {
+				vcx.AddViolationForCurrent(fmt.Sprintf(msgUnwantedProperty, propertyName))
+			} else if vcx.meetsWhenConditions(pv.WhenConditions) {
+				if !present {
+					if pv.Mandatory {
+						vcx.AddViolationForCurrent(fmt.Sprintf(msgMissingProperty, propertyName))
+					}
+				} else {
+					vcx.pushPathProperty(propertyName, actualValue)
+					pv.validate(actualValue, vcx)
+					vcx.popPath()
 				}
-			} else {
-				vcx.pushPathProperty(propertyName, actualValue)
-				pv.validate(actualValue, vcx)
-				vcx.popPath()
 			}
 			if !vcx.continueAll {
 				return

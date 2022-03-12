@@ -119,7 +119,19 @@ type PropertyValidator struct {
 	// ObjectValidator is checked, if specified, after all Constraints are checked
 	ObjectValidator *Validator
 	// Order is the order in which the property is checked (see Validator.OrderedPropertyChecks)
+	//
+	// Note: setting any property with Order other than 0 (zero) will force the validator to use ordered property checks
+	// (i.e. as if Validator.OrderedPropertyChecks had been set to true)
 	Order int
+	// WhenConditions is the condition tokens that dictate under which conditions this validator is to be checked
+	//
+	// Condition tokens can be set and unset during validation to allow polymorphism of validation
+	// (see ValidatorContext.SetCondition & ValidatorContext.ClearCondition)
+	WhenConditions []string
+	// UnwantedConditions is the condition tokens that dictate when the property should not be present
+	UnwantedConditions []string
+	// OasInfo is additional information (for OpenAPI Specification)
+	OasInfo *OasInfo
 }
 
 func (pv *PropertyValidator) validate(actualValue interface{}, vcx *ValidatorContext) {
@@ -185,7 +197,7 @@ func checkNumeric(value interface{}, isInt bool) bool {
 }
 
 func (pv *PropertyValidator) checkObjectValidation(vcx *ValidatorContext) {
-	if pv.ObjectValidator != nil {
+	if pv.ObjectValidator != nil && vcx.meetsWhenConditions(pv.ObjectValidator.WhenConditions) {
 		if !pv.ObjectValidator.DisallowObject && pv.ObjectValidator.AllowArray {
 			// can be object or array...
 			if !pv.subValidateObjectOrArray(vcx.CurrentValue(), vcx) {

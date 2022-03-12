@@ -522,3 +522,61 @@ func TestContext_SetCurrentValueOnRootFails(t *testing.T) {
 	require.Equal(t, 1, len(violations))
 	require.Equal(t, testMsg, violations[0].Message)
 }
+
+func TestValidatorConditionSet(t *testing.T) {
+	vcx := newValidatorContext(nil, false)
+
+	require.False(t, vcx.IsCondition("TEST"))
+
+	vcx.SetCondition("TEST")
+	require.True(t, vcx.IsCondition("TEST"))
+}
+
+func TestValidatorConditionSetWithExclamation(t *testing.T) {
+	vcx := newValidatorContext(nil, false)
+
+	require.False(t, vcx.IsCondition("TEST"))
+
+	vcx.SetCondition("TEST")
+	require.True(t, vcx.IsCondition("TEST"))
+
+	vcx.SetCondition("!TEST")
+	require.False(t, vcx.IsCondition("TEST"))
+}
+
+func TestValidatorContextMeetsWhenConditions(t *testing.T) {
+	vcx := newValidatorContext(nil, false)
+	vcx.SetCondition("TEST1")
+	require.True(t, vcx.IsCondition("TEST1"))
+	vcx.SetCondition("TEST2")
+	require.True(t, vcx.IsCondition("TEST2"))
+
+	require.True(t, vcx.meetsWhenConditions([]string{}))
+
+	require.True(t, vcx.meetsWhenConditions([]string{"TEST1"}))
+	require.True(t, vcx.meetsWhenConditions([]string{"TEST2"}))
+	require.True(t, vcx.meetsWhenConditions([]string{"TEST1", "TEST2"}))
+	require.False(t, vcx.meetsWhenConditions([]string{"!TEST1"}))
+	require.False(t, vcx.meetsWhenConditions([]string{"TEST1", "!TEST1"}))
+	require.False(t, vcx.meetsWhenConditions([]string{"FOO"}))
+
+	require.True(t, vcx.meetsWhenConditions([]string{"!FOO"}))
+	require.True(t, vcx.meetsWhenConditions([]string{"TEST1", "!FOO"}))
+	require.False(t, vcx.meetsWhenConditions([]string{"TEST1", "!TEST2"}))
+}
+
+func TestValidatorContextMeetsUnwantedConditions(t *testing.T) {
+	vcx := newValidatorContext(nil, false)
+	require.True(t, vcx.meetsUnwantedConditions([]string{}))
+
+	vcx.SetCondition("TEA")
+	require.True(t, vcx.meetsUnwantedConditions([]string{"!TEA"}))
+	require.False(t, vcx.meetsUnwantedConditions([]string{"TEA"}))
+	require.True(t, vcx.meetsUnwantedConditions([]string{"COFFEE"}))
+	require.False(t, vcx.meetsUnwantedConditions([]string{"!COFFEE"}))
+	vcx.SetCondition("COFFEE")
+	require.True(t, vcx.meetsUnwantedConditions([]string{"!TEA"}))
+	require.False(t, vcx.meetsUnwantedConditions([]string{"TEA"}))
+	require.False(t, vcx.meetsUnwantedConditions([]string{"COFFEE"}))
+	require.True(t, vcx.meetsUnwantedConditions([]string{"!COFFEE"}))
+}

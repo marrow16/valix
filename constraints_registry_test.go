@@ -8,7 +8,7 @@ import (
 
 func TestConstraintsRegistryInitialized(t *testing.T) {
 	registry.reset()
-	require.Equal(t, 29, len(registry.namedConstraints))
+	require.Equal(t, 30, len(registry.namedConstraints))
 }
 
 func TestRegisterConstraint(t *testing.T) {

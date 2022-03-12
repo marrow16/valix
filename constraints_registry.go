@@ -39,6 +39,7 @@ func defaultConstraints() map[string]Constraint {
 		"Positive":                        &Positive{},
 		"PositiveOrZero":                  &PositiveOrZero{},
 		"Range":                           &Range{},
+		"SetConditionFrom":                &SetConditionFrom{},
 		"StringCharacters":                &StringCharacters{},
 		"StringNoControlCharacters":       &StringNoControlCharacters{},
 		"StringNotBlank":                  &StringNotBlank{},

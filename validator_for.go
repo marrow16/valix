@@ -38,6 +38,8 @@ type ValidatorForOptions struct {
 	// When this is set to false (default) properties are checked in the order in which they appear in the properties map -
 	// which is unpredictable
 	OrderedPropertyChecks bool
+	// OasInfo is additional information (for OpenAPI Specification)
+	OasInfo *OasInfo
 }
 
 const (
@@ -100,6 +102,7 @@ func emptyValidatorFromOptions(options *ValidatorForOptions) *Validator {
 		result.DisallowObject = options.DisallowObject
 		result.StopOnFirst = options.StopOnFirst
 		result.OrderedPropertyChecks = options.OrderedPropertyChecks
+		result.OasInfo = options.OasInfo
 	}
 	return result
 }
@@ -138,6 +141,9 @@ func propertyValidatorFromField(fld reflect.StructField) (*PropertyValidator, st
 		},
 	}
 	if err := result.processV8nTag(fld); err != nil {
+		return nil, name, err
+	}
+	if err := result.processOasTag(fld); err != nil {
 		return nil, name, err
 	}
 	if fld.Type.Kind() == reflect.Struct && result.Type == JsonObject {
