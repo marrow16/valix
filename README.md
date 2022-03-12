@@ -19,11 +19,12 @@ Valix - Go package for validating requests
   * [Constraint Sets](#constraint-sets)
   * [Custom Constraints](#custom-constraints)
   * [Constraints Registry](#constraints-registry)
+  * [Conditional Constraints](#conditional-constraints) 
 * [Validation Tags](#validation-tags) 
 
 ## Overview
 
-Validate requests in the form of `*http.Request`, `map[string]interface{}` or `[]interface{}`
+Validate JSON requests in the form of `*http.Request`, `map[string]interface{}` or `[]interface{}`
 
 ## Installation
 To install Valix, use go get:
@@ -41,6 +42,7 @@ To update Valix to the latest version, run:
 * Finds all validation violations - not just the first one! (see [Using Validators](#using-validators))
 * Rich set of pre-defined common constraints (see [Common Constraints](#common-constraints))
 * Customisable constraints (see [Custom Constraints](#custom-constraints))
+* Conditional constraints to support polymorphic request models (see [Conditional Constraints](#conditional-constraints))
 * 100% tested (see [Codecov.io](https://codecov.io/gh/marrow16/valix))
 
 ## Concepts
@@ -371,38 +373,39 @@ by the validator it must implement the `valix.Constraint` interface.
 
 Valix provides a rich set of pre-defined common constraints - listed here for reference:
 
-| Constraint Name                   | Description                                                                                                                       |
-|-----------------------------------|-----------------------------------------------------------------------------------------------------------------------------------|
-| `valix.ArrayOf`                   | Check each element in an array value is of the correct type                                                                       |
-| `valix.DatetimeFuture`            | Check that a datetime/date (represented as string or time.Time) is in the future                                                  |
-| `valix.DatetimeFutureOrPresent`   | Check that a datetime/date (represented as string or time.Time) is in the future or present                                       |
-| `valix.DatetimePast`              | Check that a datetime/date (represented as string or time.Time) is in the past                                                    |
-| `valix.DatetimePastOrPresent`     | Check that a datetime/date (represented as string or time.Time) is in the past or present                                         |
-| `valix.Length`                    | Check that a value (object, array, string) has minimum and maximum length                                                         |
-| `valix.Maximum`                   | Check that a numeric value is less than or equal to a specified maximum                                                           |
-| `valix.Minimum`                   | Check that a numeric value is greater than or equal to a specified minimum                                                        |
-| `valix.Negative`                  | Check that a numeric value is negative                                                                                            |
-| `valix.NegativeOrZero`            | Check that a numeric value is negative or zero                                                                                    |
-| `valix.Positive`                  | Check that a numeric value is positive (exc. zero)                                                                                |
-| `valix.PositiveOrZero`            | Check that a numeric value is positive or zero                                                                                    |
-| `valix.Range`                     | Check that a numeric value is within a specified minimum and maximum range                                                        |
-| `valix.StringCharacters`          | Check that a string contains only allowable characters  (and does not contain any disallowed characters)                          |
-| `valix.StringLength`              | Check that a string has a minimum and maximum length                                                                              |
-| `valix.StringMaxLength`           | Check that a string has a maximum length                                                                                          |
-| `valix.StringMinLength`           | Check that a string has a minimum length                                                                                          |
-| `valix.StringNormalizeUnicode`    | Sets the Unicode normalization of a string value (to the specified form: NFC, NFKC, NFD, NFKD)                                    |
-| `valix.StringNotBlank`            | Check that string value is not blank (i.e. that after removing leading and  trailing whitespace the value is not an empty string) |
-| `valix.StringNotEmpty`            | Check that string value is not empty (i.e. not "")                                                                                |
-| `valix.StringNoControlCharacters` | Check that a string does not contain any control characters (i.e. chars < 32)                                                     |
-| `valix.StringPattern`             | Check that a string matches a given regexp pattern                                                                                |
-| `valix.StringTrim`                | Trims a string value                                                                                                              |
-| `valix.StringValidCardNumber`     | Check that a string contains a valid card number (according to Luhn Algorithm)                                                    |
-| `valix.StringValidEmail`          | Check that a string contains a valid email address                                                                                |
-| `valix.StringValidISODate`        | Check that a string value is a valid ISO8601 Date format (excluding time)                                                         |
-| `valix.StringValidISODatetime`    | Check that a string value is a valid ISO8601 Date/time format                                                                     |
-| `valix.StringValidISODate`        | Check that a string value is a valid ISO8601 Date format (excluding time)                                                         |
-| `valix.StringValidToken`          | Check that a string matches one of a pre-defined list of tokens                                                                   |
-| `valix.StringValidUuid`           | Check that a string value is a valid UUID (and optionally of a minimum or specified version)                                      |
+| Constraint Name                   | Description                                                                                                                                                                                                                               |
+|-----------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `valix.ArrayOf`                   | Check each element in an array value is of the correct type                                                                                                                                                                               |
+| `valix.DatetimeFuture`            | Check that a datetime/date (represented as string or time.Time) is in the future                                                                                                                                                          |
+| `valix.DatetimeFutureOrPresent`   | Check that a datetime/date (represented as string or time.Time) is in the future or present                                                                                                                                               |
+| `valix.DatetimePast`              | Check that a datetime/date (represented as string or time.Time) is in the past                                                                                                                                                            |
+| `valix.DatetimePastOrPresent`     | Check that a datetime/date (represented as string or time.Time) is in the past or present                                                                                                                                                 |
+| `valix.Length`                    | Check that a value (object, array, string) has minimum and maximum length                                                                                                                                                                 |
+| `valix.Maximum`                   | Check that a numeric value is less than or equal to a specified maximum                                                                                                                                                                   |
+| `valix.Minimum`                   | Check that a numeric value is greater than or equal to a specified minimum                                                                                                                                                                |
+| `valix.Negative`                  | Check that a numeric value is negative                                                                                                                                                                                                    |
+| `valix.NegativeOrZero`            | Check that a numeric value is negative or zero                                                                                                                                                                                            |
+| `valix.Positive`                  | Check that a numeric value is positive (exc. zero)                                                                                                                                                                                        |
+| `valix.PositiveOrZero`            | Check that a numeric value is positive or zero                                                                                                                                                                                            |
+| `valix.Range`                     | Check that a numeric value is within a specified minimum and maximum range                                                                                                                                                                |
+| `valix.SetConditionFrom`          | Is a utility constraint that can be used to set a condition in the `ValidatorContext` from string value of the property to which this constraint is added.<br/>(see example usage in [Conditional Constraints](#conditional-constraints)) |
+| `valix.StringCharacters`          | Check that a string contains only allowable characters  (and does not contain any disallowed characters)                                                                                                                                  |
+| `valix.StringLength`              | Check that a string has a minimum and maximum length                                                                                                                                                                                      |
+| `valix.StringMaxLength`           | Check that a string has a maximum length                                                                                                                                                                                                  |
+| `valix.StringMinLength`           | Check that a string has a minimum length                                                                                                                                                                                                  |
+| `valix.StringNormalizeUnicode`    | Sets the Unicode normalization of a string value (to the specified form: NFC, NFKC, NFD, NFKD)                                                                                                                                            |
+| `valix.StringNotBlank`            | Check that string value is not blank (i.e. that after removing leading and  trailing whitespace the value is not an empty string)                                                                                                         |
+| `valix.StringNotEmpty`            | Check that string value is not empty (i.e. not "")                                                                                                                                                                                        |
+| `valix.StringNoControlCharacters` | Check that a string does not contain any control characters (i.e. chars < 32)                                                                                                                                                             |
+| `valix.StringPattern`             | Check that a string matches a given regexp pattern                                                                                                                                                                                        |
+| `valix.StringTrim`                | Trims a string value                                                                                                                                                                                                                      |
+| `valix.StringValidCardNumber`     | Check that a string contains a valid card number (according to Luhn Algorithm)                                                                                                                                                            |
+| `valix.StringValidEmail`          | Check that a string contains a valid email address                                                                                                                                                                                        |
+| `valix.StringValidISODate`        | Check that a string value is a valid ISO8601 Date format (excluding time)                                                                                                                                                                 |
+| `valix.StringValidISODatetime`    | Check that a string value is a valid ISO8601 Date/time format                                                                                                                                                                             |
+| `valix.StringValidISODate`        | Check that a string value is a valid ISO8601 Date format (excluding time)                                                                                                                                                                 |
+| `valix.StringValidToken`          | Check that a string matches one of a pre-defined list of tokens                                                                                                                                                                           |
+| `valix.StringValidUuid`           | Check that a string value is a valid UUID (and optionally of a minimum or specified version)                                                                                                                                              |
 
 ### Constraint Sets
 
@@ -540,6 +543,59 @@ type MyRequest struct {
 }
 ```
 
+### Conditional Constraints
+
+Sometimes, the model of JSON requests needs to vary according to some property condition.  For example, the following is a beverage order for a tea and coffee shop:
+```go
+type BeverageOrder struct {
+    Type     string `json:"type" v8n:"notNull,required,&StringValidToken{Tokens:['tea','coffee']}"`
+    Quantity int    `json:"quantity" v8n:"notNull,required,&Positive{}"`
+    // only relevant to type="tea"...
+    Blend    string `json:"blend" v8n:"notNull,required,&StringValidToken{Tokens:['Earl Grey','English Breakfast','Masala Chai']}"`
+    // only relevant to type="coffee"...
+    Roast    string `json:"roast" v8n:"notNull,required,&StringValidToken{Tokens:['light','medium','dark']}"`
+}
+```
+The above validation will always expect the `blend` and `roast` properties to be present and their value to be valid.  However, this is not the requirement of the model - we only want:
+* the `blend` property to be present and valid when `type="tea"`
+* the 'roast' property to be present and valid when `type="coffee"`
+
+These validation requirements can be incorporated by using the _'when conditions'_:
+```go
+type BeverageOrder struct {
+    Type     string `json:"type" v8n:"notNull,required,order:-1,&StringValidToken{Tokens:['tea','coffee']},&SetConditionFrom{}"`
+    Quantity int    `json:"quantity" v8n:"notNull,required,&Positive{}"`
+    // only relevant to type="tea"...
+    Blend    string `json:"blend" v8n:"when:tea,notNull,required,&StringValidToken{Tokens:['Earl Grey','English Breakfast','Masala Chai']}"`
+    // only relevant to type="coffee"...
+    Roast    string `json:"roast" v8n:"when:coffee,notNull,required,&StringValidToken{Tokens:['light','medium','dark']}"`
+}
+```
+Note in the above:
+* on the `Type` field:
+  * `order:-1` means that this property is checked
+  * `&SetConditionFrom{}` sets a validator context condition token from the incoming value of property `type` - therefore, either a validator context token of `tea` or `coffee` will be set
+* on the `Blend` field the `when:tea` tag has been added - which means the `blend` property is only checked when there is a validator context token of `tea` set  
+* on the `Roast` field the `when:coffee` tag has been added - which means the `roast` property is only checked when there is a validator context token of `coffee` set
+
+However, this second example may still not be strict enough - because it allows the `blend` property to be present when the type is `"coffee"` and the `roast` property to be present when the type is `"tea"`<br>
+This can be overcome by using the _'unwanted conditions'_:
+```go
+type BeverageOrderStrict struct {
+    Type     string `json:"type" v8n:"notNull,required,order:-1,&StringValidToken{Tokens:['tea','coffee']},&SetConditionFrom{}"`
+    Quantity int    `json:"quantity" v8n:"notNull,required,&Positive{}"`
+    // Blend is only relevant when type="tea"...
+    Blend    string `json:"blend" v8n:"when:tea,unwanted:!tea,notNull,required,&StringValidToken{Tokens:['Earl Grey','English Breakfast','Masala Chai']}"`
+    // Roast is only relevant when type="coffee"...
+    Roast    string `json:"roast" v8n:"when:coffee,unwanted:!coffee,notNull,required,&StringValidToken{Tokens:['light','medium','dark']}"`
+}
+```
+Note in the above:
+* the `unwanted:!tea` tag has been added to the `Blend` field - 
+  which means... _"if context token of `tea` has __not__ been set then we do not want the `blend` property to be present"_
+* the `unwanted:!coffee` tag has been added to the `Roast` field - 
+  which means... _"if context token of `coffee` has __not__ been set then we do not want the `roast` property to be present"_
+
 ## Validation Tags
 Valix can read tags from struct fields when building validators.  These are the `v8n` tags, in the format:
 ```go
@@ -549,17 +605,206 @@ type example struct {
 ```
 Where the tokens correspond to various property validation options - as listed here:
 
-| Token                              | Purpose                                                                                                                                                                                                                                                                                                                               |
-|------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `mandatory`                        | Specifies the JSON property must be present                                                                                                                                                                                                                                                                                           |
-| `notNull`                          | Specifies the JSON value for the property cannot be null                                                                                                                                                                                                                                                                              |
-| `optional`                         | Specifies the JSON property does not have to be present<br/>*(opposite to `mandatory`)*                                                                                                                                                                                                                                               |
-| `order:<n>`                        | Specifies the order in which the property should be validated (only respected if parent object is tagged as `obj.ordered` or parent validator is set to `OrderedPropertyChecks`)                                                                                                                                                      |
-| `type:<type>`                      | Specifies (overrides) the type expected for the JSON property value <br/>Where `<type>` must be one of (case-insensitive): `string`, `number`, `integer`, `boolean`, `object`, `array` or `any`                                                                                                                                       |
-| `constraint:<name>{fields}`        | Adds a constraint to the property (this token can be specified multiple times within the `v8n` tag.  The `<name>` must be a Valix common constraint or a previously registered constraint.<br/>The constraint `fields` can optionally be set example:<br/>&nbsp;&nbsp;&nbsp;&nbsp;`constraint:StringLength{Minimum: 1, Maximum: 255}` |
-| `constraints:[<name>{},...]`       | Adds multiple constraints to the property                                                                                                                                                                                                                                                                                             |
-| `&<constraint-name>{fields}`       | Adds a constraint to the property (shorthand way of specifying constraint without `constraint:` or `constraints:[]` prefix)                                                                                                                                                                                                           |
-| `obj.ignoreUnknownProperties`      | Sets an object (or array of objects) to ignore unknown properties (ignoring unknown properties means that the validator will not fail if an unknown property is found)                                                                                                                                                                |
-| `obj.unknownProperties:true/false` | Sets whether an object (or array of objects) is to ignore or not ignore unknown properties                                                                                                                                                                                                                                            |
-| `obj.constraint:<name>{}`          | Sets a constraint on an entire object (or each object in an array of objects)                                                                                                                                                                                                                                                         |
-| `obj.ordered`                      | Sets the object validator for a property to check properties in order<br/>(same as `Validator.OrderedPropertyChecks` in [Additional validator options](#additional-validator-options))                                                                                                                                                |
+<table>
+  <thead>
+    <tr>
+      <th width="33%">Token</th>
+      <th>Purpose & Example</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>mandatory</code></td>
+      <td>
+        Specifies the JSON property must be present
+        <pre>type Example struct {
+  Foo string `v8n:"mandatory"`
+}</pre>
+      </td>
+    </tr>
+    <tr>
+      <td><code>notNull</code></td>
+      <td>
+        Specifies the JSON value for the property cannot be null
+        <pre>type Example struct {
+  Foo string `v8n:"notNull"`
+}</pre>
+      </td>
+    </tr>
+    <tr>
+      <td><code>nullable</code></td>
+      <td>
+        Specifies the JSON value for the property can be null (<em>opposite of <code>notNull</code></em>)
+        <pre>type Example struct {
+  Foo string `v8n:"nullable"`
+}</pre>
+      </td>
+    </tr>
+    <tr>
+      <td><code>optional</code></td>
+      <td>
+        Specifies the JSON property does not have to be present (<em>opposite of <code>mandatory</code></em>)
+        <pre>type Example struct {
+  Foo string `v8n:"optional"`
+}</pre>
+      </td>
+    </tr>
+    <tr>
+      <td><code>order:&lt;n&gt;</code></td>
+      <td>
+        Specifies the order in which the property should be validated (only respected if parent object is tagged as <code>obj.ordered</code> or parent validator is set to <code>OrderedPropertyChecks</code>)
+        <pre>type Example struct {
+  Foo string `v8n:"order:0"`
+  Bar string `v8n:"order:1"`
+}</pre>
+      </td>
+    </tr>
+    <tr>
+      <td><code>required</code></td>
+      <td>
+        <em>same as <code>mandatory</code></em>
+        <pre>type Example struct {
+  Foo string `v8n:"required"`
+}</pre>
+      </td>
+    </tr>
+    <tr>
+      <td><code>type:&lt;type&gt;</code>
+      </td>
+      <td>
+        Specifies (overrides) the type expected for the JSON property value<br>
+        Where <code>&lt;type&gt;</code> must be one of (case-insensitive):<br>
+        &nbsp;&nbsp;&nbsp;<code>string</code>, <code>number</code>, <code>integer</code>, <code>boolean</code>, <code>object</code>, <code>array</code> or <code>any</code>
+        <pre>type Example struct {
+  Foo json.Number `v8n:"type:integer"`
+}</pre>
+      </td>
+    </tr>
+    <tr>
+      <td><code>constraint:&lt;name&gt;{fields}</code></td>
+      <td>
+        Adds a constraint to the property (this token can be specified multiple times within the <code>v8n</code> tag.
+        The <code>&lt;name&gt;</code> must be a Valix common constraint or a previously registered constraint.
+        The constraint `fields` can optionally be set.
+        <pre>type Example struct {
+  Foo string `v8n:"constraint:StringMaxLength{Value:255}"`
+}</pre>
+      </td>
+    </tr>
+    <tr>
+      <td><code>&amp;&lt;constraint-name&gt;{fields}</code></td>
+      <td>
+        Adds a constraint to the property (shorthand way of specifying constraint without <code>constraint:</code> or <code>constraints:[]</code> prefix)
+        <pre>type Example struct {
+  Foo string `v8n:"&amp;StringMaxLength{Value:255}"`
+}</pre>
+      </td>
+    </tr>
+    <tr>
+      <td><code>constraints:[&lt;name&gt;{},...]</code></td>
+      <td>
+        Adds multiple constraints to the property
+        <pre>type Example struct {
+  Foo string `v8n:"constraints:[StringNotEmpty{},StringNoControlCharacters{}]"`
+}</pre>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <code>when:&lt;condition&gt;</code><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<em>or</em><br>
+        <code>when:[&lt;condition&gt;,...]</code>
+      </td>
+      <td>
+        Adds when condition(s) for the property - where <code>&lt;condition&gt;</code> is a condition token (that may have been set during validation)<br>
+        The property is only validated when these conditions are met (see <a href="#conditional-constraints">Conditional Constraints</a>)
+        <pre>type Example struct {
+  Foo string `v8n:"when:YES_FOO"`
+}</pre>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <code>unwanted:&lt;condition&gt;</code><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<em>or</em><br>
+        <code>unwanted:[&lt;condition&gt;,...]</code>
+      </td>
+      <td>
+        Adds unwanted condition(s) for the property - where <code>&lt;condition&gt;</code> is a condition token (that may have been set during validation)<br>
+        If the unwanted condition(s) is met but the property is present then this is a validation violation (see <a href="#conditional-constraints">Conditional Constraints</a>)
+        <pre>type Example struct {
+  Foo string `v8n:"unwanted:NO_FOO"`
+}</pre>
+      </td>
+    </tr>
+    <tr>
+      <td><code>obj.ignoreUnknownProperties</code></td>
+      <td>
+        Sets an object (or array of objects) to ignore unknown properties (ignoring unknown properties means that the validator will not fail if an unknown property is found)
+        <pre>type Example struct {
+  SubObj struct{
+    Foo string
+  } `json:"subObj" v8n:"obj.ignoreUnknownProperties"`
+}</pre>
+      </td>
+    </tr>
+    <tr>
+      <td><code>obj.unknownProperties:true|false</code></td>
+      <td>
+        Sets whether an object is to allow/ignore (<code>true</code>) or disallow (<code>false</code>) unknown properties
+        <pre>type Example struct {
+  SubObj struct{
+    Foo string
+  } `json:"subObj" v8n:"obj.unknownProperties:false"`
+}</pre>
+      </td>
+    </tr>
+    <tr>
+      <td><code>obj.constraint:&lt;name&gt;{}</code></td>
+      <td>
+        Sets a constraint on an entire object or array
+        <pre>type Example struct {
+  SubObj struct{
+    Foo string
+  } `json:"subObj" v8n:"obj.constraint:Length{Minimum:1,Maximum:16}"`
+}</pre>
+      </td>
+    </tr>
+    <tr>
+      <td><code>obj.ordered</code></td>
+      <td>
+        Sets the object validator to check properties in order<br/>
+        (same as <code>Validator.OrderedPropertyChecks</code> in <a href="#additional-validator-options">Additional validator options</a>)
+        <pre>type Example struct {
+  SubObj struct{
+    Foo string `v8n:"order:0"`
+    Bar string `v8n:"order:1"`
+  } `v8n:"obj.ordered"`
+}</pre>
+the above will check the properties in order specified by their <code>order:</code> - whereas the following will check the properties in alphabetical order of name...
+        <pre>type Example struct {
+  SubObj struct{
+    Foo string `json:"foo"`
+    Bar string `json:"bar"`
+  } `v8n:"obj.ordered"`
+}</pre>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <code>obj.when:&lt;token&gt;</code><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<em>or</em><br>
+        <code>obj.when:[&lt;token&gt;,...]</code>
+      </td>
+      <td>
+        Adds when condition(s) for the object or array - where <code>&lt;condition&gt;</code> is a condition token (that may have been set during validation)<br>
+        The object/array is only validated when these conditions are met (see <a href="#conditional-constraints">Conditional Constraints</a>)
+        <pre>type Example struct {
+  SubObj struct{
+    Foo string
+  } `json:"subObj" v8n:"obj.when:YES_SUB"`
+}</pre>
+      </td>
+    </tr>
+  </tbody>
+</table>

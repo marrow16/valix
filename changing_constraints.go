@@ -48,3 +48,19 @@ func (c *StringNormalizeUnicode) Check(v interface{}, vcx *ValidatorContext) (bo
 	}
 	return true, c.GetMessage()
 }
+
+// SetConditionFrom constraint is a utility constraint that can be used to set a condition in the
+// ValidatorContext from string value of the property (to which this constraint is added)
+//
+// Note: It will only set a condition if the property value is a string!
+type SetConditionFrom struct {
+	baseNoMsg
+}
+
+// Check implements Constraint.Check
+func (c *SetConditionFrom) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
+	if str, ok := v.(string); ok {
+		vcx.SetCondition(str)
+	}
+	return true, c.GetMessage()
+}

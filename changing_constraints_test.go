@@ -93,3 +93,35 @@ func TestNormalizeUnicodeConstraintWithFollowingLengthConstraint(t *testing.T) {
 	require.Equal(t, 2, len(obj["foo"].(string)))
 	require.Equal(t, "\u00e7", obj["foo"])
 }
+
+func TestSetConditionFromConstraint(t *testing.T) {
+	conditionWasSet := false
+	validator := &Validator{
+		Properties: Properties{
+			"foo": {
+				Type:      JsonString,
+				NotNull:   true,
+				Mandatory: true,
+				Constraints: Constraints{
+					&SetConditionFrom{},
+					NewCustomConstraint(func(value interface{}, vcx *ValidatorContext, this *CustomConstraint) (bool, string) {
+						conditionWasSet = vcx.IsCondition("TEST_CONDITION_TOKEN")
+						return true, ""
+					}, ""),
+				},
+			},
+		},
+	}
+	obj := map[string]interface{}{
+		"foo": "TEST_CONDITION_TOKEN",
+	}
+
+	ok, _ := validator.Validate(obj)
+	require.True(t, ok)
+	require.True(t, conditionWasSet)
+
+	obj["foo"] = "bar"
+	ok, _ = validator.Validate(obj)
+	require.True(t, ok)
+	require.False(t, conditionWasSet)
+}

@@ -9,26 +9,33 @@ import (
 )
 
 const (
-	tagItemNotNull           = "notNull"
-	tagItemMandatory         = "mandatory"
-	tagItemOptional          = "optional"
-	tagItemType              = "type"
-	tagItemConstraint        = "constraint"
-	tagItemConstraints       = "constraints"
-	tagItemConstraintsPrefix = tagItemConstraints + ":"
-	tagItemOrder             = "order"
+	tagTokenNotNull           = "notNull"
+	tagTokenNullable          = "nullable"
+	tagTokenMandatory         = "mandatory"
+	tagTokenRequired          = "required"
+	tagTokenOptional          = "optional"
+	tagTokenType              = "type"
+	tagTokenConstraint        = "constraint"
+	tagTokenConstraints       = "constraints"
+	tagTokenConstraintsPrefix = tagTokenConstraints + ":"
+	tagTokenOrder             = "order"
+	tagTokenWhen              = "when"
+	tagTokenUnwanted          = "unwanted"
 	// object level tag items...
-	tagItemObjPrefix                  = "obj."
-	tagItemObjIgnoreUnknownProperties = tagItemObjPrefix + "ignoreUnknownProperties"
-	tagItemObjUnknownProperties       = tagItemObjPrefix + "unknownProperties" // true/false
-	tagItemObjConstraint              = tagItemObjPrefix + tagItemConstraint
-	tagItemObjOrdered                 = tagItemObjPrefix + "ordered"
+	tagTokenObjPrefix                  = "obj."
+	tagTokenObjIgnoreUnknownProperties = tagTokenObjPrefix + "ignoreUnknownProperties"
+	tagTokenObjUnknownProperties       = tagTokenObjPrefix + "unknownProperties" // true/false
+	tagTokenObjConstraint              = tagTokenObjPrefix + tagTokenConstraint
+	tagTokenObjOrdered                 = tagTokenObjPrefix + "ordered"
+	tagTokenObjWhen                    = tagTokenObjPrefix + tagTokenWhen
 )
 
 const (
 	msgV8nPrefix                   = "tag " + tagNameV8n + " - "
 	msgUnknownPropertyType         = msgV8nPrefix + "unknown property type '%s'"
 	msgUnknownTokenInTag           = msgV8nPrefix + "unknown token '%s'"
+	msgUnexpectedColon             = msgV8nPrefix + "unexpected ':' colon after token '%s'"
+	msgExpectedColon               = msgV8nPrefix + "expected ':' colon after token '%s'"
 	msgConstraintsFormat           = msgV8nPrefix + "must specify constraints in the format '&name{}' (found \"%s\")"
 	msgUnknownConstraint           = msgV8nPrefix + "contains unknown constraint '%s'"
 	msgCannotCreateConstraint      = msgV8nPrefix + "cannot create constraint '%s{}' (on non-struct constraint)"
@@ -38,6 +45,7 @@ const (
 	msgConstraintArgsParseError    = msgV8nPrefix + "constraint '%s{}' - args parsing error (%s)"
 	msgTagFldMissingColon          = msgV8nPrefix + "constraint '%s{}` field missing ':' separator"
 	msgUnknownTagValue             = msgV8nPrefix + "token '%s' expected %s value (found \"%s\")"
+	msgPropertyNotObject           = msgV8nPrefix + "token '%s' cannot be used on non object/array field"
 	msgUnclosed                    = "unclosed parenthesis or quote started at position %d"
 	msgUnopened                    = "unopened parenthesis at position %d"
 )
@@ -61,25 +69,28 @@ func (pv *PropertyValidator) processV8nTag(fld reflect.StructField) error {
 
 func (pv *PropertyValidator) processTagItems(tagItems []string) error {
 	for _, ti := range tagItems {
-		cs, is, err := isConstraintsList(ti)
-		if err != nil {
-			return err
-		} else if is {
-			for _, c := range cs {
-				if e2 := pv.addConstraint(c); e2 != nil {
-					return e2
+		tagItem := strings.Trim(ti, " ")
+		if tagItem != "" {
+			cs, is, err := isConstraintsList(tagItem)
+			if err != nil {
+				return err
+			} else if is {
+				for _, c := range cs {
+					if e2 := pv.addConstraint(c); e2 != nil {
+						return e2
+					}
 				}
+			} else if e3 := pv.addTagItem(tagItem); e3 != nil {
+				return e3
 			}
-		} else if e3 := pv.addTagItem(ti); e3 != nil {
-			return e3
 		}
 	}
 	return nil
 }
 
 func isConstraintsList(tagItem string) ([]string, bool, error) {
-	if strings.HasPrefix(tagItem, tagItemConstraintsPrefix) {
-		value := strings.Trim(tagItem[len(tagItemConstraintsPrefix):], " ")
+	if strings.HasPrefix(tagItem, tagTokenConstraintsPrefix) {
+		value := strings.Trim(tagItem[len(tagTokenConstraintsPrefix):], " ")
 		if strings.HasPrefix(value, "[") && strings.HasSuffix(value, "]") {
 			if list, err := parseCommas(value[1 : len(value)-1]); err != nil {
 				return nil, false, err
@@ -95,58 +106,100 @@ func isConstraintsList(tagItem string) ([]string, bool, error) {
 
 func (pv *PropertyValidator) addTagItem(tagItem string) (result error) {
 	result = nil
-	tagName := tagItem
+	tagToken := tagItem
 	tagValue := ""
+	hasColon := false
 	if cAt := firstValidColonAt(tagItem); cAt != -1 {
-		tagName = strings.Trim(tagItem[0:cAt], " ")
+		hasColon = true
+		tagToken = strings.Trim(tagItem[0:cAt], " ")
 		tagValue = strings.Trim(tagItem[cAt+1:], " ")
 	}
-	switch tagName {
-	case tagItemNotNull:
+	colonErr := false
+	noColonErr := false
+	switch tagToken {
+	case tagTokenNotNull:
+		colonErr = hasColon
 		pv.NotNull = true
 		break
-	case tagItemMandatory:
+	case tagTokenNullable:
+		colonErr = hasColon
+		pv.NotNull = false
+		break
+	case tagTokenMandatory, tagTokenRequired:
+		colonErr = hasColon
 		pv.Mandatory = true
 		break
-	case tagItemOptional:
+	case tagTokenOptional:
+		colonErr = hasColon
 		pv.Mandatory = false
 		break
-	case tagItemType:
-		if ty := JsonTypeFromString(tagValue); ty == JsonTypeUndefined {
-			result = fmt.Errorf(msgUnknownPropertyType, tagValue)
-		} else {
-			pv.Type = ty
+	case tagTokenType:
+		noColonErr = !hasColon
+		if !noColonErr {
+			result = pv.setTagType(tagValue)
 		}
 		break
-	case tagItemOrder:
-		if v, err := strconv.ParseInt(tagValue, 10, 32); err != nil {
-			result = fmt.Errorf(msgUnknownTagValue, tagItemOrder, "int", tagValue)
-		} else {
-			pv.Order = int(v)
+	case tagTokenOrder:
+		noColonErr = !hasColon
+		if !noColonErr {
+			result = pv.setTagOrder(tagValue)
 		}
 		break
-	case tagItemConstraint:
-		if err := pv.addConstraint(tagValue); err != nil {
-			result = err
+	case tagTokenConstraint:
+		noColonErr = !hasColon
+		if !noColonErr {
+			result = pv.addConstraint(tagValue)
 		}
 		break
-	case tagItemObjConstraint:
-		if err := pv.ObjectValidator.addConstraint(tagValue); err != nil {
-			result = err
+	case tagTokenObjConstraint:
+		noColonErr = !hasColon
+		if !noColonErr {
+			result = pv.setTagObjConstraint(tagValue)
 		}
 		break
-	case tagItemObjIgnoreUnknownProperties:
-		pv.ObjectValidator.IgnoreUnknownProperties = true
-		break
-	case tagItemObjUnknownProperties:
-		if b, err := strconv.ParseBool(tagValue); err == nil {
-			pv.ObjectValidator.IgnoreUnknownProperties = b
-		} else {
-			result = fmt.Errorf(msgUnknownTagValue, tagItemObjUnknownProperties, "boolean", tagValue)
+	case tagTokenWhen:
+		noColonErr = !hasColon
+		if !noColonErr {
+			result = pv.setTagWhen(tagValue)
 		}
 		break
-	case tagItemObjOrdered:
-		pv.ObjectValidator.OrderedPropertyChecks = true
+	case tagTokenUnwanted:
+		noColonErr = !hasColon
+		if !noColonErr {
+			result = pv.setTagUnwanted(tagValue)
+		}
+		break
+	case tagTokenObjIgnoreUnknownProperties:
+		colonErr = hasColon
+		if !colonErr {
+			if pv.ObjectValidator == nil {
+				result = fmt.Errorf(msgPropertyNotObject, tagToken)
+			} else {
+				pv.ObjectValidator.IgnoreUnknownProperties = true
+			}
+		}
+		break
+	case tagTokenObjUnknownProperties:
+		noColonErr = !hasColon
+		if !noColonErr {
+			result = pv.setTagObjUnknownProperties(tagValue)
+		}
+		break
+	case tagTokenObjOrdered:
+		colonErr = hasColon
+		if !colonErr {
+			if pv.ObjectValidator == nil {
+				result = fmt.Errorf(msgPropertyNotObject, tagToken)
+			} else {
+				pv.ObjectValidator.OrderedPropertyChecks = true
+			}
+		}
+		break
+	case tagTokenObjWhen:
+		noColonErr = !hasColon
+		if !noColonErr {
+			result = pv.setTagObjWhen(tagValue)
+		}
 		break
 	default:
 		if strings.HasPrefix(tagItem, "&") && strings.HasSuffix(tagItem, "}") {
@@ -155,10 +208,96 @@ func (pv *PropertyValidator) addTagItem(tagItem string) (result error) {
 				result = err
 			}
 		} else {
-			result = fmt.Errorf(msgUnknownTokenInTag, tagName)
+			result = fmt.Errorf(msgUnknownTokenInTag, tagToken)
+		}
+	}
+	if result == nil {
+		if colonErr {
+			result = fmt.Errorf(msgUnexpectedColon, tagToken)
+		} else if noColonErr {
+			result = fmt.Errorf(msgExpectedColon, tagToken)
 		}
 	}
 	return
+}
+
+func (pv *PropertyValidator) setTagType(tagValue string) error {
+	ty := JsonTypeFromString(tagValue)
+	if ty == JsonTypeUndefined {
+		return fmt.Errorf(msgUnknownPropertyType, tagValue)
+	}
+	pv.Type = ty
+	return nil
+}
+
+func (pv *PropertyValidator) setTagOrder(tagValue string) error {
+	v, err := strconv.ParseInt(tagValue, 10, 32)
+	if err != nil {
+		return fmt.Errorf(msgUnknownTagValue, tagTokenOrder, "int", tagValue)
+	}
+	pv.Order = int(v)
+	return nil
+}
+
+func (pv *PropertyValidator) setTagObjConstraint(tagValue string) error {
+	if pv.ObjectValidator == nil {
+		return fmt.Errorf(msgPropertyNotObject, tagTokenObjConstraint)
+	}
+	return pv.ObjectValidator.addConstraint(tagValue)
+}
+
+func (pv *PropertyValidator) setTagWhen(tagValue string) error {
+	if strings.HasPrefix(tagValue, "[") && strings.HasSuffix(tagValue, "]") {
+		if tokens, err := parseCommas(tagValue[1 : len(tagValue)-1]); err == nil {
+			pv.WhenConditions = append(pv.WhenConditions, tokens...)
+		} else {
+			return err
+		}
+	} else {
+		pv.WhenConditions = append(pv.WhenConditions, tagValue)
+	}
+	return nil
+}
+
+func (pv *PropertyValidator) setTagUnwanted(tagValue string) error {
+	if strings.HasPrefix(tagValue, "[") && strings.HasSuffix(tagValue, "]") {
+		if tokens, err := parseCommas(tagValue[1 : len(tagValue)-1]); err == nil {
+			pv.UnwantedConditions = append(pv.UnwantedConditions, tokens...)
+		} else {
+			return err
+		}
+	} else {
+		pv.UnwantedConditions = append(pv.UnwantedConditions, tagValue)
+	}
+	return nil
+}
+
+func (pv *PropertyValidator) setTagObjUnknownProperties(tagValue string) error {
+	if pv.ObjectValidator == nil {
+		return fmt.Errorf(msgPropertyNotObject, tagTokenObjUnknownProperties)
+	}
+	b, err := strconv.ParseBool(tagValue)
+	if err != nil {
+		return fmt.Errorf(msgUnknownTagValue, tagTokenObjUnknownProperties, "boolean", tagValue)
+	}
+	pv.ObjectValidator.IgnoreUnknownProperties = b
+	return nil
+}
+
+func (pv *PropertyValidator) setTagObjWhen(tagValue string) error {
+	if pv.ObjectValidator == nil {
+		return fmt.Errorf(msgPropertyNotObject, tagTokenObjWhen)
+	}
+	if strings.HasPrefix(tagValue, "[") && strings.HasSuffix(tagValue, "]") {
+		if tokens, err := parseCommas(tagValue[1 : len(tagValue)-1]); err == nil {
+			pv.ObjectValidator.WhenConditions = append(pv.ObjectValidator.WhenConditions, tokens...)
+		} else {
+			return err
+		}
+	} else {
+		pv.ObjectValidator.WhenConditions = append(pv.ObjectValidator.WhenConditions, tagValue)
+	}
+	return nil
 }
 
 func (pv *PropertyValidator) addConstraint(tagValue string) error {

@@ -1334,6 +1334,170 @@ func TestValidatorOrderedPropertyChecking(t *testing.T) {
 	require.Equal(t, 3, len(violations))
 }
 
+type unMarshallable struct {
+	Name string `json:"name" v8n:"notNull,mandatory,constraints:[StringNoControlCharacters{},StringLength{Minimum: 1, Maximum: 255}]"`
+	Age  int    `json:"age" v8n:"type:Integer,notNull,mandatory,constraint:PositiveOrZero{}"`
+}
+
+var unMarshallableValidator *Validator = nil
+
+func init() {
+	unMarshallableValidator = MustCompileValidatorFor(unMarshallable{}, nil)
+}
+func (s *unMarshallable) UnmarshalJSON(data []byte) error {
+	// if we don't create a copy of the struct - json.Decoder goes into a loop and stack overflows
+	type copyStruct unMarshallable
+	cpy := copyStruct{}
+	err := unMarshallableValidator.ValidateInto(data, &cpy)
+	if err != nil {
+		return err
+	}
+	*s = unMarshallable(cpy)
+	return nil
+}
+
+func TestUnMarshallableValidator(t *testing.T) {
+	un := &unMarshallable{}
+	data := []byte(`{"name":"charlie","age":10}`)
+	err := json.Unmarshal(data, un)
+	require.Nil(t, err)
+	require.Equal(t, "charlie", un.Name)
+	require.Equal(t, 10, un.Age)
+
+	data = []byte(`{"name":null,"age":-1}`)
+	err = json.Unmarshal(data, un)
+	require.NotNil(t, err)
+	require.Equal(t, messagePositiveOrZero, err.Error()) // messages get sorted!
+	vErr, ok := err.(*ValidationError)
+	require.True(t, ok)
+	require.NotNil(t, vErr)
+	require.False(t, vErr.IsBadRequest)
+	require.Equal(t, 2, len(vErr.Violations))
+	require.Equal(t, "age", vErr.Violations[0].Property)
+	require.Equal(t, "", vErr.Violations[0].Path)
+	require.Equal(t, messagePositiveOrZero, vErr.Violations[0].Message)
+	require.Equal(t, "name", vErr.Violations[1].Property)
+	require.Equal(t, "", vErr.Violations[1].Path)
+	require.Equal(t, messageValueCannotBeNull, vErr.Violations[1].Message)
+
+	data = []byte(`null`)
+	err = json.Unmarshal(data, un)
+	require.NotNil(t, err)
+	require.Equal(t, msgNotJsonNull, err.Error())
+	vErr, ok = err.(*ValidationError)
+	require.True(t, ok)
+	require.NotNil(t, vErr)
+	require.True(t, vErr.IsBadRequest)
+	require.Equal(t, 0, len(vErr.Violations))
+}
+
+func TestValidatorMeetsWhenConditions(t *testing.T) {
+	testIgnore := false
+	v := &Validator{
+		Constraints: Constraints{
+			NewCustomConstraint(func(value interface{}, vcx *ValidatorContext, this *CustomConstraint) (bool, string) {
+				if testIgnore {
+					vcx.SetCondition("TEST_IGNORE")
+				}
+				return true, ""
+			}, ""),
+		},
+		Properties: Properties{
+			"foo": {
+				Type:      JsonString,
+				Mandatory: true,
+				Constraints: Constraints{
+					&StringNotEmpty{},
+				},
+				WhenConditions: []string{"!TEST_IGNORE"},
+			},
+		},
+	}
+	obj := jsonObject(`{}`)
+
+	ok, violations := v.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, fmt.Sprintf(msgMissingProperty, "foo"), violations[0].Message)
+
+	testIgnore = true
+	ok, violations = v.Validate(obj)
+	require.True(t, ok)
+	require.Equal(t, 0, len(violations))
+
+	// and again with ordered
+	v.OrderedPropertyChecks = true
+	testIgnore = false
+	ok, _ = v.Validate(obj)
+	require.False(t, ok)
+	testIgnore = true
+	ok, _ = v.Validate(obj)
+	require.True(t, ok)
+}
+
+func TestValidatorMeetsUnwantedConditions(t *testing.T) {
+	testUnwanted := true
+	v := &Validator{
+		Constraints: Constraints{
+			NewCustomConstraint(func(value interface{}, vcx *ValidatorContext, this *CustomConstraint) (bool, string) {
+				if testUnwanted {
+					vcx.SetCondition("TEST_UNWANTED")
+				}
+				return true, ""
+			}, ""),
+		},
+		Properties: Properties{
+			"foo": {
+				Type:      JsonString,
+				Mandatory: true,
+				Constraints: Constraints{
+					&StringNotEmpty{},
+				},
+				UnwantedConditions: []string{"TEST_UNWANTED"},
+			},
+		},
+	}
+	obj := jsonObject(`{"foo": "bar"}`)
+
+	ok, violations := v.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, fmt.Sprintf(msgUnwantedProperty, "foo"), violations[0].Message)
+
+	testUnwanted = false
+	ok, violations = v.Validate(obj)
+	require.True(t, ok)
+
+	// and again with ordered
+	v.OrderedPropertyChecks = true
+	testUnwanted = true
+	ok, _ = v.Validate(obj)
+	require.False(t, ok)
+	testUnwanted = false
+	ok, _ = v.Validate(obj)
+	require.True(t, ok)
+}
+
+func TestPresumptiveOrderedPropertyChecks(t *testing.T) {
+	v := &Validator{
+		Properties: Properties{
+			"foo": {
+				Order: 0,
+			},
+		},
+	}
+	require.False(t, v.OrderedPropertyChecks)
+	require.False(t, v.IsOrderedPropertyChecks())
+
+	v.OrderedPropertyChecks = true
+	require.True(t, v.IsOrderedPropertyChecks())
+
+	v.OrderedPropertyChecks = false
+	v.Properties["foo"].Order = -1
+	require.False(t, v.OrderedPropertyChecks)
+	require.True(t, v.IsOrderedPropertyChecks())
+}
+
 type mockErrorReader struct {
 }
 

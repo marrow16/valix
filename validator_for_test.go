@@ -307,7 +307,7 @@ func TestValidatorForWithBadOrderTagValue(t *testing.T) {
 	v, err := ValidatorFor(myStruct, nil)
 	require.Nil(t, v)
 	require.NotNil(t, err)
-	require.Equal(t, fmt.Sprintf(msgUnknownTagValue, tagItemOrder, "int", "not_a_number"), err.Error())
+	require.Equal(t, fmt.Sprintf(msgUnknownTagValue, tagTokenOrder, "int", "not_a_number"), err.Error())
 }
 
 type subStruct struct {
