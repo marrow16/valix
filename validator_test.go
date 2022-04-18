@@ -4,10 +4,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/stretchr/testify/require"
 	"net/http"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 // test validator - validates JSON...
@@ -75,6 +76,9 @@ func TestValidatorWithReUseWorks(t *testing.T) {
 	ok, violations := addPersonToGroupValidator.Validate(o)
 	require.False(t, ok)
 	require.Equal(t, 3, len(violations))
+	require.Equal(t, CodePropertyConstraintFail, violations[0].Codes[0])
+	require.Equal(t, CodePropertyConstraintFail, violations[1].Codes[0])
+	require.Equal(t, CodePropertyConstraintFail, violations[2].Codes[0])
 }
 
 func TestMissingPropertyDetection(t *testing.T) {
@@ -84,9 +88,10 @@ func TestMissingPropertyDetection(t *testing.T) {
 	ok, violations := personValidator.Validate(o)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(msgMissingProperty, "age"), violations[0].Message)
+	require.Equal(t, msgMissingProperty, violations[0].Message)
+	require.Equal(t, "age", violations[0].Property)
+	require.Equal(t, CodeMissingProperty, violations[0].Codes[0])
 	require.Equal(t, "", violations[0].Path)
-	require.Equal(t, "", violations[0].Property)
 }
 
 func TestUnknownPropertyDetection(t *testing.T) {
@@ -98,9 +103,10 @@ func TestUnknownPropertyDetection(t *testing.T) {
 	ok, violations := personValidator.Validate(o)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(msgUnknownProperty, "unknown_property"), violations[0].Message)
+	require.Equal(t, msgUnknownProperty, violations[0].Message)
+	require.Equal(t, "unknown_property", violations[0].Property)
+	require.Equal(t, CodeUnknownProperty, violations[0].Codes[0])
 	require.Equal(t, "", violations[0].Path)
-	require.Equal(t, "", violations[0].Property)
 }
 
 func TestValidationOfArray(t *testing.T) {
@@ -135,9 +141,11 @@ func TestValidationOfArrayFailsWithNonObjectElement(t *testing.T) {
 	ok, violations := personValidator.ValidateArrayOf(a)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(msgArrayElementMustBeObject, 1), violations[0].Message)
+	require.Equal(t, msgArrayElementMustBeObject, violations[0].Message)
+	require.Equal(t, CodeArrayElementMustBeObject, violations[0].Codes[0])
+	require.Equal(t, 1, violations[0].Codes[1])
 	require.Equal(t, "", violations[0].Path)
-	require.Equal(t, "", violations[0].Property)
+	require.Equal(t, "[1]", violations[0].Property)
 }
 
 func TestValidatorWithObjectConstraint(t *testing.T) {
@@ -153,9 +161,10 @@ func TestValidatorWithObjectConstraint(t *testing.T) {
 	ok, violations := v.Validate(o)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(messageMinMax, 2, 3), violations[0].Message)
+	require.Equal(t, fmt.Sprintf(fmtMsgMinMax, 2, tokenInclusive, 3, tokenInclusive), violations[0].Message)
 	require.Equal(t, "", violations[0].Path)
 	require.Equal(t, "", violations[0].Property)
+	require.Equal(t, CodeValidatorConstraintFail, violations[0].Codes[0])
 }
 
 func TestRequestValidation(t *testing.T) {
@@ -223,6 +232,7 @@ func TestRequestValidationWithJsonNullBody(t *testing.T) {
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
 	require.Equal(t, msgRequestBodyNotJsonNull, violations[0].Message)
+	require.Equal(t, CodeRequestBodyNotJsonNull, violations[0].Codes[0])
 	require.True(t, violations[0].BadRequest)
 	require.Nil(t, obj)
 }
@@ -236,6 +246,7 @@ func TestRequestValidationWithNoBody(t *testing.T) {
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
 	require.Equal(t, msgRequestBodyEmpty, violations[0].Message)
+	require.Equal(t, CodeRequestBodyEmpty, violations[0].Codes[0])
 	require.True(t, violations[0].BadRequest)
 	require.Nil(t, obj)
 }
@@ -251,6 +262,7 @@ func TestRequestValidationFailsWithArrayWhenArrayNotAllowed(t *testing.T) {
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
 	require.Equal(t, msgRequestBodyNotJsonArray, violations[0].Message)
+	require.Equal(t, CodeRequestBodyNotJsonArray, violations[0].Codes[0])
 	require.False(t, violations[0].BadRequest)
 	require.NotNil(t, obj)
 }
@@ -266,6 +278,7 @@ func TestRequestValidationFailsWithObjectWhenObjectNotAllowed(t *testing.T) {
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
 	require.Equal(t, msgRequestBodyExpectedJsonArray, violations[0].Message)
+	require.Equal(t, CodeRequestBodyExpectedJsonArray, violations[0].Codes[0])
 	require.False(t, violations[0].BadRequest)
 	require.NotNil(t, obj)
 }
@@ -281,6 +294,7 @@ func TestRequestValidationFailsWhenExpectingObject(t *testing.T) {
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
 	require.Equal(t, msgRequestBodyExpectedJsonObject, violations[0].Message)
+	require.Equal(t, CodeRequestBodyExpectedJsonObject, violations[0].Codes[0])
 	require.True(t, violations[0].BadRequest)
 	require.NotNil(t, obj)
 }
@@ -296,6 +310,7 @@ func TestRequestValidationFailsWhenObjectDisallowed(t *testing.T) {
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
 	require.Equal(t, msgRequestBodyNotJsonObject, violations[0].Message)
+	require.Equal(t, CodeRequestBodyNotJsonObject, violations[0].Codes[0])
 	require.False(t, violations[0].BadRequest)
 	require.NotNil(t, obj)
 }
@@ -310,6 +325,7 @@ func TestRequestValidationWithBadJson(t *testing.T) {
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
 	require.Equal(t, msgUnableToDecodeRequest, violations[0].Message)
+	require.Equal(t, CodeUnableToDecodeRequest, violations[0].Codes[0])
 	require.True(t, violations[0].BadRequest)
 	require.Nil(t, obj)
 }
@@ -347,7 +363,7 @@ func TestValidatorStopsOnArrayElement(t *testing.T) {
 				Constraints: Constraints{
 					NewCustomConstraint(func(value interface{}, vcx *ValidatorContext, cc *CustomConstraint) (bool, string) {
 						vcx.Stop()
-						return false, cc.GetMessage()
+						return false, cc.GetMessage(vcx)
 					}, testMsg),
 				},
 			},
@@ -405,7 +421,7 @@ func TestPropertyValueObjectValidatorFailsForObjectOrArray(t *testing.T) {
 	ok, violations := v.Validate(o)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, messageValueMustBeObjectOrArray, violations[0].Message)
+	require.Equal(t, msgValueMustBeObjectOrArray, violations[0].Message)
 }
 
 func TestPropertyValueObjectValidatorFailsForObjectOnly(t *testing.T) {
@@ -424,7 +440,7 @@ func TestPropertyValueObjectValidatorFailsForObjectOnly(t *testing.T) {
 	ok, violations := v.Validate(o)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, messageValueMustBeObject, violations[0].Message)
+	require.Equal(t, msgValueMustBeObject, violations[0].Message)
 }
 
 func TestPropertyValueObjectValidatorFailsForArrayOnly(t *testing.T) {
@@ -443,7 +459,7 @@ func TestPropertyValueObjectValidatorFailsForArrayOnly(t *testing.T) {
 	ok, violations := v.Validate(o)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, messageValueMustBeArray, violations[0].Message)
+	require.Equal(t, msgValueMustBeArray, violations[0].Message)
 }
 
 func TestPropertyValueObjectValidatorFailsForNeitherObjectNorArray(t *testing.T) {
@@ -462,7 +478,7 @@ func TestPropertyValueObjectValidatorFailsForNeitherObjectNorArray(t *testing.T)
 	ok, violations := v.Validate(o)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, messagePropertyObjectValidatorError, violations[0].Message)
+	require.Equal(t, msgPropertyObjectValidatorError, violations[0].Message)
 }
 
 func TestSubPropertyValidation(t *testing.T) {
@@ -531,10 +547,10 @@ func TestSubPropertyAsArrayValidation(t *testing.T) {
 	SortViolationsByPathAndProperty(violations)
 	require.Equal(t, "person", violations[0].Path)
 	require.Equal(t, "age", violations[0].Property)
-	require.Equal(t, messagePositiveOrZero, violations[0].Message)
+	require.Equal(t, msgPositiveOrZero, violations[0].Message)
 	require.Equal(t, "person", violations[1].Path)
 	require.Equal(t, "name", violations[1].Property)
-	require.Equal(t, fmt.Sprintf(messageStringMinMaxLen, 1, 255), violations[1].Message)
+	require.Equal(t, fmt.Sprintf(fmtMsgStringMinMaxLen, 1, tokenInclusive, 255, tokenInclusive), violations[1].Message)
 
 	o["person"] = []interface{}{
 		jsonObject(`{
@@ -565,7 +581,7 @@ func TestCheckPropertyTypeString(t *testing.T) {
 	ok, violations := v.Validate(o)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(messageValueExpectedType, JsonString), violations[0].Message)
+	require.Equal(t, fmt.Sprintf(fmtMsgValueExpectedType, JsonString), violations[0].Message)
 
 	o["foo"] = true
 	ok, _ = v.Validate(o)
@@ -595,7 +611,7 @@ func TestCheckPropertyTypeNumber(t *testing.T) {
 	ok, violations := v.Validate(o)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(messageValueExpectedType, JsonNumber), violations[0].Message)
+	require.Equal(t, fmt.Sprintf(fmtMsgValueExpectedType, JsonNumber), violations[0].Message)
 
 	o["foo"] = true
 	ok, _ = v.Validate(o)
@@ -629,7 +645,7 @@ func TestCheckPropertyTypeBoolean(t *testing.T) {
 	ok, violations := v.Validate(o)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(messageValueExpectedType, JsonBoolean), violations[0].Message)
+	require.Equal(t, fmt.Sprintf(fmtMsgValueExpectedType, JsonBoolean), violations[0].Message)
 
 	o["foo"] = 1.0
 	ok, _ = v.Validate(o)
@@ -663,7 +679,7 @@ func TestCheckPropertyTypeObject(t *testing.T) {
 	ok, violations := v.Validate(o)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(messageValueExpectedType, JsonObject), violations[0].Message)
+	require.Equal(t, fmt.Sprintf(fmtMsgValueExpectedType, JsonObject), violations[0].Message)
 
 	o["foo"] = 1.0
 	ok, _ = v.Validate(o)
@@ -693,7 +709,7 @@ func TestCheckPropertyTypeArray(t *testing.T) {
 	ok, violations := v.Validate(o)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(messageValueExpectedType, JsonArray), violations[0].Message)
+	require.Equal(t, fmt.Sprintf(fmtMsgValueExpectedType, JsonArray), violations[0].Message)
 
 	o["foo"] = 1.0
 	ok, _ = v.Validate(o)
@@ -744,7 +760,7 @@ func TestValidatorStops(t *testing.T) {
 	ok, violations = v.Validate(o)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, messageValueCannotBeNull, violations[0].Message)
+	require.Equal(t, msgValueCannotBeNull, violations[0].Message)
 }
 
 func TestValidatorManuallyAddedViolation(t *testing.T) {
@@ -769,7 +785,7 @@ func TestValidatorManuallyAddedViolation(t *testing.T) {
 	require.False(t, ok)
 	require.Equal(t, 2, len(violations))
 	require.Equal(t, msg, violations[0].Message)
-	require.Equal(t, messageNotEmptyString, violations[1].Message)
+	require.Equal(t, msgNotEmptyString, violations[1].Message)
 }
 
 func TestValidatorManuallyAddedCurrentViolation(t *testing.T) {
@@ -780,7 +796,7 @@ func TestValidatorManuallyAddedCurrentViolation(t *testing.T) {
 				Type: JsonString,
 				Constraints: Constraints{
 					NewCustomConstraint(func(value interface{}, vcx *ValidatorContext, cc *CustomConstraint) (bool, string) {
-						vcx.AddViolationForCurrent(msg)
+						vcx.AddViolationForCurrent(msg, true)
 						return true, ""
 					}, ""),
 					&StringNotEmpty{},
@@ -796,7 +812,7 @@ func TestValidatorManuallyAddedCurrentViolation(t *testing.T) {
 	require.Equal(t, msg, violations[0].Message)
 	require.Equal(t, "", violations[0].Path)
 	require.Equal(t, "foo", violations[0].Property)
-	require.Equal(t, messageNotEmptyString, violations[1].Message)
+	require.Equal(t, msgNotEmptyString, violations[1].Message)
 	require.Equal(t, "", violations[1].Path)
 	require.Equal(t, "foo", violations[1].Property)
 }
@@ -990,18 +1006,21 @@ func TestValidateReaderCanReadObjectOrArray(t *testing.T) {
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
 	require.Equal(t, msgExpectedJsonObject, violations[0].Message)
+	require.Equal(t, CodeExpectedJsonObject, violations[0].Codes[0])
 
 	r = strings.NewReader(`null`)
 	ok, violations, obj = validator.ValidateReader(r)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
 	require.Equal(t, msgNotJsonNull, violations[0].Message)
+	require.Equal(t, CodeNotJsonNull, violations[0].Codes[0])
 
 	r = strings.NewReader(`[{"foo": "bar"}]`)
 	ok, violations, obj = validator.ValidateReader(r)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
 	require.Equal(t, msgNotJsonArray, violations[0].Message)
+	require.Equal(t, CodeNotJsonArray, violations[0].Codes[0])
 
 	validator.AllowArray = true
 	validator.DisallowObject = false
@@ -1020,6 +1039,7 @@ func TestValidateReaderCanReadObjectOrArray(t *testing.T) {
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
 	require.Equal(t, msgExpectedJsonArray, violations[0].Message)
+	require.Equal(t, CodeExpectedJsonArray, violations[0].Codes[0])
 
 	validator.AllowArray = false
 	validator.DisallowObject = true
@@ -1028,6 +1048,7 @@ func TestValidateReaderCanReadObjectOrArray(t *testing.T) {
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
 	require.Equal(t, msgNotJsonObject, violations[0].Message)
+	require.Equal(t, CodeNotJsonObject, violations[0].Codes[0])
 }
 
 func TestValidateString(t *testing.T) {
@@ -1166,6 +1187,7 @@ func TestRequestValidateIntoFailsWithBadJsonBody(t *testing.T) {
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
 	require.Equal(t, msgUnableToDecodeRequest, violations[0].Message)
+	require.Equal(t, CodeUnableToDecodeRequest, violations[0].Codes[0])
 	require.Nil(t, obj)
 }
 
@@ -1179,6 +1201,7 @@ func TestRequestValidateIntoFailsWithEmptyBody(t *testing.T) {
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
 	require.Equal(t, msgRequestBodyEmpty, violations[0].Message)
+	require.Equal(t, CodeRequestBodyEmpty, violations[0].Codes[0])
 	require.Nil(t, obj)
 }
 
@@ -1193,6 +1216,7 @@ func TestRequestValidateIntoFailsWithErrorReader(t *testing.T) {
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
 	require.Equal(t, msgErrorReading, violations[0].Message)
+	require.Equal(t, CodeErrorReading, violations[0].Codes[0])
 	require.Nil(t, obj)
 }
 
@@ -1206,7 +1230,8 @@ func TestRequestValidateIntoFailsWithValidation(t *testing.T) {
 	ok, violations, obj := validatorForInto.RequestValidateInto(req, myObj)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(msgUnknownProperty, "xxx"), violations[0].Message)
+	require.Equal(t, msgUnknownProperty, violations[0].Message)
+	require.Equal(t, "xxx", violations[0].Property)
 	require.NotNil(t, obj)
 }
 
@@ -1235,6 +1260,7 @@ func TestRequestValidateIntoFailsWithWhenIntoStructDifferent(t *testing.T) {
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
 	require.Equal(t, msgErrorUnmarshall, violations[0].Message)
+	require.Equal(t, CodeErrorUnmarshall, violations[0].Codes[0])
 	require.NotNil(t, obj)
 }
 
@@ -1245,6 +1271,7 @@ func TestValidateReaderIntoFailsWithBadJson(t *testing.T) {
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
 	require.Equal(t, msgUnableToDecode, violations[0].Message)
+	require.Equal(t, CodeUnableToDecode, violations[0].Codes[0])
 	require.Nil(t, obj)
 }
 
@@ -1254,7 +1281,8 @@ func TestValidateReaderIntoFailsValidation(t *testing.T) {
 	ok, violations, obj := validatorForInto.ValidateReaderInto(r, myObj)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(msgUnknownProperty, "xxx"), violations[0].Message)
+	require.Equal(t, msgUnknownProperty, violations[0].Message)
+	require.Equal(t, "xxx", violations[0].Property)
 	require.NotNil(t, obj)
 }
 
@@ -1275,6 +1303,7 @@ func TestValidateReaderIntoFailsWhenIntoStructDifferent(t *testing.T) {
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
 	require.Equal(t, msgErrorUnmarshall, violations[0].Message)
+	require.Equal(t, CodeErrorUnmarshall, violations[0].Codes[0])
 	require.NotNil(t, obj)
 }
 
@@ -1367,7 +1396,7 @@ func TestUnMarshallableValidator(t *testing.T) {
 	data = []byte(`{"name":null,"age":-1}`)
 	err = json.Unmarshal(data, un)
 	require.NotNil(t, err)
-	require.Equal(t, messagePositiveOrZero, err.Error()) // messages get sorted!
+	require.Equal(t, msgPositiveOrZero, err.Error()) // messages get sorted!
 	vErr, ok := err.(*ValidationError)
 	require.True(t, ok)
 	require.NotNil(t, vErr)
@@ -1375,10 +1404,10 @@ func TestUnMarshallableValidator(t *testing.T) {
 	require.Equal(t, 2, len(vErr.Violations))
 	require.Equal(t, "age", vErr.Violations[0].Property)
 	require.Equal(t, "", vErr.Violations[0].Path)
-	require.Equal(t, messagePositiveOrZero, vErr.Violations[0].Message)
+	require.Equal(t, msgPositiveOrZero, vErr.Violations[0].Message)
 	require.Equal(t, "name", vErr.Violations[1].Property)
 	require.Equal(t, "", vErr.Violations[1].Path)
-	require.Equal(t, messageValueCannotBeNull, vErr.Violations[1].Message)
+	require.Equal(t, msgValueCannotBeNull, vErr.Violations[1].Message)
 
 	data = []byte(`null`)
 	err = json.Unmarshal(data, un)
@@ -1418,7 +1447,8 @@ func TestValidatorMeetsWhenConditions(t *testing.T) {
 	ok, violations := v.Validate(obj)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(msgMissingProperty, "foo"), violations[0].Message)
+	require.Equal(t, msgMissingProperty, violations[0].Message)
+	require.Equal(t, "foo", violations[0].Property)
 
 	testIgnore = true
 	ok, violations = v.Validate(obj)
@@ -1462,7 +1492,9 @@ func TestValidatorMeetsUnwantedConditions(t *testing.T) {
 	ok, violations := v.Validate(obj)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(msgUnwantedProperty, "foo"), violations[0].Message)
+	require.Equal(t, msgUnwantedProperty, violations[0].Message)
+	require.Equal(t, "foo", violations[0].Property)
+	require.Equal(t, CodeUnwantedProperty, violations[0].Codes[0])
 
 	testUnwanted = false
 	ok, violations = v.Validate(obj)
@@ -1522,9 +1554,274 @@ func TestValidateReaderIntoFailsWithErrorReader(t *testing.T) {
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
 	require.Equal(t, msgErrorReading, violations[0].Message)
+	require.Equal(t, CodeErrorReading, violations[0].Codes[0])
 	require.Nil(t, obj)
 }
 
+func TestValidatorPolymorphism(t *testing.T) {
+	catProperties := Properties{
+		"body": {
+			Type:      JsonString,
+			Mandatory: true,
+			NotNull:   true,
+			Constraints: Constraints{
+				&StringValidToken{
+					Tokens: []string{"foreign", "semi-foreign", "moderate", "cobby", "lean", "muscular", "large", "normal"},
+				},
+			},
+		},
+		"coatLength": {
+			Type:      JsonString,
+			Mandatory: true,
+			NotNull:   true,
+			Constraints: Constraints{
+				&StringValidToken{
+					Tokens: []string{"short", "semi-long", "long", "rex", "hairless"},
+				},
+			},
+		},
+	}
+	dogProperties := Properties{
+		"breed": {
+			Type:      JsonString,
+			Mandatory: true,
+			NotNull:   true,
+		},
+	}
+	rabbitProperties := Properties{
+		"isFluffy": {
+			Type:      JsonBoolean,
+			Mandatory: true,
+			NotNull:   true,
+		},
+		"isFriendly": {
+			Type:      JsonBoolean,
+			Mandatory: true,
+			NotNull:   true,
+		},
+	}
+	petValidator := &Validator{
+		Constraints: Constraints{
+			&SetConditionProperty{
+				PropertyName: "petType",
+			},
+		},
+		Properties: Properties{
+			"petType": {
+				Type:      JsonString,
+				Mandatory: true,
+				NotNull:   true,
+				Constraints: Constraints{
+					&StringValidToken{
+						Tokens: []string{"cat", "dog", "rabbit"},
+					},
+				},
+			},
+		},
+		ConditionalVariants: ConditionalVariants{
+			{
+				Properties:     catProperties,
+				WhenConditions: []string{"cat"},
+			},
+			{
+				Properties:     dogProperties,
+				WhenConditions: []string{"dog"},
+			},
+			{
+				Properties:     rabbitProperties,
+				WhenConditions: []string{"rabbit"},
+			},
+		},
+	}
+
+	obj := jsonObject(`{
+		"petType": "dog",
+		"breed": "Staffordshire Bull Terrier"
+	}`)
+	ok, violations := petValidator.Validate(obj)
+	require.True(t, ok)
+	require.Equal(t, 0, len(violations))
+
+	obj = jsonObject(`{
+		"petType": "dog",
+		"body": "cobby"
+	}`)
+	ok, violations = petValidator.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 2, len(violations))
+	require.Equal(t, msgInvalidProperty, violations[0].Message)
+	require.Equal(t, "body", violations[0].Property)
+	require.Equal(t, CodeInvalidProperty, violations[0].Codes[0])
+	require.Equal(t, msgMissingProperty, violations[1].Message)
+	require.Equal(t, "breed", violations[1].Property)
+
+	obj = jsonObject(`{
+		"petType": "cat",
+		"body": "cobby"
+	}`)
+	ok, violations = petValidator.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, msgMissingProperty, violations[0].Message)
+	require.Equal(t, "coatLength", violations[0].Property)
+
+	obj = jsonObject(`{
+		"petType": "cat",
+		"body": "cobby",
+		"coatLength": "short"
+	}`)
+	ok, _ = petValidator.Validate(obj)
+	require.True(t, ok)
+
+	obj = jsonObject(`{
+		"petType": "rabbit",
+		"body": "cobby",
+		"coatLength": "short"
+	}`)
+	ok, violations = petValidator.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 4, len(violations))
+}
+
+func TestConditionalVariantsStopOnFirst(t *testing.T) {
+	constraintPasses := false
+	v := &Validator{
+		StopOnFirst:           true,
+		OrderedPropertyChecks: true,
+		Constraints: Constraints{
+			&SetConditionProperty{PropertyName: "foo"},
+		},
+		Properties: Properties{
+			"foo": {
+				Type:      JsonString,
+				Mandatory: true,
+				Constraints: Constraints{
+					&StringValidToken{Tokens: []string{"bar"}},
+				},
+			},
+			"baz": {
+				Type:    JsonString,
+				NotNull: true,
+			},
+		},
+		ConditionalVariants: ConditionalVariants{
+			{
+				WhenConditions: []string{"bar"},
+				Constraints: Constraints{
+					NewCustomConstraint(func(value interface{}, vcx *ValidatorContext, this *CustomConstraint) (bool, string) {
+						return constraintPasses, "constraint fail"
+					}, ""),
+				},
+				Properties: Properties{
+					"bar": {
+						Type:    JsonString,
+						NotNull: true,
+					},
+				},
+			},
+		},
+	}
+	obj := jsonObject(`{
+		"foo": "bar",
+		"bar": null,
+		"baz": 1,
+		"unknown": true
+	}`)
+	ok, violations := v.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, "constraint fail", violations[0].Message)
+
+	constraintPasses = true
+	ok, violations = v.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, msgUnknownProperty, violations[0].Message)
+	require.Equal(t, "unknown", violations[0].Property)
+
+	obj2 := jsonObject(`{
+		"foo": "bar",
+		"bar": null,
+		"baz": 1
+	}`)
+	ok, violations = v.Validate(obj2)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, msgValueCannotBeNull, violations[0].Message)
+	require.Equal(t, "bar", violations[0].Property)
+
+	// and without stop on first...
+	constraintPasses = false
+	v.StopOnFirst = false
+	ok, violations = v.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 4, len(violations))
+}
+
+func TestConditionalNestedVariants(t *testing.T) {
+	v := &Validator{
+		Constraints: Constraints{
+			&SetConditionProperty{PropertyName: "foo"},
+		},
+		Properties: Properties{
+			"foo": {
+				Type:      JsonString,
+				Mandatory: true,
+				Constraints: Constraints{
+					&StringValidToken{Tokens: []string{"bar"}},
+				},
+			},
+		},
+		ConditionalVariants: ConditionalVariants{
+			{
+				WhenConditions: []string{"bar"},
+				Constraints: Constraints{
+					&SetConditionProperty{PropertyName: "bar"},
+				},
+				Properties: Properties{
+					"bar": {
+						Type:      JsonString,
+						NotNull:   true,
+						Mandatory: true,
+					},
+				},
+				ConditionalVariants: ConditionalVariants{
+					{
+						WhenConditions: []string{"baz"},
+						Properties: Properties{
+							"baz": {
+								Type:      JsonString,
+								NotNull:   true,
+								Mandatory: true,
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	obj := jsonObject(`{
+		"foo": "bar",
+		"bar": "baz",
+		"baz": "xxx"
+	}`)
+	ok, violations := v.Validate(obj)
+	require.True(t, ok)
+	require.Equal(t, 0, len(violations))
+
+	obj["foo"] = "xxx"
+	ok, violations = v.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 3, len(violations))
+	SortViolationsByPathAndProperty(violations)
+	require.Equal(t, msgUnknownProperty, violations[0].Message)
+	require.Equal(t, "bar", violations[0].Property)
+	require.Equal(t, msgUnknownProperty, violations[1].Message)
+	require.Equal(t, "baz", violations[1].Property)
+	require.Equal(t, "foo", violations[2].Property)
+}
+
+/* Utility structs & functions */
 type myCustomConstraint struct {
 	expectedPath string
 }
@@ -1532,7 +1829,7 @@ type myCustomConstraint struct {
 func (c *myCustomConstraint) Check(value interface{}, vcx *ValidatorContext) (bool, string) {
 	return false, c.expectedPath
 }
-func (c *myCustomConstraint) GetMessage() string {
+func (c *myCustomConstraint) GetMessage(tcx I18nContext) string {
 	return ""
 }
 

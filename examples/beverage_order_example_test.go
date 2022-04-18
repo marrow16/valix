@@ -1,9 +1,10 @@
 package examples
 
 import (
+	"testing"
+
 	"github.com/marrow16/valix"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 /*
@@ -22,8 +23,8 @@ var InitialBeverageOrderValidator = valix.MustCompileValidatorFor(InitialBeverag
 var BeverageOrderValidator = valix.MustCompileValidatorFor(BeverageOrder{}, nil)
 
 type BeverageOrder struct {
-	Type string `json:"type" v8n:"notNull,required,order:-1,&StringValidToken{Tokens:['tea','coffee']},&SetConditionFrom{}"`
-	//                                                sets the condition from the value of property 'type' ^^^
+	Type string `json:"type" v8n:"notNull,required,order:-1,&StringValidToken{Tokens:['tea','coffee']},&SetConditionFrom{Parent:true}"`
+	//                                             sets the condition from the value of property 'type' ^^^
 	Quantity int `json:"quantity" v8n:"notNull,required,&Positive{}"`
 	// only relevant to type="tea"...
 	Blend string `json:"blend" v8n:"when:tea,notNull,required,&StringValidToken{Tokens:['Earl Grey','English Breakfast','Masala Chai']}"`
@@ -91,7 +92,8 @@ func TestBeverageOrderValidatorTeaWithMissingBlend(t *testing.T) {
 	ok, violations, _ := BeverageOrderValidator.ValidateStringInto(json, req)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, "Missing property 'blend'", violations[0].Message)
+	require.Equal(t, "Missing property", violations[0].Message)
+	require.Equal(t, "blend", violations[0].Property)
 }
 
 func TestBeverageOrderValidatorCoffeeWithMissingRoast(t *testing.T) {
@@ -103,7 +105,8 @@ func TestBeverageOrderValidatorCoffeeWithMissingRoast(t *testing.T) {
 	ok, violations, _ := BeverageOrderValidator.ValidateStringInto(json, req)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, "Missing property 'roast'", violations[0].Message)
+	require.Equal(t, "Missing property", violations[0].Message)
+	require.Equal(t, "roast", violations[0].Property)
 }
 
 var BeverageOrderStrictValidator = valix.MustCompileValidatorFor(BeverageOrderStrict{}, nil)
@@ -111,7 +114,7 @@ var BeverageOrderStrictValidator = valix.MustCompileValidatorFor(BeverageOrderSt
 // BeverageOrderStrict is a stricter version of BeverageOrder - where if appropriate type has not been set then
 // the 'blend' and 'roast' properties should not be present (because they have the `unwanted` v8n tag set)
 type BeverageOrderStrict struct {
-	Type string `json:"type" v8n:"notNull,required,order:-1,&StringValidToken{Tokens:['tea','coffee']},&SetConditionFrom{}"`
+	Type string `json:"type" v8n:"notNull,required,order:-1,&StringValidToken{Tokens:['tea','coffee']},&SetConditionFrom{Parent:true}"`
 	//                                                sets the condition from the value of property 'type' ^^^
 	Quantity int `json:"quantity" v8n:"notNull,required,&Positive{}"`
 	// Blend is only relevant when type="tea"...
@@ -144,7 +147,8 @@ func TestBeverageOrderStrictValidator(t *testing.T) {
 	ok, violations, _ := BeverageOrderStrictValidator.ValidateStringInto(json, req)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, "Property 'roast' must not be present", violations[0].Message)
+	require.Equal(t, "Property must not be present", violations[0].Message)
+	require.Equal(t, "roast", violations[0].Property)
 
 	json = `{
 		"type": "coffee",
@@ -156,7 +160,8 @@ func TestBeverageOrderStrictValidator(t *testing.T) {
 	ok, violations, _ = BeverageOrderStrictValidator.ValidateStringInto(json, req)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, "Property 'blend' must not be present", violations[0].Message)
+	require.Equal(t, "Property must not be present", violations[0].Message)
+	require.Equal(t, "blend", violations[0].Property)
 }
 
 func TestBeverageOrderStrictValidatorExpressedAsCode(t *testing.T) {
@@ -169,7 +174,7 @@ func TestBeverageOrderStrictValidatorExpressedAsCode(t *testing.T) {
 				Order:     -1,
 				Constraints: valix.Constraints{
 					&valix.StringValidToken{Tokens: []string{"tea", "coffee"}},
-					&valix.SetConditionFrom{},
+					&valix.SetConditionFrom{Parent: true},
 				},
 			},
 			"quantity": {
@@ -210,7 +215,8 @@ func TestBeverageOrderStrictValidatorExpressedAsCode(t *testing.T) {
 	ok, violations, _ := v.ValidateString(json)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, "Property 'roast' must not be present", violations[0].Message)
+	require.Equal(t, "Property must not be present", violations[0].Message)
+	require.Equal(t, "roast", violations[0].Property)
 
 	json = `{
 		"type": "tea",
@@ -229,7 +235,8 @@ func TestBeverageOrderStrictValidatorExpressedAsCode(t *testing.T) {
 	ok, violations, _ = v.ValidateString(json)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, "Property 'blend' must not be present", violations[0].Message)
+	require.Equal(t, "Property must not be present", violations[0].Message)
+	require.Equal(t, "blend", violations[0].Property)
 
 	json = `{
 		"type": "coffee",

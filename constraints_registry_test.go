@@ -2,26 +2,33 @@ package valix
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/require"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
+const commonConstraintsCount = 63 // excludes abbreviations
+
 func TestConstraintsRegistryInitialized(t *testing.T) {
-	registry.reset()
-	require.Equal(t, 30, len(registry.namedConstraints))
+	constraintsRegistry.reset()
+	require.Equal(t, (commonConstraintsCount*2)+len(getBuiltInPresets()), len(constraintsRegistry.namedConstraints))
 }
 
 func TestRegisterConstraint(t *testing.T) {
 	// make sure it isn't there first...
-	registry.reset()
-	require.False(t, registry.has(myConstraintName))
+	constraintsRegistry.reset()
+	defer func() {
+		constraintsRegistry.reset()
+	}()
+	require.False(t, constraintsRegistry.has(myConstraintName))
 
 	RegisterConstraint(&myConstraint{})
-	require.True(t, registry.has(myConstraintName))
+	require.True(t, constraintsRegistry.has(myConstraintName))
 }
 
 func TestRegisterConstraintPanicsAddingDuplicate(t *testing.T) {
 	defer func() {
+		constraintsRegistry.reset()
 		if r := recover(); r == nil {
 			t.Errorf("Expected panic")
 		} else {
@@ -30,40 +37,47 @@ func TestRegisterConstraintPanicsAddingDuplicate(t *testing.T) {
 	}()
 
 	// make sure it isn't there first...
-	registry.reset()
-	require.False(t, registry.has(myConstraintName))
+	constraintsRegistry.reset()
+	require.False(t, constraintsRegistry.has(myConstraintName))
 
 	RegisterConstraint(&myConstraint{})
-	require.True(t, registry.has(myConstraintName))
+	require.True(t, constraintsRegistry.has(myConstraintName))
 
 	RegisterConstraint(&myConstraint{})
 }
 
 func TestReRegisterConstraintNotPanicsAddingDuplicate(t *testing.T) {
 	// make sure it isn't there first...
-	registry.reset()
-	require.False(t, registry.has(myConstraintName))
+	constraintsRegistry.reset()
+	defer func() {
+		constraintsRegistry.reset()
+	}()
+	require.False(t, constraintsRegistry.has(myConstraintName))
 
 	ReRegisterConstraint(&myConstraint{})
-	require.True(t, registry.has(myConstraintName))
+	require.True(t, constraintsRegistry.has(myConstraintName))
 
 	ReRegisterConstraint(&myConstraint{})
-	require.True(t, registry.has(myConstraintName))
+	require.True(t, constraintsRegistry.has(myConstraintName))
 }
 
 func TestRegisterNamedConstraint(t *testing.T) {
 	const testName = "TestName"
 	// make sure it isn't there first...
-	registry.reset()
-	require.False(t, registry.has(testName))
+	constraintsRegistry.reset()
+	defer func() {
+		constraintsRegistry.reset()
+	}()
+	require.False(t, constraintsRegistry.has(testName))
 
 	RegisterNamedConstraint(testName, &myConstraint{})
-	require.True(t, registry.has(testName))
+	require.True(t, constraintsRegistry.has(testName))
 }
 
 func TestRegisterNamedConstraintPanicsAddingDuplicate(t *testing.T) {
 	const testName = "TestName"
 	defer func() {
+		constraintsRegistry.reset()
 		if r := recover(); r == nil {
 			t.Errorf("Expected panic")
 		} else {
@@ -71,11 +85,11 @@ func TestRegisterNamedConstraintPanicsAddingDuplicate(t *testing.T) {
 		}
 	}()
 	// make sure it isn't there first...
-	registry.reset()
-	require.False(t, registry.has(testName))
+	constraintsRegistry.reset()
+	require.False(t, constraintsRegistry.has(testName))
 
 	RegisterNamedConstraint(testName, &myConstraint{})
-	require.True(t, registry.has(testName))
+	require.True(t, constraintsRegistry.has(testName))
 
 	RegisterNamedConstraint(testName, &myConstraint2{})
 }
@@ -83,29 +97,36 @@ func TestRegisterNamedConstraintPanicsAddingDuplicate(t *testing.T) {
 func TestReRegisterNamedConstraintNotPanicsAddingDuplicate(t *testing.T) {
 	const testName = "TestName"
 	// make sure it isn't there first...
-	registry.reset()
-	require.False(t, registry.has(testName))
+	constraintsRegistry.reset()
+	defer func() {
+		constraintsRegistry.reset()
+	}()
+	require.False(t, constraintsRegistry.has(testName))
 
 	ReRegisterNamedConstraint(testName, &myConstraint{})
-	require.True(t, registry.has(testName))
+	require.True(t, constraintsRegistry.has(testName))
 
 	ReRegisterNamedConstraint(testName, &myConstraint2{})
-	require.True(t, registry.has(testName))
+	require.True(t, constraintsRegistry.has(testName))
 }
 
 func TestRegisterConstraints(t *testing.T) {
 	// make sure it isn't there first...
-	registry.reset()
-	require.False(t, registry.has(myConstraintName))
-	require.False(t, registry.has(myConstraint2Name))
+	constraintsRegistry.reset()
+	defer func() {
+		constraintsRegistry.reset()
+	}()
+	require.False(t, constraintsRegistry.has(myConstraintName))
+	require.False(t, constraintsRegistry.has(myConstraint2Name))
 
 	RegisterConstraints(&myConstraint{}, &myConstraint2{})
-	require.True(t, registry.has(myConstraintName))
-	require.True(t, registry.has(myConstraint2Name))
+	require.True(t, constraintsRegistry.has(myConstraintName))
+	require.True(t, constraintsRegistry.has(myConstraint2Name))
 }
 
 func TestRegisterConstraintsPanicsAddingDuplicates(t *testing.T) {
 	defer func() {
+		constraintsRegistry.reset()
 		if r := recover(); r == nil {
 			t.Errorf("Expected panic")
 		} else {
@@ -113,42 +134,49 @@ func TestRegisterConstraintsPanicsAddingDuplicates(t *testing.T) {
 		}
 	}()
 	// make sure it isn't there first...
-	registry.reset()
-	require.False(t, registry.has(myConstraintName))
+	constraintsRegistry.reset()
+	require.False(t, constraintsRegistry.has(myConstraintName))
 
 	RegisterConstraints(&myConstraint{}, &myConstraint{})
 }
 
 func TestReRegisterConstraintsNotPanicsAddingDuplicates(t *testing.T) {
 	// make sure it isn't there first...
-	registry.reset()
-	require.False(t, registry.has(myConstraintName))
+	constraintsRegistry.reset()
+	defer func() {
+		constraintsRegistry.reset()
+	}()
+	require.False(t, constraintsRegistry.has(myConstraintName))
 
 	// register two of the same...
 	ReRegisterConstraints(&myConstraint{}, &myConstraint{})
-	require.True(t, registry.has(myConstraintName))
+	require.True(t, constraintsRegistry.has(myConstraintName))
 }
 
 func TestRegisterNamedConstraints(t *testing.T) {
 	const testName1 = "TestName1"
 	const testName2 = "TestName2"
 	// make sure it isn't there first...
-	registry.reset()
-	require.False(t, registry.has(testName1))
-	require.False(t, registry.has(testName2))
+	constraintsRegistry.reset()
+	defer func() {
+		constraintsRegistry.reset()
+	}()
+	require.False(t, constraintsRegistry.has(testName1))
+	require.False(t, constraintsRegistry.has(testName2))
 
 	RegisterNamedConstraints(map[string]Constraint{
 		testName1: &myConstraint{SomeFlag: true},
 		testName2: &myConstraint2{SomeFlag: false},
 	})
-	require.True(t, registry.has(testName1))
-	require.True(t, registry.has(testName2))
+	require.True(t, constraintsRegistry.has(testName1))
+	require.True(t, constraintsRegistry.has(testName2))
 }
 
 func TestRegisterNamedConstraintsPanicsWithDuplicate(t *testing.T) {
 	const testName1 = "TestName1"
 	const testName2 = "TestName2"
 	defer func() {
+		constraintsRegistry.reset()
 		if r := recover(); r == nil {
 			t.Errorf("Expected panic")
 		} else {
@@ -156,9 +184,9 @@ func TestRegisterNamedConstraintsPanicsWithDuplicate(t *testing.T) {
 		}
 	}()
 	// make sure it isn't there first...
-	registry.reset()
-	require.False(t, registry.has(testName1))
-	require.False(t, registry.has(testName2))
+	constraintsRegistry.reset()
+	require.False(t, constraintsRegistry.has(testName1))
+	require.False(t, constraintsRegistry.has(testName2))
 
 	// register one first...
 	RegisterNamedConstraint(testName1, &myConstraint{})
@@ -167,25 +195,28 @@ func TestRegisterNamedConstraintsPanicsWithDuplicate(t *testing.T) {
 		testName1: &myConstraint{SomeFlag: true},
 		testName2: &myConstraint2{SomeFlag: false},
 	})
-	require.True(t, registry.has(testName1))
-	require.True(t, registry.has(testName2))
+	require.True(t, constraintsRegistry.has(testName1))
+	require.True(t, constraintsRegistry.has(testName2))
 }
 
 func TestReRegisterNamedConstraintsNotPanicsWithDuplicate(t *testing.T) {
 	const testName1 = "TestName1"
 	const testName2 = "TestName2"
 	// make sure it isn't there first...
-	registry.reset()
-	require.False(t, registry.has(testName1))
-	require.False(t, registry.has(testName2))
+	constraintsRegistry.reset()
+	defer func() {
+		constraintsRegistry.reset()
+	}()
+	require.False(t, constraintsRegistry.has(testName1))
+	require.False(t, constraintsRegistry.has(testName2))
 
 	// register them first...
 	RegisterNamedConstraint(testName1, &myConstraint{})
 	RegisterNamedConstraint(testName2, &myConstraint{})
-	c, ok := registry.get(testName1)
+	c, ok := constraintsRegistry.get(testName1)
 	require.True(t, ok)
 	require.False(t, c.(*myConstraint).SomeFlag)
-	c, ok = registry.get(testName2)
+	c, ok = constraintsRegistry.get(testName2)
 	require.True(t, ok)
 	require.False(t, c.(*myConstraint).SomeFlag)
 
@@ -193,39 +224,39 @@ func TestReRegisterNamedConstraintsNotPanicsWithDuplicate(t *testing.T) {
 		testName1: &myConstraint{SomeFlag: true},
 		testName2: &myConstraint2{SomeFlag: false},
 	})
-	require.True(t, registry.has(testName1))
-	require.True(t, registry.has(testName2))
+	require.True(t, constraintsRegistry.has(testName1))
+	require.True(t, constraintsRegistry.has(testName2))
 
-	c, ok = registry.get(testName1)
+	c, ok = constraintsRegistry.get(testName1)
 	require.True(t, ok)
 	require.True(t, c.(*myConstraint).SomeFlag) // default flag should be set now
-	c, ok = registry.get(testName2)
+	c, ok = constraintsRegistry.get(testName2)
 	require.True(t, ok)
 	require.False(t, c.(*myConstraint2).SomeFlag)
 }
 
 func TestConstraintsRegistryReset(t *testing.T) {
-	defer registry.reset()
+	defer constraintsRegistry.reset()
 	// make sure it isn't there first...
-	registry.reset()
-	require.False(t, registry.has(myConstraintName))
+	constraintsRegistry.reset()
+	require.False(t, constraintsRegistry.has(myConstraintName))
 
 	RegisterConstraint(&myConstraint{})
-	require.True(t, registry.has(myConstraintName))
+	require.True(t, constraintsRegistry.has(myConstraintName))
 
 	ConstraintsRegistryReset()
-	require.False(t, registry.has(myConstraintName))
+	require.False(t, constraintsRegistry.has(myConstraintName))
 }
 
 func TestConstraintsRegistryHas(t *testing.T) {
-	defer registry.reset()
+	defer constraintsRegistry.reset()
 	// make sure it isn't there first...
-	registry.reset()
-	require.False(t, registry.has(myConstraintName))
+	constraintsRegistry.reset()
+	require.False(t, constraintsRegistry.has(myConstraintName))
 	require.False(t, ConstraintsRegistryHas(myConstraintName))
 
 	RegisterConstraint(&myConstraint{})
-	require.True(t, registry.has(myConstraintName))
+	require.True(t, constraintsRegistry.has(myConstraintName))
 	require.True(t, ConstraintsRegistryHas(myConstraintName))
 }
 
@@ -239,8 +270,8 @@ type myConstraint struct {
 func (my *myConstraint) Check(value interface{}, vcx *ValidatorContext) (bool, string) {
 	return true, ""
 }
-func (my *myConstraint) GetMessage() string {
-	return "My test message"
+func (my *myConstraint) GetMessage(tcx I18nContext) string {
+	return obtainI18nContext(tcx).TranslateMessage("My test message")
 }
 
 type myConstraint2 struct {
@@ -250,6 +281,6 @@ type myConstraint2 struct {
 func (my *myConstraint2) Check(value interface{}, vcx *ValidatorContext) (bool, string) {
 	return true, ""
 }
-func (my *myConstraint2) GetMessage() string {
-	return "My test message"
+func (my *myConstraint2) GetMessage(tcx I18nContext) string {
+	return obtainI18nContext(tcx).TranslateMessage("My test message")
 }

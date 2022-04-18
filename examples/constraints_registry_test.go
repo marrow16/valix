@@ -1,14 +1,11 @@
 package examples
 
 import (
+	"testing"
+
 	"github.com/marrow16/valix"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
-
-func init() {
-	valix.RegisterConstraint(&NoFoo{})
-}
 
 type myConstraint1 struct {
 	Message string
@@ -18,8 +15,8 @@ func (m *myConstraint1) Check(value interface{}, vcx *valix.ValidatorContext) (b
 	return true, ""
 }
 
-func (m *myConstraint1) GetMessage() string {
-	return "This is constraint 2 message"
+func (m *myConstraint1) GetMessage(tcx valix.I18nContext) string {
+	return tcx.TranslateMessage("This is constraint 2 message")
 }
 
 type myConstraint2 struct {
@@ -30,8 +27,8 @@ func (m *myConstraint2) Check(value interface{}, vcx *valix.ValidatorContext) (b
 	return true, ""
 }
 
-func (m *myConstraint2) GetMessage() string {
-	return "This is constraint 1 message"
+func (m *myConstraint2) GetMessage(tcx valix.I18nContext) string {
+	return tcx.TranslateMessage("This is constraint 1 message")
 }
 
 var myConstraintSet = &valix.ConstraintSet{

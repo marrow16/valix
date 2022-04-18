@@ -2,10 +2,11 @@ package valix
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/require"
 	"reflect"
 	"regexp"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestParseCommasWithBadTags(t *testing.T) {
@@ -43,18 +44,20 @@ func TestArgsStringToArgs(t *testing.T) {
 	require.Equal(t, "1.1", args["float"])
 
 	_, err = argsStringToArgs(constraintName, "str: (,bool:true")
-	//                                             012345
 	require.NotNil(t, err)
 	require.Equal(t, fmt.Sprintf(msgConstraintArgsParseError, constraintName, fmt.Sprintf(msgUnclosed, 5)), err.Error())
 
 	_, err = argsStringToArgs(constraintName, "str: ),bool:true")
-	//                                             012345
 	require.NotNil(t, err)
 	require.Equal(t, fmt.Sprintf(msgConstraintArgsParseError, constraintName, fmt.Sprintf(msgUnopened, 5)), err.Error())
 
-	_, err = argsStringToArgs(constraintName, "xxx")
-	require.NotNil(t, err)
-	_, err = argsStringToArgs(constraintName, "xxx\":\"")
+	args, err = argsStringToArgs(constraintName, "xxx")
+	require.Nil(t, err)
+	require.Equal(t, 1, len(args))
+	require.Equal(t, "xxx", args[""])
+
+	// arg without name - there can only be one arg...
+	_, err = argsStringToArgs(constraintName, "xxx:'',yyy")
 	require.NotNil(t, err)
 }
 
@@ -87,7 +90,11 @@ func TestPropertyValidator_ProcessTagItems(t *testing.T) {
 
 	err = pv.processTagItems([]string{tagTokenConstraintsPrefix + "[,]"})
 	require.NotNil(t, err)
-	require.Equal(t, fmt.Sprintf(msgConstraintsFormat, ""), err.Error())
+	require.Equal(t, fmt.Sprintf(msgUnknownConstraint, ""), err.Error())
+
+	err = pv.processTagItems([]string{"&Bad{}X"})
+	require.NotNil(t, err)
+	require.Equal(t, fmt.Sprintf(msgConstraintsFormat, "&Bad{}X"), err.Error())
 
 	err = pv.processTagItems([]string{"UNKNOWN:x"})
 	require.NotNil(t, err)
@@ -115,7 +122,7 @@ func TestPropertyValidator_AddTagItem(t *testing.T) {
 	require.Nil(t, err)
 	require.True(t, pv.Mandatory)
 
-	require.Equal(t, JsonTypeUndefined, pv.Type)
+	require.Equal(t, JsonAny, pv.Type)
 	types := []string{
 		jsonTypeTokenString,
 		jsonTypeTokenNumber,
@@ -142,6 +149,69 @@ func TestPropertyValidator_AddTagItem(t *testing.T) {
 
 	err = pv.addTagItem("UNKNOWN:xxx")
 	require.NotNil(t, err)
+}
+
+func TestPropertyValidator_AddTagItemConstraintWithNoCurly(t *testing.T) {
+	pv := &PropertyValidator{}
+	err := pv.addTagItem("&StringNotEmpty")
+	require.Nil(t, err)
+	require.Equal(t, 1, len(pv.Constraints))
+}
+
+func TestPropertyValidator_AddTagItemConstraintWithSingleValue(t *testing.T) {
+	pv := &PropertyValidator{}
+	err := pv.addTagItem("&StringMinLength{1}")
+	require.Nil(t, err)
+	require.Equal(t, 1, len(pv.Constraints))
+	c := pv.Constraints[0].(*StringMinLength)
+	require.Equal(t, 1, c.Value)
+
+	// constraints with tagged default field...
+	err = pv.addTagItem("&StringNotBlank{'test message'}")
+	require.Nil(t, err)
+	require.Equal(t, 2, len(pv.Constraints))
+	c2 := pv.Constraints[1].(*StringNotBlank)
+	require.Equal(t, "test message", c2.Message)
+
+	err = pv.addTagItem("&StringPattern{'^([A-Z]{3})$'}")
+	require.Nil(t, err)
+	require.Equal(t, 3, len(pv.Constraints))
+	c3 := pv.Constraints[2].(*StringPattern)
+	require.Equal(t, "^([A-Z]{3})$", c3.Regexp.String())
+
+	err = pv.addTagItem("&StringValidToken{['FOO','BAR']}")
+	require.Nil(t, err)
+	require.Equal(t, 4, len(pv.Constraints))
+	c4 := pv.Constraints[3].(*StringValidToken)
+	require.Equal(t, 2, len(c4.Tokens))
+	require.Equal(t, "FOO", c4.Tokens[0])
+
+	// constraint with one field...
+	constraintsRegistry.register(true, &constraintWithOneField{})
+	defer func() {
+		constraintsRegistry.reset()
+	}()
+	err = pv.addTagItem("&constraintWithOneField{'FOO'}")
+	require.Nil(t, err)
+	require.Equal(t, 5, len(pv.Constraints))
+	c5 := pv.Constraints[4].(*constraintWithOneField)
+	require.Equal(t, "FOO", c5.Message)
+
+	// and a constraint that doesn't have a default or 'Value' field...
+	err = pv.addTagItem("&StringLength{1}")
+	require.NotNil(t, err)
+	require.Equal(t, fmt.Sprintf(msgConstraintNoDefaultValue, "StringLength"), err.Error())
+}
+
+type constraintWithOneField struct {
+	Message string
+}
+
+func (c *constraintWithOneField) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
+	return true, ""
+}
+func (c *constraintWithOneField) GetMessage(tcx I18nContext) string {
+	return ""
 }
 
 func TestPropertyValidator_AddTagItemsIgnoresEmpties(t *testing.T) {
@@ -206,6 +276,17 @@ func TestPropertyValidator_AddTagItemWhen(t *testing.T) {
 	err = pv.addTagItem(tagTokenWhen + ":[{]")
 	require.NotNil(t, err)
 	require.Equal(t, fmt.Sprintf(msgUnclosed, 0), err.Error())
+
+	err = pv.addTagItem(tagTokenWhen + ":\"TEST4\"")
+	require.Nil(t, err)
+	require.Equal(t, 4, len(pv.WhenConditions))
+	require.Equal(t, "TEST4", pv.WhenConditions[3])
+
+	err = pv.addTagItem(tagTokenWhen + ":['TEST5','TEST6']")
+	require.Nil(t, err)
+	require.Equal(t, 6, len(pv.WhenConditions))
+	require.Equal(t, "TEST5", pv.WhenConditions[4])
+	require.Equal(t, "TEST6", pv.WhenConditions[5])
 }
 
 func TestPropertyValidator_AddTagItemUnwanted(t *testing.T) {
@@ -230,6 +311,17 @@ func TestPropertyValidator_AddTagItemUnwanted(t *testing.T) {
 	err = pv.addTagItem(tagTokenUnwanted + ":[{]")
 	require.NotNil(t, err)
 	require.Equal(t, fmt.Sprintf(msgUnclosed, 0), err.Error())
+
+	err = pv.addTagItem(tagTokenUnwanted + ":\"TEST4\"")
+	require.Nil(t, err)
+	require.Equal(t, 4, len(pv.UnwantedConditions))
+	require.Equal(t, "TEST4", pv.UnwantedConditions[3])
+
+	err = pv.addTagItem(tagTokenUnwanted + ":['TEST5','TEST6']")
+	require.Nil(t, err)
+	require.Equal(t, 6, len(pv.UnwantedConditions))
+	require.Equal(t, "TEST5", pv.UnwantedConditions[4])
+	require.Equal(t, "TEST6", pv.UnwantedConditions[5])
 }
 
 func TestPropertyValidator_AddTagItemObjWhen(t *testing.T) {
@@ -254,6 +346,17 @@ func TestPropertyValidator_AddTagItemObjWhen(t *testing.T) {
 	err = pv.addTagItem(tagTokenObjWhen + ":[{]")
 	require.NotNil(t, err)
 	require.Equal(t, fmt.Sprintf(msgUnclosed, 0), err.Error())
+
+	err = pv.addTagItem(tagTokenObjWhen + ":\"TEST4\"")
+	require.Nil(t, err)
+	require.Equal(t, 4, len(pv.ObjectValidator.WhenConditions))
+	require.Equal(t, "TEST4", pv.ObjectValidator.WhenConditions[3])
+
+	err = pv.addTagItem(tagTokenObjWhen + ":['TEST5','TEST6']")
+	require.Nil(t, err)
+	require.Equal(t, 6, len(pv.ObjectValidator.WhenConditions))
+	require.Equal(t, "TEST5", pv.ObjectValidator.WhenConditions[4])
+	require.Equal(t, "TEST6", pv.ObjectValidator.WhenConditions[5])
 
 	pv = &PropertyValidator{}
 	err = pv.addTagItem(tagTokenObjWhen + ":TEST1")
@@ -336,13 +439,63 @@ func TestPropertyValidator_AddObjectTagItem_Constraint(t *testing.T) {
 	require.Equal(t, fmt.Sprintf(msgPropertyNotObject, tagTokenObjConstraint), err.Error())
 }
 
+func TestParseConstraintSet(t *testing.T) {
+	pv := &PropertyValidator{ObjectValidator: &Validator{
+		Constraints: Constraints{},
+	}}
+	require.Equal(t, 0, len(pv.Constraints))
+
+	err := pv.addTagItem("&ConstraintSet{Message:'Foo',Constraints:[&StringNotEmpty{Message:'msg1'},&StringNotBlank{Message:'msg2'}],Stop:true,OneOf:true}")
+	require.Nil(t, err)
+	require.Equal(t, 1, len(pv.Constraints))
+	constraintSet, ok := pv.Constraints[0].(*ConstraintSet)
+	require.True(t, ok)
+	require.Equal(t, 2, len(constraintSet.Constraints))
+	require.True(t, constraintSet.Stop)
+	require.True(t, constraintSet.OneOf)
+}
+
+func TestBuildConstraintSetWithBadArgs(t *testing.T) {
+	_, err := buildConstraintSetWithArgs("][")
+	require.NotNil(t, err)
+	require.Equal(t, fmt.Sprintf(msgUnopened, 0), err.Error())
+
+	_, err = buildConstraintSetWithArgs("xxx")
+	require.NotNil(t, err)
+	require.Equal(t, fmt.Sprintf(msgTagFldMissingColon, constraintSetName), err.Error())
+
+	_, err = buildConstraintSetWithArgs("Message:this needs quotes")
+	require.NotNil(t, err)
+	require.Equal(t, fmt.Sprintf(msgConstraintFieldInvalidValue, constraintSetName, constraintSetFieldMessage), err.Error())
+
+	_, err = buildConstraintSetWithArgs("Constraints:this needs to be slice")
+	require.NotNil(t, err)
+	require.Equal(t, fmt.Sprintf(msgConstraintFieldInvalidValue, constraintSetName, constraintSetFieldConstraints), err.Error())
+
+	_, err = buildConstraintSetWithArgs("Stop:this needs to be bool")
+	require.NotNil(t, err)
+	require.Equal(t, fmt.Sprintf(msgConstraintFieldInvalidValue, constraintSetName, constraintSetFieldStop), err.Error())
+
+	_, err = buildConstraintSetWithArgs("OneOf:this needs to be bool")
+	require.NotNil(t, err)
+	require.Equal(t, fmt.Sprintf(msgConstraintFieldInvalidValue, constraintSetName, constraintSetFieldOneOf), err.Error())
+
+	_, err = buildConstraintSetWithArgs("UnknownField:foo")
+	require.NotNil(t, err)
+	require.Equal(t, fmt.Sprintf(msgConstraintFieldUnknown, constraintSetName, "UnknownField"), err.Error())
+
+	_, err = buildConstraintSetWithArgs("Constraints:[&UnknownConstraint{}]")
+	require.NotNil(t, err)
+	require.Equal(t, fmt.Sprintf(msgUnknownConstraint, "UnknownConstraint"), err.Error())
+}
+
 func TestRebuildConstraintWithArgs(t *testing.T) {
 	const constraintName = "TEST_CONSTRAINT"
 	var orgConstraint = &StringNotEmpty{}
 	c, err := rebuildConstraintWithArgs(constraintName, orgConstraint, "")
 	require.Nil(t, err)
 	require.NotNil(t, c)
-	require.Equal(t, messageNotEmptyString, c.GetMessage())
+	require.Equal(t, msgNotEmptyString, c.GetMessage(nil))
 
 	c, err = rebuildConstraintWithArgs(constraintName, orgConstraint, ")(")
 	require.NotNil(t, err)
@@ -354,18 +507,18 @@ type dummyNonStructConstraint map[string]struct{}
 func (d *dummyNonStructConstraint) Check(value interface{}, vcx *ValidatorContext) (bool, string) {
 	return true, ""
 }
-func (d *dummyNonStructConstraint) GetMessage() string {
+func (d *dummyNonStructConstraint) GetMessage(tcx I18nContext) string {
 	return ""
 }
 
 func TestRebuildConstraintWithArgsFailsWithNonStructConstraint(t *testing.T) {
-	registry.reset()
+	constraintsRegistry.reset()
 	const testConstraintName = "TEST_CONSTRAINT"
 
 	testConstraint := &dummyNonStructConstraint{}
-	registry.register(true, testConstraint)
+	constraintsRegistry.register(true, testConstraint)
 	defer func() {
-		registry.reset()
+		constraintsRegistry.reset()
 	}()
 
 	c, err := rebuildConstraintWithArgs(testConstraintName, testConstraint, "")
@@ -382,18 +535,18 @@ type dummyStructConstraintWithUnexportedFields struct {
 func (d *dummyStructConstraintWithUnexportedFields) Check(value interface{}, vcx *ValidatorContext) (bool, string) {
 	return true, ""
 }
-func (d *dummyStructConstraintWithUnexportedFields) GetMessage() string {
+func (d *dummyStructConstraintWithUnexportedFields) GetMessage(tcx I18nContext) string {
 	return ""
 }
 
 func TestRebuildConstraintWithArgsFailsWithNonPublicField(t *testing.T) {
-	registry.reset()
+	constraintsRegistry.reset()
 	const testConstraintName = "TEST_CONSTRAINT"
 
 	testConstraint := &dummyStructConstraintWithUnexportedFields{}
-	registry.register(true, testConstraint)
+	constraintsRegistry.register(true, testConstraint)
 	defer func() {
-		registry.reset()
+		constraintsRegistry.reset()
 	}()
 
 	c, err := rebuildConstraintWithArgs(testConstraintName, testConstraint, "field1:\"foo\"")
@@ -410,18 +563,18 @@ type dummyStructConstraintWithFields struct {
 func (d *dummyStructConstraintWithFields) Check(value interface{}, vcx *ValidatorContext) (bool, string) {
 	return true, ""
 }
-func (d *dummyStructConstraintWithFields) GetMessage() string {
+func (d *dummyStructConstraintWithFields) GetMessage(tcx I18nContext) string {
 	return ""
 }
 
 func TestRebuildConstraintWithArgsFailsWithInvalidArgType(t *testing.T) {
-	registry.reset()
+	constraintsRegistry.reset()
 	const testConstraintName = "TEST_CONSTRAINT"
 
 	testConstraint := &dummyStructConstraintWithFields{}
-	registry.register(true, testConstraint)
+	constraintsRegistry.register(true, testConstraint)
 	defer func() {
-		registry.reset()
+		constraintsRegistry.reset()
 	}()
 
 	c, err := rebuildConstraintWithArgs(testConstraintName, testConstraint, "Field2:\"foo\"")
@@ -431,12 +584,12 @@ func TestRebuildConstraintWithArgsFailsWithInvalidArgType(t *testing.T) {
 }
 
 func TestBuildConstraintFromTagValueFailsWithBadArgs(t *testing.T) {
-	registry.reset()
-	testConstraint := &dummyStructConstraintWithFields{}
-	registry.register(true, testConstraint)
+	constraintsRegistry.reset()
 	defer func() {
-		registry.reset()
+		constraintsRegistry.reset()
 	}()
+	testConstraint := &dummyStructConstraintWithFields{}
+	constraintsRegistry.register(true, testConstraint)
 
 	c, err := buildConstraintFromTagValue("&dummyStructConstraintWithFields{UnknownField:\"\"}")
 	require.NotNil(t, err)

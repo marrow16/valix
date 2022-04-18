@@ -19,6 +19,12 @@ const (
 )
 
 const (
+	ptyNameOasDescription = "description"
+	ptyNameOasTitle       = "title"
+	ptyNameOasFormat      = "format"
+	ptyNameOasExample     = "example"
+	ptyNameOasDeprecated  = "deprecated"
+
 	msgOasPrefix            = "tag " + tagOpenApi + " - "
 	msgOasUnknownTokenInTag = msgOasPrefix + "unknown token '%s'"
 	msgOasUnexpectedColon   = msgOasPrefix + "unexpected ':' colon after token '%s'"
@@ -69,8 +75,7 @@ func (pv *PropertyValidator) addOasTagItem(tagItem string) (result error) {
 		hasColon = true
 		tagToken = strings.Trim(tagItem[0:cAt], " ")
 		tagValue = strings.Trim(tagItem[cAt+1:], " ")
-		tagValueIsStr = (strings.HasPrefix(tagValue, "\"") && strings.HasSuffix(tagValue, "\"")) ||
-			(strings.HasPrefix(tagValue, "'") && strings.HasSuffix(tagValue, "'"))
+		tagValueIsStr = isQuotedStr(tagValue, true)
 		if tagValueIsStr {
 			tagValue = tagValue[1 : len(tagValue)-1]
 		}

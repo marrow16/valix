@@ -2,13 +2,14 @@ package examples
 
 import (
 	"encoding/json"
-	"github.com/marrow16/valix"
-	"github.com/stretchr/testify/require"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 	"unicode"
+
+	"github.com/marrow16/valix"
+	"github.com/stretchr/testify/require"
 )
 
 type AddPersonRequest struct {
@@ -74,7 +75,7 @@ func TestCreatePersonRequestValidatorFails(t *testing.T) {
 	require.Equal(t, "", first["path"])
 	require.Equal(t, "age", first["property"])
 	second := details[1].(map[string]interface{})
-	require.Equal(t, "String value length must be between 1 and 255 (inclusive)", second["message"])
+	require.Equal(t, "String value length must be between 1 (inclusive) and 255 (inclusive)", second["message"])
 	require.Equal(t, "", second["path"])
 	require.Equal(t, "name", second["property"])
 }
@@ -139,7 +140,7 @@ func TestCreatePerson2RequestValidatorFails(t *testing.T) {
 	require.Equal(t, "", first["path"])
 	require.Equal(t, "age", first["property"])
 	second := details[1].(map[string]interface{})
-	require.Equal(t, "String value length must be between 1 and 255 (inclusive)", second["message"])
+	require.Equal(t, "String value length must be between 1 (inclusive) and 255 (inclusive)", second["message"])
 	require.Equal(t, "", second["path"])
 	require.Equal(t, "name", second["property"])
 }
@@ -196,7 +197,7 @@ func TestValidateStringIntoStruct(t *testing.T) {
 	require.Equal(t, "Value must be positive or zero", violations[0].Message)
 	require.Equal(t, "age", violations[0].Property)
 	require.Equal(t, "", violations[0].Path)
-	require.Equal(t, "String value length must be between 1 and 255 (inclusive)", violations[1].Message)
+	require.Equal(t, "String value length must be between 1 (inclusive) and 255 (inclusive)", violations[1].Message)
 	require.Equal(t, "name", violations[1].Property)
 	require.Equal(t, "", violations[1].Path)
 
@@ -227,7 +228,7 @@ func TestValidateReaderIntoStruct(t *testing.T) {
 	require.Equal(t, "Value must be positive or zero", violations[0].Message)
 	require.Equal(t, "age", violations[0].Property)
 	require.Equal(t, "", violations[0].Path)
-	require.Equal(t, "String value length must be between 1 and 255 (inclusive)", violations[1].Message)
+	require.Equal(t, "String value length must be between 1 (inclusive) and 255 (inclusive)", violations[1].Message)
 	require.Equal(t, "name", violations[1].Property)
 	require.Equal(t, "", violations[1].Path)
 
@@ -256,7 +257,7 @@ func TestValidateMap(t *testing.T) {
 	require.Equal(t, "Value must be positive or zero", violations[0].Message)
 	require.Equal(t, "age", violations[0].Property)
 	require.Equal(t, "", violations[0].Path)
-	require.Equal(t, "String value length must be between 1 and 255 (inclusive)", violations[1].Message)
+	require.Equal(t, "String value length must be between 1 (inclusive) and 255 (inclusive)", violations[1].Message)
 	require.Equal(t, "name", violations[1].Property)
 	require.Equal(t, "", violations[1].Path)
 
@@ -287,7 +288,7 @@ func TestValidateSlice(t *testing.T) {
 	require.Equal(t, "Value must be positive or zero", violations[0].Message)
 	require.Equal(t, "age", violations[0].Property)
 	require.Equal(t, "[0]", violations[0].Path)
-	require.Equal(t, "String value length must be between 1 and 255 (inclusive)", violations[1].Message)
+	require.Equal(t, "String value length must be between 1 (inclusive) and 255 (inclusive)", violations[1].Message)
 	require.Equal(t, "name", violations[1].Property)
 	require.Equal(t, "[0]", violations[1].Path)
 
@@ -305,15 +306,18 @@ func TestValidateSlice(t *testing.T) {
 	require.True(t, ok)
 }
 
+func init() {
+	valix.RegisterNamedConstraint("my", mySet)
+}
+
 var mySet = &valix.ConstraintSet{
 	Constraints: valix.Constraints{
-		&valix.StringTrim{},
 		&valix.StringNotEmpty{},
 		&valix.StringLength{Minimum: 16, Maximum: 64},
 		valix.NewCustomConstraint(func(value interface{}, vcx *valix.ValidatorContext, this *valix.CustomConstraint) (bool, string) {
 			if str, ok := value.(string); ok {
 				if len(str) == 0 || str[0] < 'A' || str[0] > 'Z' {
-					return false, this.GetMessage()
+					return false, this.GetMessage(vcx)
 				}
 			}
 			return true, ""
@@ -372,9 +376,9 @@ func TestMyValidator(t *testing.T) {
 				NotNull:   true,
 				Mandatory: true,
 				Constraints: valix.Constraints{
-					valix.NewCustomConstraint(func(value interface{}, ctx *valix.ValidatorContext, cc *valix.CustomConstraint) (bool, string) {
+					valix.NewCustomConstraint(func(value interface{}, vcx *valix.ValidatorContext, cc *valix.CustomConstraint) (bool, string) {
 						if str, ok := value.(string); ok {
-							return !strings.Contains(str, "foo"), cc.GetMessage()
+							return !strings.Contains(str, "foo"), cc.GetMessage(vcx)
 						}
 						return true, ""
 					}, "Value must not contain \"foo\""),
@@ -402,12 +406,17 @@ type NoFoo struct {
 
 func (c *NoFoo) Check(value interface{}, vcx *valix.ValidatorContext) (bool, string) {
 	if str, ok := value.(string); ok {
-		return !strings.Contains(str, "foo"), c.GetMessage()
+		return !strings.Contains(str, "foo"), c.GetMessage(vcx)
 	}
 	return true, ""
 }
-func (c *NoFoo) GetMessage() string {
-	return "Value must not contain \"foo\""
+func (c *NoFoo) GetMessage(tcx valix.I18nContext) string {
+	return tcx.TranslateFormat("Value must not contain \"%s\"", "foo")
+}
+
+func init() {
+	// register the constraint for use in `v8n` tags...
+	valix.RegisterConstraint(&NoFoo{})
 }
 
 func TestNoFooCustomConstraint(t *testing.T) {

@@ -2,27 +2,32 @@ package valix
 
 import (
 	"encoding/json"
-	"fmt"
 	"math"
 	"strings"
 )
 
 const (
-	messageValueCannotBeNull            = "Value cannot be null"
-	messageValueExpectedType            = "Value expected to be of type %s"
-	messageValueMustBeObject            = "Value must be an object"
-	messageValueMustBeArray             = "Value must be an array"
-	messageValueMustBeObjectOrArray     = "Value must be an object or array"
-	messagePropertyObjectValidatorError = "CurrentProperty object validator error - does not allow object or array!"
+	msgValueCannotBeNull             = "Value cannot be null"
+	CodeValueCannotBeNull            = 42211
+	fmtMsgValueExpectedType          = "Value expected to be of type %[1]s"
+	CodeValueExpectedType            = 42212
+	msgValueMustBeObject             = "Value must be an object"
+	CodeValueMustBeObject            = 42213
+	msgValueMustBeArray              = "Value must be an array"
+	CodeValueMustBeArray             = 42214
+	msgValueMustBeObjectOrArray      = "Value must be an object or array"
+	CodeValueMustBeObjectOrArray     = 42215
+	msgPropertyObjectValidatorError  = "Object validator error - does not allow object or array!"
+	CodePropertyObjectValidatorError = 42216
+	CodePropertyConstraintFail       = 42299
 )
 
 // JsonType is the type for JSON values
 type JsonType int
 
 const (
-	JsonTypeUndefined JsonType = iota
 	// JsonAny matches any JSON value type
-	JsonAny
+	JsonAny JsonType = iota
 	// JsonString checks JSON value type is a string
 	JsonString
 	// JsonNumber checks JSON value type is a number
@@ -38,70 +43,67 @@ const (
 )
 
 const (
-	jsonTypeTokenUndefined = "undefined"
-	jsonTypeTokenString    = "string"
-	jsonTypeTokenNumber    = "number"
-	jsonTypeTokenInteger   = "integer"
-	jsonTypeTokenBoolean   = "boolean"
-	jsonTypeTokenObject    = "object"
-	jsonTypeTokenArray     = "array"
-	jsonTypeTokenAny       = "any"
+	jsonTypeTokenString  = "string"
+	jsonTypeTokenNumber  = "number"
+	jsonTypeTokenInteger = "integer"
+	jsonTypeTokenBoolean = "boolean"
+	jsonTypeTokenObject  = "object"
+	jsonTypeTokenArray   = "array"
+	jsonTypeTokenAny     = "any"
+	jsonTypeTokensList   = "\"" + jsonTypeTokenAny + "\",\"" + jsonTypeTokenString +
+		"\",\"" + jsonTypeTokenNumber + "\",\"" + jsonTypeTokenInteger +
+		"\",\"" + jsonTypeTokenObject +
+		"\",\"" + jsonTypeTokenObject + "\",\"" + jsonTypeTokenArray
 )
 
 func (jt JsonType) String() string {
-	result := jsonTypeTokenUndefined
+	result := ""
 	switch jt {
 	case JsonString:
 		result = jsonTypeTokenString
-		break
 	case JsonNumber:
 		result = jsonTypeTokenNumber
-		break
 	case JsonInteger:
 		result = jsonTypeTokenInteger
-		break
 	case JsonBoolean:
 		result = jsonTypeTokenBoolean
-		break
 	case JsonObject:
 		result = jsonTypeTokenObject
-		break
 	case JsonArray:
 		result = jsonTypeTokenArray
-		break
 	case JsonAny:
 		result = jsonTypeTokenAny
-		break
 	}
 	return result
 }
 
-func JsonTypeFromString(str string) JsonType {
-	result := JsonTypeUndefined
+func JsonTypeFromString(str string) (JsonType, bool) {
+	result := JsonType(-1)
+	ok := false
 	switch strings.ToLower(str) {
 	case jsonTypeTokenString:
 		result = JsonString
-		break
+		ok = true
 	case jsonTypeTokenNumber:
 		result = JsonNumber
-		break
+		ok = true
 	case jsonTypeTokenInteger:
 		result = JsonInteger
-		break
+		ok = true
 	case jsonTypeTokenBoolean:
 		result = JsonBoolean
-		break
+		ok = true
 	case jsonTypeTokenObject:
 		result = JsonObject
-		break
+		ok = true
 	case jsonTypeTokenArray:
 		result = JsonArray
-		break
+		ok = true
 	case jsonTypeTokenAny:
 		result = JsonAny
-		break
+		ok = true
 	}
-	return result
+	return result, ok
 }
 
 // PropertyValidator is the individual validator for properties
@@ -134,16 +136,16 @@ type PropertyValidator struct {
 	OasInfo *OasInfo
 }
 
-func (pv *PropertyValidator) validate(actualValue interface{}, vcx *ValidatorContext) {
-	if actualValue == nil {
-		if pv.NotNull {
-			vcx.AddViolationForCurrent(messageValueCannotBeNull)
-		}
-	} else if pv.checkType(actualValue, vcx) {
-		// don't pass the actualValue down further - because it may change!
+func (pv *PropertyValidator) validate(value interface{}, vcx *ValidatorContext) {
+	if value == nil && pv.NotNull {
+		vcx.addUnTranslatedViolationForCurrent(msgValueCannotBeNull, CodeValueCannotBeNull)
+		return
+	}
+	// only check the type if non-nil...
+	if value == nil || pv.checkType(value, vcx) {
 		pv.checkConstraints(vcx)
 		if vcx.continueAll && vcx.continuePty() {
-			pv.checkObjectValidation(vcx)
+			pv.checkObjectValidation(value, vcx)
 		}
 	}
 }
@@ -151,7 +153,7 @@ func (pv *PropertyValidator) validate(actualValue interface{}, vcx *ValidatorCon
 func (pv *PropertyValidator) checkType(actualValue interface{}, vcx *ValidatorContext) bool {
 	ok := checkValueType(actualValue, pv.Type)
 	if !ok {
-		vcx.AddViolationForCurrent(fmt.Sprintf(messageValueExpectedType, pv.Type))
+		vcx.addTranslatedViolationForCurrent(vcx.TranslateFormat(fmtMsgValueExpectedType, vcx.TranslateToken(pv.Type.String())), CodeValueExpectedType)
 	}
 	return ok
 }
@@ -196,26 +198,26 @@ func checkNumeric(value interface{}, isInt bool) bool {
 	return ok
 }
 
-func (pv *PropertyValidator) checkObjectValidation(vcx *ValidatorContext) {
+func (pv *PropertyValidator) checkObjectValidation(value interface{}, vcx *ValidatorContext) {
 	if pv.ObjectValidator != nil && vcx.meetsWhenConditions(pv.ObjectValidator.WhenConditions) {
 		if !pv.ObjectValidator.DisallowObject && pv.ObjectValidator.AllowArray {
 			// can be object or array...
-			if !pv.subValidateObjectOrArray(vcx.CurrentValue(), vcx) {
-				vcx.AddViolationForCurrent(messageValueMustBeObjectOrArray)
+			if !pv.subValidateObjectOrArray(value, vcx) {
+				vcx.addUnTranslatedViolationForCurrent(msgValueMustBeObjectOrArray, CodeValueMustBeObjectOrArray)
 			}
 		} else if !pv.ObjectValidator.DisallowObject {
 			// can only be an object...
-			if !pv.subValidateObject(vcx.CurrentValue(), vcx) {
-				vcx.AddViolationForCurrent(messageValueMustBeObject)
+			if !pv.subValidateObject(value, vcx) {
+				vcx.addUnTranslatedViolationForCurrent(msgValueMustBeObject, CodeValueMustBeObject)
 			}
 		} else if pv.ObjectValidator.AllowArray {
 			// can only be an array...
-			if !pv.subValidateArray(vcx.CurrentValue(), vcx) {
-				vcx.AddViolationForCurrent(messageValueMustBeArray)
+			if !pv.subValidateArray(value, vcx) {
+				vcx.addUnTranslatedViolationForCurrent(msgValueMustBeArray, CodeValueMustBeArray)
 			}
 		} else {
 			// something seriously wrong here because the object validator doesn't allow an object or an array!...
-			vcx.AddViolationForCurrent(messagePropertyObjectValidatorError)
+			vcx.addUnTranslatedViolationForCurrent(msgPropertyObjectValidatorError, CodePropertyObjectValidatorError)
 			vcx.Stop()
 		}
 	}
@@ -243,10 +245,11 @@ func (pv *PropertyValidator) subValidateArray(actualValue interface{}, vcx *Vali
 
 func (pv *PropertyValidator) checkConstraints(vcx *ValidatorContext) {
 	if pv.Constraints != nil {
-		for _, constraint := range pv.Constraints {
-			// re-get the current value each time because it may have changed
-			if ok, msg := constraint.Check(vcx.CurrentValue(), vcx); !ok {
-				vcx.AddViolationForCurrent(msg)
+		v := vcx.CurrentValue()
+		for i, constraint := range pv.Constraints {
+			if ok, msg := constraint.Check(v, vcx); !ok {
+				// the message is already translated by the constraint!...
+				vcx.addTranslatedViolationForCurrent(msg, CodePropertyConstraintFail, i)
 			}
 			if !vcx.continueAll || !vcx.continuePty() {
 				return

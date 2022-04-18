@@ -23,33 +23,39 @@ type Violation struct {
 	// * the request body is JSON null (i.e. a request body containing just 'null') and the
 	// Validator.AllowNullJson is set to false
 	BadRequest bool `json:"-"`
+	// Codes is a slice of anything needed to codify the violation (and can also be used to provide
+	// additional information about the violation)
+	Codes []interface{} `json:"-"`
 }
 
 // NewEmptyViolation creates a new violation with the specified message (path and property are blank)
-func NewEmptyViolation(msg string) *Violation {
+func NewEmptyViolation(msg string, codes ...interface{}) *Violation {
 	return &Violation{
 		Property: "",
 		Path:     "",
 		Message:  msg,
+		Codes:    codes,
 	}
 }
 
 // NewViolation creates a new violation with the specified property, path and message
-func NewViolation(property string, path string, msg string) *Violation {
+func NewViolation(property string, path string, msg string, codes ...interface{}) *Violation {
 	return &Violation{
 		Property: property,
 		Path:     path,
 		Message:  msg,
+		Codes:    codes,
 	}
 }
 
 // NewBadRequestViolation creates a new violation with BadRequest flag set (path and property are blank)
-func NewBadRequestViolation(msg string) *Violation {
+func NewBadRequestViolation(msg string, codes ...interface{}) *Violation {
 	return &Violation{
 		Property:   "",
 		Path:       "",
 		Message:    msg,
 		BadRequest: true,
+		Codes:      codes,
 	}
 }
 

@@ -10,15 +10,15 @@ const (
 	panicMsgConstraintExists = "constraint \"%s\" already exists in registry"
 )
 
-type constraintsRegistry struct {
+type constraintRegistry struct {
 	namedConstraints map[string]Constraint
 	sync             *sync.Mutex
 }
 
-var registry constraintsRegistry
+var constraintsRegistry constraintRegistry
 
 func init() {
-	registry = constraintsRegistry{
+	constraintsRegistry = constraintRegistry{
 		namedConstraints: defaultConstraints(),
 		sync:             &sync.Mutex{},
 	}
@@ -27,39 +27,177 @@ func init() {
 func defaultConstraints() map[string]Constraint {
 	return map[string]Constraint{
 		"ArrayOf":                         &ArrayOf{},
+		"ArrayUnique":                     &ArrayUnique{},
+		"DatetimeGreaterThan":             &DatetimeGreaterThan{},
+		"DatetimeGreaterThanOther":        &DatetimeGreaterThanOther{},
+		"DatetimeGreaterThanOrEqual":      &DatetimeGreaterThanOrEqual{},
+		"DatetimeGreaterThanOrEqualOther": &DatetimeGreaterThanOrEqualOther{},
 		"DatetimeFuture":                  &DatetimeFuture{},
 		"DatetimeFutureOrPresent":         &DatetimeFutureOrPresent{},
+		"DatetimeLessThan":                &DatetimeLessThan{},
+		"DatetimeLessThanOther":           &DatetimeLessThanOther{},
+		"DatetimeLessThanOrEqual":         &DatetimeLessThanOrEqual{},
+		"DatetimeLessThanOrEqualOther":    &DatetimeLessThanOrEqualOther{},
 		"DatetimePast":                    &DatetimePast{},
 		"DatetimePastOrPresent":           &DatetimePastOrPresent{},
+		"DatetimeTolerance":               &DatetimeTolerance{},
+		"DatetimeToleranceToNow":          &DatetimeToleranceToNow{},
+		"DatetimeToleranceToOther":        &DatetimeToleranceToOther{},
+		"EqualsOther":                     &EqualsOther{},
+		"FailingConstraint":               &FailingConstraint{},
+		"FailWhen":                        &FailWhen{},
+		"GreaterThan":                     &GreaterThan{},
+		"GreaterThanOrEqual":              &GreaterThanOrEqual{},
+		"GreaterThanOther":                &GreaterThanOther{},
+		"GreaterThanOrEqualOther":         &GreaterThanOrEqualOther{},
 		"Length":                          &Length{},
+		"LengthExact":                     &LengthExact{},
+		"LessThan":                        &LessThan{},
+		"LessThanOrEqual":                 &LessThanOrEqual{},
+		"LessThanOther":                   &LessThanOther{},
+		"LessThanOrEqualOther":            &LessThanOrEqualOther{},
 		"Maximum":                         &Maximum{},
+		"MaximumInt":                      &MaximumInt{},
 		"Minimum":                         &Minimum{},
+		"MinimumInt":                      &MinimumInt{},
+		"MultipleOf":                      &MultipleOf{},
 		"Negative":                        &Negative{},
 		"NegativeOrZero":                  &NegativeOrZero{},
+		"NotEqualsOther":                  &NotEqualsOther{},
 		"Positive":                        &Positive{},
 		"PositiveOrZero":                  &PositiveOrZero{},
 		"Range":                           &Range{},
+		"RangeInt":                        &RangeInt{},
 		"SetConditionFrom":                &SetConditionFrom{},
+		"SetConditionProperty":            &SetConditionProperty{},
 		"StringCharacters":                &StringCharacters{},
+		"StringValidEmail":                &StringValidEmail{},
+		"StringExactLength":               &StringExactLength{},
 		"StringNoControlCharacters":       &StringNoControlCharacters{},
 		"StringNotBlank":                  &StringNotBlank{},
 		"StringNotEmpty":                  &StringNotEmpty{},
 		"StringLength":                    &StringLength{},
+		"StringLowercase":                 &StringLowercase{},
 		"StringMaxLength":                 &StringMaxLength{},
 		"StringMinLength":                 &StringMinLength{},
-		"StringNormalizeUnicode":          &StringNormalizeUnicode{},
 		"StringPattern":                   &StringPattern{},
-		"StringTrim":                      &StringTrim{},
+		"StringPresetPattern":             &StringPresetPattern{},
+		"StringUppercase":                 &StringUppercase{},
 		"StringValidCardNumber":           &StringValidCardNumber{},
 		"StringValidISODatetime":          &StringValidISODatetime{},
 		"StringValidISODate":              &StringValidISODate{},
 		"StringValidToken":                &StringValidToken{},
 		"StringValidUnicodeNormalization": &StringValidUnicodeNormalization{},
 		"StringValidUuid":                 &StringValidUuid{},
+		// abbreviations...
+		"aof":        &ArrayOf{},
+		"aunique":    &ArrayUnique{},
+		"dtgt":       &DatetimeGreaterThan{},
+		"dtgto":      &DatetimeGreaterThanOther{},
+		"dtgte":      &DatetimeGreaterThanOrEqual{},
+		"dtgteo":     &DatetimeGreaterThanOrEqualOther{},
+		"dtfuture":   &DatetimeFuture{},
+		"dtfuturep":  &DatetimeFutureOrPresent{},
+		"dtlt":       &DatetimeLessThan{},
+		"dtlto":      &DatetimeLessThanOther{},
+		"dtlte":      &DatetimeLessThanOrEqual{},
+		"dtlteo":     &DatetimeLessThanOrEqualOther{},
+		"dtpast":     &DatetimePast{},
+		"dtpastp":    &DatetimePastOrPresent{},
+		"dttol":      &DatetimeTolerance{},
+		"dttolnow":   &DatetimeToleranceToNow{},
+		"dttolother": &DatetimeToleranceToOther{},
+		"eqo":        &EqualsOther{},
+		"fail":       &FailingConstraint{},
+		"failw":      &FailWhen{},
+		"gt":         &GreaterThan{},
+		"gte":        &GreaterThanOrEqual{},
+		"gto":        &GreaterThanOther{},
+		"gteo":       &GreaterThanOrEqualOther{},
+		"len":        &Length{},
+		"lenx":       &LengthExact{},
+		"lt":         &LessThan{},
+		"lte":        &LessThanOrEqual{},
+		"lto":        &LessThanOther{},
+		"lteo":       &LessThanOrEqualOther{},
+		"max":        &Maximum{},
+		"maxi":       &MaximumInt{},
+		"min":        &Minimum{},
+		"mini":       &MinimumInt{},
+		"xof":        &MultipleOf{},
+		"neg":        &Negative{},
+		"negz":       &NegativeOrZero{},
+		"neqo":       &NotEqualsOther{},
+		"pos":        &Positive{},
+		"posz":       &PositiveOrZero{},
+		"range":      &Range{},
+		"rangei":     &RangeInt{},
+		"cfrom":      &SetConditionFrom{},
+		"cpty":       &SetConditionProperty{},
+		"strchars":   &StringCharacters{},
+		"strxlen":    &StringExactLength{},
+		"strnocc":    &StringNoControlCharacters{},
+		"strnb":      &StringNotBlank{},
+		"strne":      &StringNotEmpty{},
+		"strlen":     &StringLength{},
+		"strlower":   &StringLowercase{},
+		"strmax":     &StringMaxLength{},
+		"strmin":     &StringMinLength{},
+		"strpatt":    &StringPattern{},
+		"strpreset":  &StringPresetPattern{},
+		"strupper":   &StringUppercase{},
+		"stremail":   &StringValidEmail{},
+		"strvcn":     &StringValidCardNumber{},
+		"strisodt":   &StringValidISODatetime{},
+		"strisod":    &StringValidISODate{},
+		"strtoken":   &StringValidToken{},
+		"struninorm": &StringValidUnicodeNormalization{},
+		"struuid":    &StringValidUuid{},
+		// preset patterns...
+		presetTokenAlpha:        &StringPresetPattern{Preset: presetTokenAlpha},
+		presetTokenAlphaNumeric: &StringPresetPattern{Preset: presetTokenAlphaNumeric},
+		presetTokenBase64:       &StringPresetPattern{Preset: presetTokenBase64},
+		presetTokenBase64URL:    &StringPresetPattern{Preset: presetTokenBase64URL},
+		presetTokenCard:         &StringPresetPattern{Preset: presetTokenCard},
+		presetTokenE164:         &StringPresetPattern{Preset: presetTokenE164},
+		presetTokenEAN13:        &StringPresetPattern{Preset: presetTokenEAN13},
+		presetTokenHexadecimal:  &StringPresetPattern{Preset: presetTokenHexadecimal},
+		presetTokenHsl:          &StringPresetPattern{Preset: presetTokenHsl},
+		presetTokenHsla:         &StringPresetPattern{Preset: presetTokenHsla},
+		presetTokenHtmlColor:    &StringPresetPattern{Preset: presetTokenHtmlColor},
+		presetTokenInteger:      &StringPresetPattern{Preset: presetTokenInteger},
+		presetTokenISBN:         &StringPresetPattern{Preset: presetTokenISBN},
+		presetTokenISBN10:       &StringPresetPattern{Preset: presetTokenISBN10},
+		presetTokenISBN13:       &StringPresetPattern{Preset: presetTokenISBN13},
+		presetTokenISSN:         &StringPresetPattern{Preset: presetTokenISSN},
+		presetTokenISSN8:        &StringPresetPattern{Preset: presetTokenISSN8},
+		presetTokenISSN13:       &StringPresetPattern{Preset: presetTokenISSN13},
+		presetTokenNumeric:      &StringPresetPattern{Preset: presetTokenNumeric},
+		presetTokenNumericE:     &StringPresetPattern{Preset: presetTokenNumericE},
+		presetTokenNumericX:     &StringPresetPattern{Preset: presetTokenNumericX},
+		presetTokenPublication:  &StringPresetPattern{Preset: presetTokenPublication},
+		presetTokenRgb:          &StringPresetPattern{Preset: presetTokenRgb},
+		presetTokenRgba:         &StringPresetPattern{Preset: presetTokenRgba},
+		presetTokenULID:         &StringPresetPattern{Preset: presetTokenULID},
+		presetTokenUPC:          &StringPresetPattern{Preset: presetTokenUPC},
+		presetTokenUPCA:         &StringPresetPattern{Preset: presetTokenUPCA},
+		presetTokenUPCE:         &StringPresetPattern{Preset: presetTokenUPCE},
+		presetTokenUuid:         &StringPresetPattern{Preset: presetTokenUuid},
+		presetTokenUUID:         &StringPresetPattern{Preset: presetTokenUUID},
+		presetTokenUuid1:        &StringPresetPattern{Preset: presetTokenUuid1},
+		presetTokenUUID1:        &StringPresetPattern{Preset: presetTokenUUID1},
+		presetTokenUuid2:        &StringPresetPattern{Preset: presetTokenUuid2},
+		presetTokenUUID2:        &StringPresetPattern{Preset: presetTokenUUID2},
+		presetTokenUuid3:        &StringPresetPattern{Preset: presetTokenUuid3},
+		presetTokenUUID3:        &StringPresetPattern{Preset: presetTokenUUID3},
+		presetTokenUuid4:        &StringPresetPattern{Preset: presetTokenUuid4},
+		presetTokenUUID4:        &StringPresetPattern{Preset: presetTokenUUID4},
+		presetTokenUuid5:        &StringPresetPattern{Preset: presetTokenUuid5},
+		presetTokenUUID5:        &StringPresetPattern{Preset: presetTokenUUID5},
 	}
 }
 
-func (r *constraintsRegistry) checkOverwriteAllowed(overwrite bool, name string) {
+func (r *constraintRegistry) checkOverwriteAllowed(overwrite bool, name string) {
 	if !overwrite {
 		if _, ok := r.namedConstraints[name]; ok {
 			panic(fmt.Errorf(panicMsgConstraintExists, name))
@@ -67,7 +205,7 @@ func (r *constraintsRegistry) checkOverwriteAllowed(overwrite bool, name string)
 	}
 }
 
-func (r *constraintsRegistry) register(overwrite bool, constraint Constraint) {
+func (r *constraintRegistry) register(overwrite bool, constraint Constraint) {
 	defer r.sync.Unlock()
 	r.sync.Lock()
 	name := reflect.TypeOf(constraint).Elem().Name()
@@ -75,7 +213,7 @@ func (r *constraintsRegistry) register(overwrite bool, constraint Constraint) {
 	r.namedConstraints[name] = constraint
 }
 
-func (r *constraintsRegistry) registerMany(overwrite bool, constraints ...Constraint) {
+func (r *constraintRegistry) registerMany(overwrite bool, constraints ...Constraint) {
 	defer r.sync.Unlock()
 	r.sync.Lock()
 	for _, constraint := range constraints {
@@ -85,14 +223,14 @@ func (r *constraintsRegistry) registerMany(overwrite bool, constraints ...Constr
 	}
 }
 
-func (r *constraintsRegistry) registerNamed(overwrite bool, name string, constraint Constraint) {
+func (r *constraintRegistry) registerNamed(overwrite bool, name string, constraint Constraint) {
 	defer r.sync.Unlock()
 	r.sync.Lock()
 	r.checkOverwriteAllowed(overwrite, name)
 	r.namedConstraints[name] = constraint
 }
 
-func (r *constraintsRegistry) registerManyNamed(overwrite bool, constraints map[string]Constraint) {
+func (r *constraintRegistry) registerManyNamed(overwrite bool, constraints map[string]Constraint) {
 	defer r.sync.Unlock()
 	r.sync.Lock()
 	for name, constraint := range constraints {
@@ -101,7 +239,7 @@ func (r *constraintsRegistry) registerManyNamed(overwrite bool, constraints map[
 	}
 }
 
-func (r *constraintsRegistry) get(name string) (Constraint, bool) {
+func (r *constraintRegistry) get(name string) (Constraint, bool) {
 	defer r.sync.Unlock()
 	r.sync.Lock()
 	c, ok := r.namedConstraints[name]
@@ -109,14 +247,14 @@ func (r *constraintsRegistry) get(name string) (Constraint, bool) {
 }
 
 // reset for testing
-func (r *constraintsRegistry) reset() {
+func (r *constraintRegistry) reset() {
 	defer r.sync.Unlock()
 	r.sync.Lock()
 	r.namedConstraints = defaultConstraints()
 }
 
 // has for testing
-func (r *constraintsRegistry) has(name string) bool {
+func (r *constraintRegistry) has(name string) bool {
 	defer r.sync.Unlock()
 	r.sync.Lock()
 	_, ok := r.namedConstraints[name]
@@ -136,7 +274,7 @@ func (r *constraintsRegistry) has(name string) bool {
 // Note: this function will panic if the constraint is already registered - use ReRegisterConstraint for
 // non-panic behaviour where you don't mind the constraint registration being overwritten
 func RegisterConstraint(constraint Constraint) {
-	registry.register(false, constraint)
+	constraintsRegistry.register(false, constraint)
 }
 
 // ReRegisterConstraint registers a Constraint for use by ValidatorFor
@@ -151,7 +289,7 @@ func RegisterConstraint(constraint Constraint) {
 //
 // If the constraint is already registered it is overwritten (this function will never panic)
 func ReRegisterConstraint(constraint Constraint) {
-	registry.register(true, constraint)
+	constraintsRegistry.register(true, constraint)
 }
 
 // RegisterNamedConstraint registers a Constraint for use by ValidatorFor with a specific name (or alias)
@@ -168,7 +306,7 @@ func ReRegisterConstraint(constraint Constraint) {
 // Note: this function will panic if the constraint is already registered - use ReRegisterNamedConstraint for
 // non-panic behaviour where you don't mind the constraint registration being overwritten
 func RegisterNamedConstraint(name string, constraint Constraint) {
-	registry.registerNamed(false, name, constraint)
+	constraintsRegistry.registerNamed(false, name, constraint)
 }
 
 // ReRegisterNamedConstraint registers a Constraint for use by ValidatorFor with a specific name (or alias)
@@ -184,7 +322,7 @@ func RegisterNamedConstraint(name string, constraint Constraint) {
 //
 // If the constraint is already registered it is overwritten (this function will never panic)
 func ReRegisterNamedConstraint(name string, constraint Constraint) {
-	registry.registerNamed(true, name, constraint)
+	constraintsRegistry.registerNamed(true, name, constraint)
 }
 
 // RegisterConstraints registers multiple constraints
@@ -192,14 +330,14 @@ func ReRegisterNamedConstraint(name string, constraint Constraint) {
 // Note: this function will panic if the constraint is already registered - use ReRegisterConstraints for
 // non-panic behaviour where you don't mind the constraint registration being overwritten
 func RegisterConstraints(constraints ...Constraint) {
-	registry.registerMany(false, constraints...)
+	constraintsRegistry.registerMany(false, constraints...)
 }
 
 // ReRegisterConstraints registers multiple constraints
 //
 // If any of the constraints are already registered they are overwritten (this function will never panic)
 func ReRegisterConstraints(constraints ...Constraint) {
-	registry.registerMany(true, constraints...)
+	constraintsRegistry.registerMany(true, constraints...)
 }
 
 // RegisterNamedConstraints registers multiple named constraints
@@ -207,24 +345,24 @@ func ReRegisterConstraints(constraints ...Constraint) {
 // Note: this function will panic if the constraint is already registered - use ReRegisterNamedConstraints for
 // non-panic behaviour where you don't mind the constraint registration being overwritten
 func RegisterNamedConstraints(constraints map[string]Constraint) {
-	registry.registerManyNamed(false, constraints)
+	constraintsRegistry.registerManyNamed(false, constraints)
 }
 
 // ReRegisterNamedConstraints registers multiple named constraints
 //
 // If any of the constraints are already registered they are overwritten (this function will never panic)
 func ReRegisterNamedConstraints(constraints map[string]Constraint) {
-	registry.registerManyNamed(true, constraints)
+	constraintsRegistry.registerManyNamed(true, constraints)
 }
 
 // ConstraintsRegistryReset is provided for test purposes - so the constraints registry can
 // be cleared of all registered constraints (and reset to just the Valix common constraints)
 func ConstraintsRegistryReset() {
-	registry.reset()
+	constraintsRegistry.reset()
 }
 
 // ConstraintsRegistryHas is provided for test purposes - so the constraints registry can
 // be checked to see if a specific constraint name has been registered
 func ConstraintsRegistryHas(name string) bool {
-	return registry.has(name)
+	return constraintsRegistry.has(name)
 }
