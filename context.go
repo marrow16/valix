@@ -16,35 +16,45 @@ type ValidatorContext struct {
 	continueAll bool
 	// root is the original starting object (map or slice) for the validator
 	root interface{}
+	// rootValidator is the starting validator
+	rootValidator *Validator
 	// violations is the collected violations
 	violations []*Violation
 	// pathStack is the path as each property or array index is checked
 	pathStack []*pathStackItem
-	// conditions is the current condition flags (as set by constraints or object validators)
-	conditions map[string]bool
+	// i18nContext is the actual I18nContext used to perform translations
+	i18nContext I18nContext
 }
 
-func newValidatorContext(root interface{}, stopOnFirst bool) *ValidatorContext {
+func newValidatorContext(root interface{}, rootValidator *Validator, stopOnFirst bool, i18nCtx I18nContext) *ValidatorContext {
 	return &ValidatorContext{
-		ok:          true,
-		stopOnFirst: stopOnFirst,
-		continueAll: true,
-		root:        root,
-		violations:  []*Violation{},
-		pathStack: []*pathStackItem{
-			{
-				property: nil,
-				path:     "",
-				value:    root,
-			},
-		},
-		conditions: map[string]bool{},
+		ok:            true,
+		stopOnFirst:   stopOnFirst,
+		continueAll:   true,
+		root:          root,
+		rootValidator: rootValidator,
+		violations:    []*Violation{},
+		pathStack:     []*pathStackItem{newRootPathStackItem(root, rootValidator)},
+		i18nContext:   obtainI18nContext(i18nCtx),
+	}
+}
+
+func newEmptyValidatorContext(i18nCtx I18nContext) *ValidatorContext {
+	return &ValidatorContext{
+		ok:            true,
+		stopOnFirst:   false,
+		continueAll:   true,
+		root:          nil,
+		rootValidator: nil,
+		violations:    []*Violation{},
+		pathStack:     []*pathStackItem{newRootPathStackItem(nil, nil)},
+		i18nContext:   obtainI18nContext(i18nCtx),
 	}
 }
 
 // AddViolation adds a Violation to the validation context
 //
-// Note: Also causes the validator to fail (i.e. return false on CheckFunc)
+// Note: Adding a violation always causes the validator to fail!
 func (vc *ValidatorContext) AddViolation(v *Violation) {
 	vc.violations = append(vc.violations, v)
 	vc.ok = false
@@ -56,10 +66,33 @@ func (vc *ValidatorContext) AddViolation(v *Violation) {
 // AddViolationForCurrent adds a Violation to the validation context for
 // the current property and path
 //
-// Note: Also causes the validator to fail (i.e. return false on CheckFunc)
-func (vc *ValidatorContext) AddViolationForCurrent(msg string) {
-	curr := vc.pathStack[len(vc.pathStack)-1]
-	vc.AddViolation(NewViolation(curr.propertyAsString(), curr.path, msg))
+// Note 1: Use the `translate` arg to determine if the message is to be i18n translated
+//
+// Note 2: Adding a violation always causes the validator to fail!
+func (vc *ValidatorContext) AddViolationForCurrent(msg string, translate bool, codes ...interface{}) {
+	curr := vc.currentStackItem()
+	useMsg := msg
+	if translate {
+		useMsg = vc.TranslateMessage(msg)
+	}
+	vc.AddViolation(NewViolation(curr.propertyAsString(), curr.path, useMsg, codes...))
+}
+
+// internal and message is already translated
+func (vc *ValidatorContext) addTranslatedViolationForCurrent(msg string, codes ...interface{}) {
+	curr := vc.currentStackItem()
+	vc.AddViolation(NewViolation(curr.propertyAsString(), curr.path, msg, codes...))
+}
+
+// internal and message gets translated
+func (vc *ValidatorContext) addUnTranslatedViolationForCurrent(msg string, codes ...interface{}) {
+	vc.addTranslatedViolationForCurrent(vc.TranslateMessage(msg), codes...)
+}
+
+// internal and message is translated
+func (vc *ValidatorContext) addViolationPropertyForCurrent(name string, msg string, codes ...interface{}) {
+	curr := vc.currentStackItem()
+	vc.AddViolation(NewViolation(name, curr.asPath(), vc.TranslateMessage(msg), codes...))
 }
 
 // Stop causes the entire validation to stop - i.e. not further constraints or
@@ -75,7 +108,15 @@ func (vc *ValidatorContext) Stop() {
 //
 // Note: This does not affect whether the validator succeeds or fails
 func (vc *ValidatorContext) CeaseFurther() {
-	vc.pathStack[len(vc.pathStack)-1].stopped = true
+	vc.currentStackItem().stopped = true
+}
+
+// CeaseFurtherIf causes further constraints and property validators on the current
+// property to be ceased if the condition is true
+//
+// Note: This does not affect whether the validator succeeds or fails
+func (vc *ValidatorContext) CeaseFurtherIf(condition bool) {
+	vc.currentStackItem().stopped = condition
 }
 
 // CurrentProperty returns the current property - which may be a string (for property name)
@@ -86,7 +127,7 @@ func (vc *ValidatorContext) CeaseFurther() {
 // or the current array index use...
 //    CurrentArrayIndex
 func (vc *ValidatorContext) CurrentProperty() interface{} {
-	return vc.pathStack[len(vc.pathStack)-1].property
+	return vc.currentStackItem().property
 }
 
 // CurrentPropertyName returns the current property name (or nil if current is an array index)
@@ -107,14 +148,18 @@ func (vc *ValidatorContext) CurrentArrayIndex() *int {
 	return nil
 }
 
+func (vc *ValidatorContext) currentStackItem() *pathStackItem {
+	return vc.pathStack[len(vc.pathStack)-1]
+}
+
 // CurrentPath returns the current property path
 func (vc *ValidatorContext) CurrentPath() string {
-	return vc.pathStack[len(vc.pathStack)-1].path
+	return vc.currentStackItem().path
 }
 
 // CurrentValue returns the current property value
 func (vc *ValidatorContext) CurrentValue() interface{} {
-	return vc.pathStack[len(vc.pathStack)-1].value
+	return vc.currentStackItem().value
 }
 
 // CurrentDepth returns the current depth of the context - i.e. how many properties deep in the tree
@@ -175,30 +220,6 @@ func (vc *ValidatorContext) AncestorValue(level uint) (interface{}, bool) {
 	return nil, false
 }
 
-// SetCurrentValue set the value of the current property during validation
-//
-// Note: Use with extreme caution - altering values that are maps or slices (objects or arrays)
-// during validation may cause severe problems where there are descendant validators on them
-func (vc *ValidatorContext) SetCurrentValue(v interface{}) bool {
-	if pv, ok := vc.AncestorValue(0); ok {
-		currStackItem := vc.pathStack[len(vc.pathStack)-1]
-		if apv, aok := pv.([]interface{}); aok {
-			if idx := vc.CurrentArrayIndex(); idx != nil {
-				apv[*idx] = v
-				currStackItem.value = v
-				return true
-			}
-		} else if opv, ook := pv.(map[string]interface{}); ook {
-			if pty := vc.CurrentPropertyName(); pty != nil {
-				opv[*pty] = v
-				currStackItem.value = v
-				return true
-			}
-		}
-	}
-	return false
-}
-
 // SetCondition sets a specified condition (token)
 //
 // Note: if the condition (token) is prefixed with '!' then this is the same as calling ClearCondition
@@ -207,18 +228,59 @@ func (vc *ValidatorContext) SetCondition(condition string) {
 		vc.ClearCondition(condition[1:])
 		return
 	}
-	vc.conditions[condition] = true
+	vc.currentStackItem().conditions[condition] = true
+}
+
+// SetParentCondition sets a specified condition (token) on the parent in the object tree
+//
+// Note: if the condition (token) is prefixed with '!' then this is the same as calling ClearParentCondition
+func (vc *ValidatorContext) SetParentCondition(condition string) {
+	if strings.HasPrefix(condition, "!") {
+		vc.ClearParentCondition(condition[1:])
+		return
+	}
+	if len(vc.pathStack) > 1 {
+		vc.pathStack[len(vc.pathStack)-2].conditions[condition] = true
+	}
+	vc.currentStackItem().conditions[condition] = true
+}
+
+// SetGlobalCondition sets a specified condition (token) for the entire validator context
+//
+// Note: if the condition (token) is prefixed with '!' then this is the same as calling ClearGlobalCondition
+func (vc *ValidatorContext) SetGlobalCondition(condition string) {
+	if strings.HasPrefix(condition, "!") {
+		vc.ClearGlobalCondition(condition[1:])
+		return
+	}
+	for _, ps := range vc.pathStack {
+		ps.conditions[condition] = true
+	}
 }
 
 // ClearCondition clears a specified condition (token)
 func (vc *ValidatorContext) ClearCondition(condition string) {
-	delete(vc.conditions, condition)
+	delete(vc.currentStackItem().conditions, condition)
+}
+
+// ClearParentCondition clears a specified condition (token) on the parent in the object tree
+func (vc *ValidatorContext) ClearParentCondition(condition string) {
+	if len(vc.pathStack) > 1 {
+		delete(vc.pathStack[len(vc.pathStack)-2].conditions, condition)
+	}
+	delete(vc.currentStackItem().conditions, condition)
+}
+
+// ClearGlobalCondition clears a specified condition (token) on the parent in the object tree
+func (vc *ValidatorContext) ClearGlobalCondition(condition string) {
+	for _, ps := range vc.pathStack {
+		delete(ps.conditions, condition)
+	}
 }
 
 // IsCondition checks whether a specified condition (token) has been set
 func (vc *ValidatorContext) IsCondition(condition string) bool {
-	set, ok := vc.conditions[condition]
-	return ok && set
+	return vc.currentStackItem().conditions[condition]
 }
 
 // meetsWhenConditions checks whether the supplied conditions are met
@@ -234,15 +296,16 @@ func (vc *ValidatorContext) meetsWhenConditions(conditions []string) bool {
 	anyExcluded := false
 	anyMet := false
 	anyCount := 0
+	currentConditions := vc.currentStackItem().conditions
 	for _, condition := range conditions {
 		if strings.HasPrefix(condition, "!") {
-			if vc.IsCondition(condition[1:]) {
+			if currentConditions[condition[1:]] {
 				anyExcluded = true
 				break
 			}
 		} else {
 			anyCount++
-			if vc.IsCondition(condition) {
+			if currentConditions[condition] {
 				anyMet = true
 			}
 		}
@@ -255,14 +318,15 @@ func (vc *ValidatorContext) meetsUnwantedConditions(conditions []string) bool {
 		return true
 	}
 	result := true
+	currentConditions := vc.currentStackItem().conditions
 	for _, condition := range conditions {
 		if strings.HasPrefix(condition, "!") {
-			result = vc.IsCondition(condition[1:])
+			result = currentConditions[condition[1:]]
 			if !result {
 				break
 			}
 		} else {
-			result = !vc.IsCondition(condition)
+			result = !currentConditions[condition]
 			if !result {
 				break
 			}
@@ -280,22 +344,12 @@ func (vc *ValidatorContext) ancestorStackItem(level uint) (*pathStackItem, bool)
 	return vc.pathStack[idx], true
 }
 
-func (vc *ValidatorContext) pushPathProperty(property string, value interface{}) {
-	curr := vc.pathStack[len(vc.pathStack)-1]
-	vc.pathStack = append(vc.pathStack, &pathStackItem{
-		property: property,
-		path:     curr.asPath(),
-		value:    value,
-	})
+func (vc *ValidatorContext) pushPathProperty(property string, value interface{}, validator interface{}) {
+	vc.pathStack = append(vc.pathStack, vc.currentStackItem().clone(property, value, validator))
 }
 
-func (vc *ValidatorContext) pushPathIndex(idx int, value interface{}) {
-	curr := vc.pathStack[len(vc.pathStack)-1]
-	vc.pathStack = append(vc.pathStack, &pathStackItem{
-		property: idx,
-		path:     curr.asPath(),
-		value:    value,
-	})
+func (vc *ValidatorContext) pushPathIndex(idx int, value interface{}, validator interface{}) {
+	vc.pathStack = append(vc.pathStack, vc.currentStackItem().clone(idx, value, validator))
 }
 
 func (vc *ValidatorContext) popPath() {
@@ -305,14 +359,66 @@ func (vc *ValidatorContext) popPath() {
 }
 
 func (vc *ValidatorContext) continuePty() bool {
-	return !vc.pathStack[len(vc.pathStack)-1].stopped
+	return !vc.currentStackItem().stopped
+}
+
+// TranslateMessage implements I18nContext.TranslateMessage (and relays it to internal i18nContext)
+func (vc *ValidatorContext) TranslateMessage(msg string) string {
+	return vc.i18nContext.TranslateMessage(msg)
+}
+
+// TranslateFormat implements I18nContext.TranslateFormat (and relays it to internal i18nContext)
+func (vc *ValidatorContext) TranslateFormat(format string, a ...interface{}) string {
+	return vc.i18nContext.TranslateFormat(format, a...)
+}
+
+// TranslateToken implements I18nContext.TranslateToken (and relays it to internal i18nContext)
+func (vc *ValidatorContext) TranslateToken(token string) string {
+	return vc.i18nContext.TranslateToken(token)
+}
+
+// Language implements I18nContext.Language (and relays it to internal i18nContext)
+func (vc *ValidatorContext) Language() string {
+	return vc.i18nContext.Language()
+}
+
+// Region implements I18nContext.Region (and relays it to internal i18nContext)
+func (vc *ValidatorContext) Region() string {
+	return vc.i18nContext.Region()
 }
 
 type pathStackItem struct {
-	property interface{}
-	path     string
-	value    interface{}
-	stopped  bool
+	property   interface{}
+	path       string
+	value      interface{}
+	validator  interface{}
+	stopped    bool
+	conditions map[string]bool
+}
+
+func newRootPathStackItem(value interface{}, validator interface{}) *pathStackItem {
+	return &pathStackItem{
+		property:   nil,
+		path:       "",
+		value:      value,
+		validator:  validator,
+		stopped:    false,
+		conditions: map[string]bool{},
+	}
+}
+
+func (p *pathStackItem) clone(pty interface{}, value interface{}, validator interface{}) *pathStackItem {
+	result := &pathStackItem{
+		property:   pty,
+		path:       p.asPath(),
+		value:      value,
+		validator:  validator,
+		conditions: make(map[string]bool, len(p.conditions)),
+	}
+	for k, v := range p.conditions {
+		result.conditions[k] = v
+	}
+	return result
 }
 
 func (p *pathStackItem) asPath() string {

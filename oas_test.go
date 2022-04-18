@@ -2,8 +2,9 @@ package valix
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/require"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestValidatorForWithOasTag(t *testing.T) {

@@ -2,9 +2,10 @@ package examples
 
 import (
 	"encoding/json"
+	"testing"
+
 	"github.com/marrow16/valix"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestTagMandatory(t *testing.T) {

@@ -203,5 +203,5 @@ func detectFieldType(fld reflect.StructField) JsonType {
 			return JsonObject
 		}
 	}
-	return JsonTypeUndefined
+	return JsonAny
 }

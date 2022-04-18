@@ -41,9 +41,10 @@ const (
 	msgCannotCreateConstraint      = msgV8nPrefix + "cannot create constraint '%s{}' (on non-struct constraint)"
 	msgConstraintFieldUnknown      = msgV8nPrefix + "constraint '%s{}' field '%s' is unknown or not assignable"
 	msgConstraintFieldInvalidValue = msgV8nPrefix + "constraint '%s{}' field '%s' cannot be assigned with value specified"
-	msgConstraintFieldNotExported  = msgV8nPrefix + "constraint '%s{}' has un-exported field '%s' - so no fields can be specified as args"
+	msgConstraintFieldNotExported  = msgV8nPrefix + "constraint '%s{}' has unexported field '%s' - so no fields can be specified as args"
 	msgConstraintArgsParseError    = msgV8nPrefix + "constraint '%s{}' - args parsing error (%s)"
 	msgTagFldMissingColon          = msgV8nPrefix + "constraint '%s{}` field missing ':' separator"
+	msgConstraintNoDefaultValue    = msgV8nPrefix + "constraint '%s{}` does not have tagged default field"
 	msgUnknownTagValue             = msgV8nPrefix + "token '%s' expected %s value (found \"%s\")"
 	msgPropertyNotObject           = msgV8nPrefix + "token '%s' cannot be used on non object/array field"
 	msgUnclosed                    = "unclosed parenthesis or quote started at position %d"
@@ -91,7 +92,7 @@ func (pv *PropertyValidator) processTagItems(tagItems []string) error {
 func isConstraintsList(tagItem string) ([]string, bool, error) {
 	if strings.HasPrefix(tagItem, tagTokenConstraintsPrefix) {
 		value := strings.Trim(tagItem[len(tagTokenConstraintsPrefix):], " ")
-		if strings.HasPrefix(value, "[") && strings.HasSuffix(value, "]") {
+		if isBracedStr(value, false) {
 			if list, err := parseCommas(value[1 : len(value)-1]); err != nil {
 				return nil, false, err
 			} else {
@@ -202,7 +203,7 @@ func (pv *PropertyValidator) addTagItem(tagItem string) (result error) {
 		}
 		break
 	default:
-		if strings.HasPrefix(tagItem, "&") && strings.HasSuffix(tagItem, "}") {
+		if strings.HasPrefix(tagItem, "&") {
 			// if tagName starts with '&' we can assume it's a constraint
 			if err := pv.addConstraint(tagItem); err != nil {
 				result = err
@@ -222,8 +223,8 @@ func (pv *PropertyValidator) addTagItem(tagItem string) (result error) {
 }
 
 func (pv *PropertyValidator) setTagType(tagValue string) error {
-	ty := JsonTypeFromString(tagValue)
-	if ty == JsonTypeUndefined {
+	ty, ok := JsonTypeFromString(tagValue)
+	if !ok {
 		return fmt.Errorf(msgUnknownPropertyType, tagValue)
 	}
 	pv.Type = ty
@@ -247,12 +248,20 @@ func (pv *PropertyValidator) setTagObjConstraint(tagValue string) error {
 }
 
 func (pv *PropertyValidator) setTagWhen(tagValue string) error {
-	if strings.HasPrefix(tagValue, "[") && strings.HasSuffix(tagValue, "]") {
+	if isBracedStr(tagValue, true) {
 		if tokens, err := parseCommas(tagValue[1 : len(tagValue)-1]); err == nil {
-			pv.WhenConditions = append(pv.WhenConditions, tokens...)
+			for _, token := range tokens {
+				if isQuotedStr(token, true) {
+					pv.WhenConditions = append(pv.WhenConditions, token[1:len(token)-1])
+				} else {
+					pv.WhenConditions = append(pv.WhenConditions, token)
+				}
+			}
 		} else {
 			return err
 		}
+	} else if isQuotedStr(tagValue, true) {
+		pv.WhenConditions = append(pv.WhenConditions, tagValue[1:len(tagValue)-1])
 	} else {
 		pv.WhenConditions = append(pv.WhenConditions, tagValue)
 	}
@@ -260,12 +269,20 @@ func (pv *PropertyValidator) setTagWhen(tagValue string) error {
 }
 
 func (pv *PropertyValidator) setTagUnwanted(tagValue string) error {
-	if strings.HasPrefix(tagValue, "[") && strings.HasSuffix(tagValue, "]") {
+	if isBracedStr(tagValue, true) {
 		if tokens, err := parseCommas(tagValue[1 : len(tagValue)-1]); err == nil {
-			pv.UnwantedConditions = append(pv.UnwantedConditions, tokens...)
+			for _, token := range tokens {
+				if isQuotedStr(token, true) {
+					pv.UnwantedConditions = append(pv.UnwantedConditions, token[1:len(token)-1])
+				} else {
+					pv.UnwantedConditions = append(pv.UnwantedConditions, token)
+				}
+			}
 		} else {
 			return err
 		}
+	} else if isQuotedStr(tagValue, true) {
+		pv.UnwantedConditions = append(pv.UnwantedConditions, tagValue[1:len(tagValue)-1])
 	} else {
 		pv.UnwantedConditions = append(pv.UnwantedConditions, tagValue)
 	}
@@ -288,12 +305,20 @@ func (pv *PropertyValidator) setTagObjWhen(tagValue string) error {
 	if pv.ObjectValidator == nil {
 		return fmt.Errorf(msgPropertyNotObject, tagTokenObjWhen)
 	}
-	if strings.HasPrefix(tagValue, "[") && strings.HasSuffix(tagValue, "]") {
+	if isBracedStr(tagValue, true) {
 		if tokens, err := parseCommas(tagValue[1 : len(tagValue)-1]); err == nil {
-			pv.ObjectValidator.WhenConditions = append(pv.ObjectValidator.WhenConditions, tokens...)
+			for _, token := range tokens {
+				if isQuotedStr(token, true) {
+					pv.ObjectValidator.WhenConditions = append(pv.ObjectValidator.WhenConditions, token[1:len(token)-1])
+				} else {
+					pv.ObjectValidator.WhenConditions = append(pv.ObjectValidator.WhenConditions, token)
+				}
+			}
 		} else {
 			return err
 		}
+	} else if isQuotedStr(tagValue, true) {
+		pv.ObjectValidator.WhenConditions = append(pv.ObjectValidator.WhenConditions, tagValue[1:len(tagValue)-1])
 	} else {
 		pv.ObjectValidator.WhenConditions = append(pv.ObjectValidator.WhenConditions, tagValue)
 	}
@@ -320,20 +345,26 @@ func (v *Validator) addConstraint(tagValue string) error {
 
 func buildConstraintFromTagValue(tagValue string) (Constraint, error) {
 	useValue := strings.Trim(tagValue, " ")
-	curlyOpenAt := strings.Index(useValue, "{")
-	if curlyOpenAt == -1 || !strings.HasSuffix(useValue, "}") {
-		return nil, fmt.Errorf(msgConstraintsFormat, tagValue)
+	constraintName := useValue
+	argsStr := ""
+	if curlyOpenAt := strings.Index(useValue, "{"); curlyOpenAt != -1 {
+		if !strings.HasSuffix(useValue, "}") {
+			return nil, fmt.Errorf(msgConstraintsFormat, tagValue)
+		}
+		argsStr = strings.Trim(useValue[curlyOpenAt+1:len(useValue)-1], " ")
+		constraintName = useValue[0:curlyOpenAt]
 	}
-	constraintName := useValue[0:curlyOpenAt]
 	if strings.HasPrefix(constraintName, "&") {
 		constraintName = constraintName[1:]
 	}
-	c, ok := registry.get(constraintName)
+	if constraintName == constraintSetName {
+		return buildConstraintSetWithArgs(argsStr)
+	}
+	c, ok := constraintsRegistry.get(constraintName)
 	if !ok {
 		return nil, fmt.Errorf(msgUnknownConstraint, constraintName)
 	}
 	// check if the tag value has any args specified...
-	argsStr := strings.Trim(useValue[curlyOpenAt+1:len(useValue)-1], " ")
 	if argsStr == "" {
 		// no args within curly braces, so it's safe to re-use the registered constraint...
 		return c, nil
@@ -343,6 +374,60 @@ func buildConstraintFromTagValue(tagValue string) (Constraint, error) {
 		return nil, cErr
 	}
 	return newC, nil
+}
+
+func buildConstraintSetWithArgs(argsStr string) (Constraint, error) {
+	args, err := parseCommas(argsStr)
+	if err != nil {
+		return nil, err
+	}
+	result := &ConstraintSet{
+		Message:     "",
+		Constraints: Constraints{},
+	}
+	for _, arg := range args {
+		colonAt := firstValidColonAt(arg)
+		if colonAt == -1 {
+			return nil, fmt.Errorf(msgTagFldMissingColon, constraintSetName)
+		}
+		fieldName := strings.Trim(arg[0:colonAt], " ")
+		value := strings.Trim(arg[colonAt+1:], " ")
+		if fieldName == constraintSetFieldMessage {
+			if isQuotedStr(value, true) {
+				result.Message = value[1 : len(value)-1]
+			} else {
+				return nil, fmt.Errorf(msgConstraintFieldInvalidValue, constraintSetName, constraintSetFieldMessage)
+			}
+		} else if fieldName == constraintSetFieldConstraints {
+			if isBracedStr(value, true) {
+				tagValues, _ := parseCommas(value[1 : len(value)-1])
+				for _, tagValue := range tagValues {
+					if constraint, cErr := buildConstraintFromTagValue(tagValue); cErr != nil {
+						return nil, cErr
+					} else {
+						result.Constraints = append(result.Constraints, constraint)
+					}
+				}
+			} else {
+				return nil, fmt.Errorf(msgConstraintFieldInvalidValue, constraintSetName, constraintSetFieldConstraints)
+			}
+		} else if fieldName == constraintSetFieldStop {
+			if b, pErr := strconv.ParseBool(value); pErr == nil {
+				result.Stop = b
+			} else {
+				return nil, fmt.Errorf(msgConstraintFieldInvalidValue, constraintSetName, constraintSetFieldStop)
+			}
+		} else if fieldName == constraintSetFieldOneOf {
+			if b, pErr := strconv.ParseBool(value); pErr == nil {
+				result.OneOf = b
+			} else {
+				return nil, fmt.Errorf(msgConstraintFieldInvalidValue, constraintSetName, constraintSetFieldOneOf)
+			}
+		} else {
+			return nil, fmt.Errorf(msgConstraintFieldUnknown, constraintSetName, fieldName)
+		}
+	}
+	return result, nil
 }
 
 func rebuildConstraintWithArgs(cName string, c Constraint, argsStr string) (Constraint, error) {
@@ -361,7 +446,8 @@ func rebuildConstraintWithArgs(cName string, c Constraint, argsStr string) (Cons
 	var result = newC.Interface().(Constraint)
 	// clone the original constraint fields into new constraint...
 	orgV := reflect.ValueOf(c)
-	for f := 0; f < ty.NumField(); f++ {
+	count := ty.NumField()
+	for f := 0; f < count; f++ {
 		fn := ty.Field(f).Name
 		fv := orgV.Elem().FieldByName(fn)
 		fld := newC.Elem().FieldByName(fn)
@@ -373,6 +459,13 @@ func rebuildConstraintWithArgs(cName string, c Constraint, argsStr string) (Cons
 	}
 	// now overwrite any specified args into the constraint fields...
 	for argName, argVal := range args {
+		if argName == "" && len(args) == 1 {
+			if defName, err := getConstraintDefaultValueField(cName, newC.Elem(), ty); err != nil {
+				return nil, err
+			} else {
+				argName = defName
+			}
+		}
 		fld := newC.Elem().FieldByName(argName)
 		if fld.Kind() != reflect.Invalid && fld.CanSet() {
 			if !safeSet(fld, argVal) {
@@ -385,12 +478,27 @@ func rebuildConstraintWithArgs(cName string, c Constraint, argsStr string) (Cons
 	return result, nil
 }
 
+func getConstraintDefaultValueField(cName string, newC reflect.Value, ty reflect.Type) (string, error) {
+	// scan fields to see if any are tagged as `v8n:"default"`...
+	count := ty.NumField()
+	if count == 1 {
+		// only has one field, so that must be the default field...
+		return ty.Field(0).Name, nil
+	}
+	for f := 0; f < count; f++ {
+		sf := ty.Field(f)
+		if sf.Tag.Get(tagNameV8n) == "default" {
+			return sf.Name, nil
+		}
+	}
+	return "", fmt.Errorf(msgConstraintNoDefaultValue, cName)
+}
+
 func safeSet(fv reflect.Value, valueStr string) (result bool) {
 	result = false
 	switch fv.Kind() {
 	case reflect.String:
-		if (strings.HasPrefix(valueStr, "\"") && strings.HasSuffix(valueStr, "\"")) ||
-			(strings.HasPrefix(valueStr, "'") && strings.HasSuffix(valueStr, "'")) {
+		if isQuotedStr(valueStr, true) {
 			fv.SetString(valueStr[1 : len(valueStr)-1])
 			result = true
 		}
@@ -420,8 +528,7 @@ func safeSet(fv reflect.Value, valueStr string) (result bool) {
 		}
 		break
 	case reflect.Slice:
-		if (strings.HasPrefix(valueStr, "[") && strings.HasSuffix(valueStr, "]")) ||
-			(strings.HasPrefix(valueStr, "{") && strings.HasSuffix(valueStr, "}")) {
+		if isBracedStr(valueStr, true) {
 			if items, ok := itemsToSlice(fv.Type(), valueStr); ok {
 				fv.Set(items)
 				result = true
@@ -429,8 +536,7 @@ func safeSet(fv reflect.Value, valueStr string) (result bool) {
 		}
 		break
 	case regexpKind:
-		if (strings.HasPrefix(valueStr, "\"") && strings.HasSuffix(valueStr, "\"")) ||
-			(strings.HasPrefix(valueStr, "'") && strings.HasSuffix(valueStr, "'")) {
+		if isQuotedStr(valueStr, true) {
 			rxv := reflect.ValueOf(regexp.MustCompile(valueStr[1 : len(valueStr)-1])).Elem()
 			fv.Set(rxv)
 			result = true
@@ -449,8 +555,7 @@ func itemsToSlice(itemType reflect.Type, arrayStr string) (result reflect.Value,
 			ok = true
 			for i, vu := range strItems {
 				v := strings.Trim(vu, " ")
-				if (strings.HasPrefix(v, "\"") && strings.HasSuffix(v, "\"")) ||
-					(strings.HasPrefix(v, "'") && strings.HasSuffix(v, "'")) {
+				if isQuotedStr(v, true) {
 					result.Index(i).SetString(v[1 : len(v)-1])
 				} else {
 					ok = false
@@ -521,6 +626,10 @@ func argsStringToArgs(cName string, str string) (map[string]string, error) {
 		argName := strings.Trim(arg, " ")
 		cAt := firstValidColonAt(argName)
 		if cAt == -1 {
+			if len(rawArgs) == 1 {
+				result[""] = argName
+				break
+			}
 			return nil, fmt.Errorf(msgTagFldMissingColon, cName)
 		}
 		argValue := strings.Trim(argName[cAt+1:], " ")
@@ -646,4 +755,14 @@ func (ds *delimiterStack) inAny() bool {
 }
 func (ds *delimiterStack) inQuote() bool {
 	return ds.current != nil && ds.current.isQuote
+}
+
+func isQuotedStr(str string, allowSingles bool) bool {
+	return (strings.HasPrefix(str, "\"") && strings.HasSuffix(str, "\"")) ||
+		(allowSingles && strings.HasPrefix(str, "'") && strings.HasSuffix(str, "'"))
+}
+
+func isBracedStr(str string, allowCurly bool) bool {
+	return (strings.HasPrefix(str, "[") && strings.HasSuffix(str, "]")) ||
+		(allowCurly && strings.HasPrefix(str, "{") && strings.HasSuffix(str, "}"))
 }

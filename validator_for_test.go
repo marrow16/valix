@@ -2,8 +2,9 @@ package valix
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/require"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestShouldPanicWithNonStruct(t *testing.T) {
@@ -217,7 +218,7 @@ func TestValidatorForDetectsTypeMap(t *testing.T) {
 	require.True(t, ok)
 	require.NotNil(t, pv)
 	require.Equal(t, 0, len(pv.Constraints))
-	require.Equal(t, JsonTypeUndefined, pv.Type)
+	require.Equal(t, JsonAny, pv.Type)
 }
 
 func TestValidatorForDetectsTypeArray(t *testing.T) {
@@ -503,26 +504,29 @@ func TestValidatorForWithSlice(t *testing.T) {
 	require.Equal(t, 4, len(violations))
 
 	SortViolationsByPathAndProperty(violations)
-	require.Equal(t, fmt.Sprintf(msgMissingProperty, "bar"), violations[0].Message)
-	require.Equal(t, "[0]", violations[0].Property)
-	require.Equal(t, "", violations[0].Path)
-	require.Equal(t, fmt.Sprintf(msgMissingProperty, "foo"), violations[1].Message)
-	require.Equal(t, "[1]", violations[1].Property)
-	require.Equal(t, "", violations[1].Path)
-	require.Equal(t, messageValueCannotBeNull, violations[2].Message)
-	require.Equal(t, "foo", violations[2].Property)
-	require.Equal(t, "[0]", violations[2].Path)
-	require.Equal(t, messageValueCannotBeNull, violations[3].Message)
-	require.Equal(t, "bar", violations[3].Property)
+	require.Equal(t, msgMissingProperty, violations[0].Message)
+	require.Equal(t, "bar", violations[0].Property)
+	require.Equal(t, "[0]", violations[0].Path)
+	require.Equal(t, msgValueCannotBeNull, violations[1].Message)
+	require.Equal(t, "foo", violations[1].Property)
+	require.Equal(t, "[0]", violations[1].Path)
+	require.Equal(t, msgValueCannotBeNull, violations[2].Message)
+	require.Equal(t, "bar", violations[2].Property)
+	require.Equal(t, "[1]", violations[2].Path)
+	require.Equal(t, msgMissingProperty, violations[3].Message)
+	require.Equal(t, "foo", violations[3].Property)
 	require.Equal(t, "[1]", violations[3].Path)
 }
 
 func TestNamedConstraintTagsUseCorrectDefaultFields(t *testing.T) {
-	registry.reset()
+	constraintsRegistry.reset()
+	defer func() {
+		constraintsRegistry.reset()
+	}()
 	namedTestConstraint1 := &StringNotEmpty{Message: "Message 1"}
 	namedTestConstraint2 := &StringNotEmpty{Message: "Message 2"}
-	registry.registerNamed(true, "StringNotEmpty1", namedTestConstraint1)
-	registry.registerNamed(true, "StringNotEmpty2", namedTestConstraint2)
+	constraintsRegistry.registerNamed(true, "StringNotEmpty1", namedTestConstraint1)
+	constraintsRegistry.registerNamed(true, "StringNotEmpty2", namedTestConstraint2)
 	type MyStruct struct {
 		Foo string `json:"foo" v8n:"&StringNotEmpty1{},&StringNotEmpty2{},&StringNotEmpty2{Message: 'Message 3'}"`
 	}
@@ -540,11 +544,14 @@ func TestNamedConstraintTagsUseCorrectDefaultFields(t *testing.T) {
 }
 
 func TestConstraintTagUsingCustomConstraint(t *testing.T) {
-	registry.reset()
+	constraintsRegistry.reset()
+	defer func() {
+		constraintsRegistry.reset()
+	}()
 	customConstraint := NewCustomConstraint(func(value interface{}, vcx *ValidatorContext, this *CustomConstraint) (bool, string) {
-		return false, this.GetMessage()
+		return false, this.GetMessage(vcx)
 	}, "My Custom Error")
-	registry.registerNamed(true, "MyCustom", customConstraint)
+	constraintsRegistry.registerNamed(true, "MyCustom", customConstraint)
 	type myStruct struct {
 		Foo string `json:"foo" v8n:"&MyCustom{Message: 'Overridden Message'}"`
 	}
@@ -565,15 +572,18 @@ type definedConstraintWithUnexportedField struct {
 }
 
 func (d *definedConstraintWithUnexportedField) Check(value interface{}, vcx *ValidatorContext) (bool, string) {
-	return false, d.GetMessage()
+	return false, d.GetMessage(vcx)
 }
-func (d *definedConstraintWithUnexportedField) GetMessage() string {
+func (d *definedConstraintWithUnexportedField) GetMessage(tcx I18nContext) string {
 	return d.msg
 }
 
 func TestConstraintTagWithDefinedConstraintWithUnexportedField(t *testing.T) {
-	registry.reset()
-	registry.registerNamed(true, "MyDefined", &definedConstraintWithUnexportedField{msg: "TEST MESSAGE"})
+	constraintsRegistry.reset()
+	defer func() {
+		constraintsRegistry.reset()
+	}()
+	constraintsRegistry.registerNamed(true, "MyDefined", &definedConstraintWithUnexportedField{msg: "TEST MESSAGE"})
 	type myStruct struct {
 		Foo string `json:"foo" v8n:"&MyDefined{}"`
 	}
