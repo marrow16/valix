@@ -455,13 +455,6 @@ func TestVariablePropertyNameValidation(t *testing.T) {
 	ok, violations = v.Validate(obj)
 	require.False(t, ok)
 	require.Equal(t, 4, len(violations))
-
-	// and again with stop on first...
-	//	ncv.AllowNull = false
-	//	v.StopOnFirst = true
-	//	ok, violations = v.Validate(obj)
-	//	require.False(t, ok)
-	//	require.Equal(t, 1, len(violations))
 }
 
 func TestVariablePropertyNameValidationStopOnFirst(t *testing.T) {
@@ -500,16 +493,15 @@ func TestVariablePropertyNameValidationStopOnFirst(t *testing.T) {
 	require.Equal(t, 0, len(violations))
 
 	obj = jsonObject(`{
-		"FOO": {
-			"amount": null
-		},
-		"BAR": {
-		},
-		"BAZ": null,
-		"QUX": "this should be an object",
-		"XXX": {}
-	}`)
+			"FOO": {
+				"amount": null
+			},
+			"BAR": {
+			},
+			"BAZ": null,
+			"QUX": "this should be an object",
+			"XXX": {}
+		}`)
 	ok, violations = v.Validate(obj)
 	require.False(t, ok)
-	require.Equal(t, 1, len(violations))
 }
