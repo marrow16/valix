@@ -39,11 +39,11 @@ type internalTranslator struct {
 	Formats  map[string]map[string]string `json:"formats"`
 }
 
-func (t *internalTranslator) TranslateToken(lang string, region string, token string) string {
-	result := token
-	if ts, ok := t.Tokens[token]; ok {
-		if region != "" {
-			if trr, ok := ts[lang+"-"+region]; ok {
+func lookupTranslation(trs map[string]map[string]string, str string, lang string, rgn string) string {
+	result := str
+	if ts, ok := trs[str]; ok {
+		if rgn != "" {
+			if trr, ok := ts[lang+"-"+rgn]; ok {
 				result = trr
 			} else if tr, ok := ts[lang]; ok {
 				result = tr
@@ -53,38 +53,18 @@ func (t *internalTranslator) TranslateToken(lang string, region string, token st
 		}
 	}
 	return result
+}
+
+func (t *internalTranslator) TranslateToken(lang string, region string, token string) string {
+	return lookupTranslation(t.Tokens, token, lang, region)
 }
 
 func (t *internalTranslator) TranslateMessage(lang string, region string, message string) string {
-	result := message
-	if ts, ok := t.Messages[message]; ok {
-		if region != "" {
-			if trr, ok := ts[lang+"-"+region]; ok {
-				result = trr
-			} else if tr, ok := ts[lang]; ok {
-				result = tr
-			}
-		} else if tr, ok := ts[lang]; ok {
-			result = tr
-		}
-	}
-	return result
+	return lookupTranslation(t.Messages, message, lang, region)
 }
 
 func (t *internalTranslator) TranslateFormat(lang string, region string, format string, a ...interface{}) string {
-	result := format
-	if ts, ok := t.Formats[format]; ok {
-		if region != "" {
-			if trr, ok := ts[lang+"-"+region]; ok {
-				result = trr
-			} else if tr, ok := ts[lang]; ok {
-				result = tr
-			}
-		} else if tr, ok := ts[lang]; ok {
-			result = tr
-		}
-	}
-	return fmt.Sprintf(result, a...)
+	return fmt.Sprintf(lookupTranslation(t.Formats, format, lang, region), a...)
 }
 
 func (t *internalTranslator) AddTokenLanguageTranslation(lang string, token string, translation string, regionals ...RegionalVariantTranslation) {
@@ -854,6 +834,13 @@ var defaultInternalTranslator = &internalTranslator{
 			"it": "Il valore deve essere solo caratteri alfanumerici (A-Z, a-z, 0-9)",
 			"de": "Wert darf nur aus alphanumerischen Zeichen bestehen (A-Z, a-z, 0-9)",
 		},
+		msgPresetBarcode: {
+			"en": "Value must be a valid barcode",
+			"fr": "La valeur doit être un code-barres valide",
+			"es": "El valor debe ser un código de barras válido",
+			"it": "Il valore deve essere un codice a barre valido",
+			"de": "Wert muss ein gültiger Strichcode sein",
+		},
 		msgPresetBase64: {
 			"en": msgPresetBase64,
 			"fr": "La valeur doit être une chaîne valide encodée en base64",
@@ -868,6 +855,22 @@ var defaultInternalTranslator = &internalTranslator{
 			"it": "Il valore deve essere una stringa codificata URL base64 valida",
 			"de": "Wert muss eine gültige Base64-URL-codierte Zeichenfolge sein",
 		},
+		msgPresetCMYK: {
+			"en":    msgPresetCMYK,
+			"en-US": "Value must be a valid cmyk() color string",
+			"fr":    "La valeur doit être une chaîne de couleur cmyk() valide",
+			"es":    "El valor debe ser una cadena de color cmyk() válida",
+			"it":    "Il valore deve essere una stringa di colore cmyk() valida",
+			"de":    "Der Wert muss eine gültige cmyk()-Farbzeichenfolge sein",
+		},
+		msgPresetCMYK300: {
+			"en":    msgPresetCMYK300,
+			"en-US": "Value must be a valid cmyk() color string (maximum 300%)",
+			"fr":    "La valeur doit être une chaîne de couleur cmyk() valide (maximum 300 %)",
+			"es":    "El valor debe ser una cadena de color cmyk() válida (máximo 300 %)",
+			"it":    "Il valore deve essere una stringa di colore cmyk() valida (massimo 300%)",
+			"de":    "Der Wert muss eine gültige cmyk()-Farbzeichenfolge sein (maximal 300 %)",
+		},
 		msgPresetE164: {
 			"en": msgPresetE164,
 			"fr": "La valeur doit être un code E.164 valide",
@@ -875,12 +878,54 @@ var defaultInternalTranslator = &internalTranslator{
 			"it": "Il valore deve essere un codice E.164 valido",
 			"de": "Wert muss ein gültiger E.164-Code sein",
 		},
+		msgPresetEAN: {
+			"en": msgPresetEAN,
+			"fr": "La valeur doit être un code EAN valide",
+			"es": "El valor debe ser un código EAN válido",
+			"it": "Il valore deve essere un codice EAN valido",
+			"de": "Wert muss ein gültiger EAN-Code sein",
+		},
+		msgPresetEAN8: {
+			"en": msgPresetEAN8,
+			"fr": "La valeur doit être un code EAN-8 valide",
+			"es": "El valor debe ser un código EAN-8 válido",
+			"it": "Il valore deve essere un codice EAN-8 valido",
+			"de": "Wert muss ein gültiger EAN-8-Code sein",
+		},
 		msgPresetEAN13: {
 			"en": msgPresetEAN13,
 			"fr": "La valeur doit être un code EAN-13 valide",
 			"es": "El valor debe ser un código EAN-13 válido",
 			"it": "Il valore deve essere un codice EAN-13 valido",
 			"de": "Wert muss ein gültiger EAN-13-Code sein",
+		},
+		msgPresetDUN14: {
+			"en": msgPresetDUN14,
+			"fr": "La valeur doit être un code DUN-14 valide",
+			"es": "El valor debe ser un código DUN-14 válido",
+			"it": "Il valore deve essere un codice DUN-14 valido",
+			"de": "Wert muss ein gültiger DUN-14-Code sein",
+		},
+		msgPresetEAN14: {
+			"en": msgPresetEAN14,
+			"fr": "La valeur doit être un code EAN-14 valide",
+			"es": "El valor debe ser un código EAN-14 válido",
+			"it": "Il valore deve essere un codice EAN-14 valido",
+			"de": "Wert muss ein gültiger EAN-14-Code sein",
+		},
+		msgPresetEAN18: {
+			"en": msgPresetEAN18,
+			"fr": "La valeur doit être un code EAN-18 valide",
+			"es": "El valor debe ser un código EAN-18 válido",
+			"it": "Il valore deve essere un codice EAN-18 valido",
+			"de": "Wert muss ein gültiger EAN-18-Code sein",
+		},
+		msgPresetEAN99: {
+			"en": msgPresetEAN99,
+			"fr": "La valeur doit être un code EAN-99 valide",
+			"es": "El valor debe ser un código EAN-99 válido",
+			"it": "Il valore deve essere un codice EAN-99 valido",
+			"de": "Wert muss ein gültiger EAN-99-Code sein",
 		},
 		msgPresetHexadecimal: {
 			"en": msgPresetHexadecimal,
@@ -977,6 +1022,14 @@ var defaultInternalTranslator = &internalTranslator{
 			"es":    "El valor debe ser una cadena de color rgba() válida",
 			"it":    "Il valore deve essere una stringa di colore rgba() valida",
 			"de":    "Wert muss eine gültige rgba() Farbzeichenfolge sein",
+		},
+		msgPresetRgbIcc: {
+			"en":    msgPresetRgbIcc,
+			"en-US": "Value must be a valid rgb-icc() color string",
+			"fr":    "La valeur doit être une chaîne de couleur rgb-icc() valide",
+			"es":    "El valor debe ser una cadena de color rgb-icc() válida",
+			"it":    "Il valore deve essere una stringa di colore rgb-icc() valida",
+			"de":    "Wert muss eine gültige rgb-icc() Farbzeichenfolge sein",
 		},
 		msgPresetULID: {
 			"en": msgPresetULID,

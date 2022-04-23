@@ -38,6 +38,10 @@ func NewEmptyViolation(msg string, codes ...interface{}) *Violation {
 	}
 }
 
+func newEmptyViolation(tcx I18nContext, msg string, codes ...interface{}) *Violation {
+	return NewEmptyViolation(obtainI18nContext(tcx).TranslateMessage(msg), codes...)
+}
+
 // NewViolation creates a new violation with the specified property, path and message
 func NewViolation(property string, path string, msg string, codes ...interface{}) *Violation {
 	return &Violation{
@@ -57,6 +61,10 @@ func NewBadRequestViolation(msg string, codes ...interface{}) *Violation {
 		BadRequest: true,
 		Codes:      codes,
 	}
+}
+
+func newBadRequestViolation(tcx I18nContext, msg string, codes ...interface{}) *Violation {
+	return NewBadRequestViolation(obtainI18nContext(tcx).TranslateMessage(msg), codes...)
 }
 
 // SortViolationsByPathAndProperty is a utility function for sorting violations

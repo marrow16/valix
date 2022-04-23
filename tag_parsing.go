@@ -31,24 +31,25 @@ const (
 )
 
 const (
-	msgV8nPrefix                   = "tag " + tagNameV8n + " - "
-	msgUnknownPropertyType         = msgV8nPrefix + "unknown property type '%s'"
-	msgUnknownTokenInTag           = msgV8nPrefix + "unknown token '%s'"
-	msgUnexpectedColon             = msgV8nPrefix + "unexpected ':' colon after token '%s'"
-	msgExpectedColon               = msgV8nPrefix + "expected ':' colon after token '%s'"
-	msgConstraintsFormat           = msgV8nPrefix + "must specify constraints in the format '&name{}' (found \"%s\")"
-	msgUnknownConstraint           = msgV8nPrefix + "contains unknown constraint '%s'"
-	msgCannotCreateConstraint      = msgV8nPrefix + "cannot create constraint '%s{}' (on non-struct constraint)"
-	msgConstraintFieldUnknown      = msgV8nPrefix + "constraint '%s{}' field '%s' is unknown or not assignable"
-	msgConstraintFieldInvalidValue = msgV8nPrefix + "constraint '%s{}' field '%s' cannot be assigned with value specified"
-	msgConstraintFieldNotExported  = msgV8nPrefix + "constraint '%s{}' has unexported field '%s' - so no fields can be specified as args"
-	msgConstraintArgsParseError    = msgV8nPrefix + "constraint '%s{}' - args parsing error (%s)"
-	msgTagFldMissingColon          = msgV8nPrefix + "constraint '%s{}` field missing ':' separator"
-	msgConstraintNoDefaultValue    = msgV8nPrefix + "constraint '%s{}` does not have tagged default field"
-	msgUnknownTagValue             = msgV8nPrefix + "token '%s' expected %s value (found \"%s\")"
-	msgPropertyNotObject           = msgV8nPrefix + "token '%s' cannot be used on non object/array field"
-	msgUnclosed                    = "unclosed parenthesis or quote started at position %d"
-	msgUnopened                    = "unopened parenthesis at position %d"
+	msgV8nPrefix                    = "tag " + tagNameV8n + " - "
+	msgUnknownPropertyType          = msgV8nPrefix + "unknown property type '%s'"
+	msgUnknownTokenInTag            = msgV8nPrefix + "unknown token '%s'"
+	msgUnexpectedColon              = msgV8nPrefix + "unexpected ':' colon after token '%s'"
+	msgExpectedColon                = msgV8nPrefix + "expected ':' colon after token '%s'"
+	msgConstraintsFormat            = msgV8nPrefix + "must specify constraints in the format '&name{}' (found \"%s\")"
+	msgConditionalConstraintsFormat = msgV8nPrefix + "must specify conditional constraints in the format '&[token,...]name{}' (found \"%s\")"
+	msgUnknownConstraint            = msgV8nPrefix + "contains unknown constraint '%s'"
+	msgCannotCreateConstraint       = msgV8nPrefix + "cannot create constraint '%s{}' (on non-struct constraint)"
+	msgConstraintFieldUnknown       = msgV8nPrefix + "constraint '%s{}' field '%s' is unknown or not assignable"
+	msgConstraintFieldInvalidValue  = msgV8nPrefix + "constraint '%s{}' field '%s' cannot be assigned with value specified"
+	msgConstraintFieldNotExported   = msgV8nPrefix + "constraint '%s{}' has unexported field '%s' - so no fields can be specified as args"
+	msgConstraintArgsParseError     = msgV8nPrefix + "constraint '%s{}' - args parsing error (%s)"
+	msgTagFldMissingColon           = msgV8nPrefix + "constraint '%s{}` field missing ':' separator"
+	msgConstraintNoDefaultValue     = msgV8nPrefix + "constraint '%s{}` does not have tagged default field"
+	msgUnknownTagValue              = msgV8nPrefix + "token '%s' expected %s value (found \"%s\")"
+	msgPropertyNotObject            = msgV8nPrefix + "token '%s' cannot be used on non object/array field"
+	msgUnclosed                     = "unclosed parenthesis or quote started at position %d"
+	msgUnopened                     = "unopened parenthesis at position %d"
 )
 
 var (
@@ -127,7 +128,9 @@ func (pv *PropertyValidator) addTagItem(tagItem string) (result error) {
 		pv.NotNull = false
 		break
 	case tagTokenMandatory, tagTokenRequired:
-		colonErr = hasColon
+		if hasColon {
+			result = pv.setTagMandatoryWhen(tagValue)
+		}
 		pv.Mandatory = true
 		break
 	case tagTokenOptional:
@@ -240,6 +243,31 @@ func (pv *PropertyValidator) setTagOrder(tagValue string) error {
 	return nil
 }
 
+func addConditions(conditions *Conditions, tagValue string, allowCurly bool) error {
+	if isBracedStr(tagValue, allowCurly) {
+		if tokens, err := parseCommas(tagValue[1 : len(tagValue)-1]); err == nil {
+			for _, token := range tokens {
+				if isQuotedStr(token, true) {
+					*conditions = append(*conditions, token[1:len(token)-1])
+				} else {
+					*conditions = append(*conditions, token)
+				}
+			}
+		} else {
+			return err
+		}
+	} else if isQuotedStr(tagValue, true) {
+		*conditions = append(*conditions, tagValue[1:len(tagValue)-1])
+	} else {
+		*conditions = append(*conditions, tagValue)
+	}
+	return nil
+}
+
+func (pv *PropertyValidator) setTagMandatoryWhen(tagValue string) error {
+	return addConditions(&pv.MandatoryWhen, tagValue, true)
+}
+
 func (pv *PropertyValidator) setTagObjConstraint(tagValue string) error {
 	if pv.ObjectValidator == nil {
 		return fmt.Errorf(msgPropertyNotObject, tagTokenObjConstraint)
@@ -248,45 +276,11 @@ func (pv *PropertyValidator) setTagObjConstraint(tagValue string) error {
 }
 
 func (pv *PropertyValidator) setTagWhen(tagValue string) error {
-	if isBracedStr(tagValue, true) {
-		if tokens, err := parseCommas(tagValue[1 : len(tagValue)-1]); err == nil {
-			for _, token := range tokens {
-				if isQuotedStr(token, true) {
-					pv.WhenConditions = append(pv.WhenConditions, token[1:len(token)-1])
-				} else {
-					pv.WhenConditions = append(pv.WhenConditions, token)
-				}
-			}
-		} else {
-			return err
-		}
-	} else if isQuotedStr(tagValue, true) {
-		pv.WhenConditions = append(pv.WhenConditions, tagValue[1:len(tagValue)-1])
-	} else {
-		pv.WhenConditions = append(pv.WhenConditions, tagValue)
-	}
-	return nil
+	return addConditions(&pv.WhenConditions, tagValue, true)
 }
 
 func (pv *PropertyValidator) setTagUnwanted(tagValue string) error {
-	if isBracedStr(tagValue, true) {
-		if tokens, err := parseCommas(tagValue[1 : len(tagValue)-1]); err == nil {
-			for _, token := range tokens {
-				if isQuotedStr(token, true) {
-					pv.UnwantedConditions = append(pv.UnwantedConditions, token[1:len(token)-1])
-				} else {
-					pv.UnwantedConditions = append(pv.UnwantedConditions, token)
-				}
-			}
-		} else {
-			return err
-		}
-	} else if isQuotedStr(tagValue, true) {
-		pv.UnwantedConditions = append(pv.UnwantedConditions, tagValue[1:len(tagValue)-1])
-	} else {
-		pv.UnwantedConditions = append(pv.UnwantedConditions, tagValue)
-	}
-	return nil
+	return addConditions(&pv.UnwantedConditions, tagValue, true)
 }
 
 func (pv *PropertyValidator) setTagObjUnknownProperties(tagValue string) error {
@@ -345,6 +339,23 @@ func (v *Validator) addConstraint(tagValue string) error {
 
 func buildConstraintFromTagValue(tagValue string) (Constraint, error) {
 	useValue := strings.Trim(tagValue, " ")
+	if strings.HasPrefix(useValue, "&") {
+		useValue = useValue[1:]
+	}
+	isConditional := false
+	var conditions Conditions
+	if strings.HasPrefix(useValue, "[") {
+		isConditional = true
+		closeAt := strings.Index(useValue, "]")
+		if closeAt == -1 {
+			return nil, fmt.Errorf(msgConditionalConstraintsFormat, tagValue)
+		}
+		list := useValue[:closeAt+1]
+		if err := addConditions(&conditions, list, false); err != nil {
+			return nil, err
+		}
+		useValue = useValue[closeAt+1:]
+	}
 	constraintName := useValue
 	argsStr := ""
 	if curlyOpenAt := strings.Index(useValue, "{"); curlyOpenAt != -1 {
@@ -354,9 +365,9 @@ func buildConstraintFromTagValue(tagValue string) (Constraint, error) {
 		argsStr = strings.Trim(useValue[curlyOpenAt+1:len(useValue)-1], " ")
 		constraintName = useValue[0:curlyOpenAt]
 	}
-	if strings.HasPrefix(constraintName, "&") {
-		constraintName = constraintName[1:]
-	}
+	//	if strings.HasPrefix(constraintName, "&") {
+	//		constraintName = constraintName[1:]
+	//	}
 	if constraintName == constraintSetName {
 		return buildConstraintSetWithArgs(argsStr)
 	}
@@ -367,11 +378,23 @@ func buildConstraintFromTagValue(tagValue string) (Constraint, error) {
 	// check if the tag value has any args specified...
 	if argsStr == "" {
 		// no args within curly braces, so it's safe to re-use the registered constraint...
+		if isConditional {
+			return &ConditionalConstraint{
+				Constraint: c,
+				When:       conditions,
+			}, nil
+		}
 		return c, nil
 	}
 	newC, cErr := rebuildConstraintWithArgs(constraintName, c, argsStr)
 	if cErr != nil {
 		return nil, cErr
+	}
+	if isConditional {
+		return &ConditionalConstraint{
+			Constraint: newC,
+			When:       conditions,
+		}, nil
 	}
 	return newC, nil
 }
@@ -460,7 +483,7 @@ func rebuildConstraintWithArgs(cName string, c Constraint, argsStr string) (Cons
 	// now overwrite any specified args into the constraint fields...
 	for argName, argVal := range args {
 		if argName == "" && len(args) == 1 {
-			if defName, err := getConstraintDefaultValueField(cName, newC.Elem(), ty); err != nil {
+			if defName, err := getConstraintDefaultValueField(cName, ty); err != nil {
 				return nil, err
 			} else {
 				argName = defName
@@ -478,7 +501,7 @@ func rebuildConstraintWithArgs(cName string, c Constraint, argsStr string) (Cons
 	return result, nil
 }
 
-func getConstraintDefaultValueField(cName string, newC reflect.Value, ty reflect.Type) (string, error) {
+func getConstraintDefaultValueField(cName string, ty reflect.Type) (string, error) {
 	// scan fields to see if any are tagged as `v8n:"default"`...
 	count := ty.NumField()
 	if count == 1 {
@@ -662,7 +685,7 @@ func parseCommas(str string) ([]string, error) {
 		case ',':
 			if !stk.inAny() {
 				part := string(runes[lastTokenAt:i])
-				result = append(result, part)
+				result = append(result, strings.Trim(part, " "))
 				lastTokenAt = i + 1
 			}
 			break
@@ -677,8 +700,8 @@ func parseCommas(str string) ([]string, error) {
 		return nil, fmt.Errorf(msgUnclosed, stk.current.pos)
 	}
 	if lastTokenAt < len(runes) {
-		str := string(runes[lastTokenAt:])
-		result = append(result, str)
+		last := string(runes[lastTokenAt:])
+		result = append(result, strings.Trim(last, " "))
 	}
 	return result, nil
 }

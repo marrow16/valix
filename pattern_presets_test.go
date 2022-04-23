@@ -9,7 +9,7 @@ import (
 	"testing"
 )
 
-const builtInPresetsCount = 40
+const builtInPresetsCount = 50
 
 func TestPresetsRegistryInitialized(t *testing.T) {
 	require.Equal(t, builtInPresetsCount, len(presetsRegistry.namedPresets))
@@ -92,7 +92,7 @@ func TestRegisteredPresetUsedAsV8nTag(t *testing.T) {
 	require.Equal(t, testName, constraint.Preset)
 }
 
-func TestCodesWithModuloChecked(t *testing.T) {
+func TestBarcodesWithModuloChecked(t *testing.T) {
 	testCases := []struct {
 		code        string
 		preset      string
@@ -102,6 +102,12 @@ func TestCodesWithModuloChecked(t *testing.T) {
 		{
 			"123601057072",
 			presetTokenUPCA,
+			true,
+			true,
+		},
+		{
+			"123601057072",
+			presetTokenBarcode,
 			true,
 			true,
 		},
@@ -119,9 +125,57 @@ func TestCodesWithModuloChecked(t *testing.T) {
 		},
 		{
 			"01234565",
+			presetTokenBarcode,
+			true,
+			true,
+		},
+		{
+			"01234565",
 			presetTokenUPC,
 			true,
 			true,
+		},
+		{
+			"96385074",
+			presetTokenEAN8,
+			true,
+			true,
+		},
+		{
+			"96385074",
+			presetTokenBarcode,
+			true,
+			true,
+		},
+		{
+			"96385074",
+			presetTokenEAN,
+			true,
+			true,
+		},
+		{
+			"996385074",
+			presetTokenEAN,
+			true,
+			false,
+		},
+		{
+			"96385079",
+			presetTokenEAN8,
+			true,
+			false,
+		},
+		{
+			"96385079",
+			presetTokenBarcode,
+			true,
+			false,
+		},
+		{
+			"96385079",
+			presetTokenEAN,
+			true,
+			false,
 		},
 		{
 			"5000237128237",
@@ -130,8 +184,260 @@ func TestCodesWithModuloChecked(t *testing.T) {
 			true,
 		},
 		{
+			"5000237128237",
+			presetTokenBarcode,
+			true,
+			true,
+		},
+		{
+			"5000237128237",
+			presetTokenEAN,
+			true,
+			true,
+		},
+		{
+			"5000237128239",
+			presetTokenEAN13,
+			true,
+			false,
+		},
+		{
+			"5000237128239",
+			presetTokenBarcode,
+			true,
+			false,
+		},
+		{
+			"5000237128239",
+			presetTokenEAN,
+			true,
+			false,
+		},
+		{
+			"40700719670720",
+			presetTokenEAN14,
+			true,
+			true,
+		},
+		{
+			"40700719670729",
+			presetTokenEAN14,
+			true,
+			false,
+		},
+		{
+			"40700719670720",
+			presetTokenBarcode,
+			true,
+			true,
+		},
+		{
+			"40700719670729",
+			presetTokenBarcode,
+			true,
+			false,
+		},
+		{
+			"40700719670720",
+			presetTokenEAN,
+			true,
+			true,
+		},
+		{
+			"(01)40700719670720",
+			presetTokenEAN14,
+			true,
+			true,
+		},
+		{
+			"(01)40700719670720",
+			presetTokenBarcode,
+			true,
+			true,
+		},
+		{
+			"(01)40700719670720",
+			presetTokenEAN,
+			true,
+			true,
+		},
+		{
+			"(01)40700719670729",
+			presetTokenEAN14,
+			true,
+			false,
+		},
+		{
+			"(01)40700719670729",
+			presetTokenBarcode,
+			true,
+			false,
+		},
+		{
+			"(01)40700719670729",
+			presetTokenEAN,
+			true,
+			false,
+		},
+		{
+			"40700719670729",
+			presetTokenEAN14,
+			true,
+			false,
+		},
+		{
+			"40700719670729",
+			presetTokenBarcode,
+			true,
+			false,
+		},
+		{
+			"40700719670729",
+			presetTokenEAN,
+			true,
+			false,
+		},
+		{
+			"407000000719670720",
+			presetTokenEAN18,
+			true,
+			true,
+		},
+		{
+			"407000000719670720",
+			presetTokenBarcode,
+			true,
+			true,
+		},
+		{
+			"407000000719670720",
+			presetTokenEAN,
+			true,
+			true,
+		},
+		{
+			"407000000719670729",
+			presetTokenEAN18,
+			true,
+			false,
+		},
+		{
+			"407000000719670729",
+			presetTokenBarcode,
+			true,
+			false,
+		},
+		{
+			"407000000719670729",
+			presetTokenEAN,
+			true,
+			false,
+		},
+		{
+			"(00)407000000719670720",
+			presetTokenEAN18,
+			true,
+			true,
+		},
+		{
+			"(00)407000000719670720",
+			presetTokenBarcode,
+			true,
+			true,
+		},
+		{
+			"(00)407000000719670720",
+			presetTokenEAN,
+			true,
+			true,
+		},
+		{
+			"(00)407000000719670729",
+			presetTokenEAN18,
+			true,
+			false,
+		},
+		{
+			"(00)407000000719670729",
+			presetTokenBarcode,
+			true,
+			false,
+		},
+		{
+			"(00)407000000719670729",
+			presetTokenEAN,
+			true,
+			false,
+		},
+		{
+			"5000237128237",
+			presetTokenEAN99,
+			false,
+			false,
+		},
+		{
+			"5000237128237",
+			presetTokenBarcode,
+			true,
+			true,
+		},
+		{
+			"5000237128239",
+			presetTokenBarcode,
+			true,
+			false,
+		},
+		{
+			"5000237128237",
+			presetTokenEAN,
+			true,
+			true,
+		},
+		{
+			"9911171967072",
+			presetTokenEAN99,
+			true,
+			true,
+		},
+		{
+			"9911171967072",
+			presetTokenBarcode,
+			true,
+			true,
+		},
+		{
+			"9911171967072",
+			presetTokenEAN,
+			true,
+			true,
+		},
+		{
+			"9911171967079",
+			presetTokenEAN99,
+			true,
+			false,
+		},
+		{
+			"9911171967079",
+			presetTokenBarcode,
+			true,
+			false,
+		},
+		{
+			"9911171967079",
+			presetTokenEAN,
+			true,
+			false,
+		},
+		{
 			"9771364743155",
 			presetTokenISSN,
+			true,
+			true,
+		},
+		{
+			"9771364743155",
+			presetTokenBarcode,
 			true,
 			true,
 		},
@@ -140,6 +446,18 @@ func TestCodesWithModuloChecked(t *testing.T) {
 			presetTokenISSN,
 			true,
 			true,
+		},
+		{
+			"9770262407244",
+			presetTokenBarcode,
+			true,
+			true,
+		},
+		{
+			"9770262407249",
+			presetTokenBarcode,
+			true,
+			false,
 		},
 		{
 			"9770036873121",
@@ -173,6 +491,18 @@ func TestCodesWithModuloChecked(t *testing.T) {
 		},
 		{
 			"1144875X",
+			presetTokenBarcode,
+			true,
+			true,
+		},
+		{
+			"11448759",
+			presetTokenBarcode,
+			true,
+			false,
+		},
+		{
+			"1144875X",
 			presetTokenISSN8,
 			true,
 			true,
@@ -197,6 +527,18 @@ func TestCodesWithModuloChecked(t *testing.T) {
 		},
 		{
 			"020161622X",
+			presetTokenBarcode,
+			true,
+			true,
+		},
+		{
+			"0201616229",
+			presetTokenBarcode,
+			true,
+			false,
+		},
+		{
+			"020161622X",
 			presetTokenISBN,
 			true,
 			true,
@@ -283,6 +625,150 @@ func TestCodesWithModuloChecked(t *testing.T) {
 			"0805300911",
 			presetTokenISBN,
 			true,
+			false,
+		},
+		{
+			"0",
+			presetTokenBarcode,
+			false,
+			false,
+		},
+		{
+			"00",
+			presetTokenBarcode,
+			false,
+			false,
+		},
+		{
+			"000",
+			presetTokenBarcode,
+			false,
+			false,
+		},
+		{
+			"0000",
+			presetTokenBarcode,
+			false,
+			false,
+		},
+		{
+			"00000",
+			presetTokenBarcode,
+			false,
+			false,
+		},
+		{
+			"000000",
+			presetTokenBarcode,
+			false,
+			false,
+		},
+		{
+			"0000000",
+			presetTokenBarcode,
+			false,
+			false,
+		},
+		{
+			"00000000",
+			presetTokenBarcode,
+			true,
+			true,
+		},
+		{
+			"0000000X",
+			presetTokenBarcode,
+			true,
+			false,
+		},
+		{
+			"000000000",
+			presetTokenBarcode,
+			true,
+			false,
+		},
+		{
+			"0000000000",
+			presetTokenBarcode,
+			true,
+			true,
+		},
+		{
+			"00000000000",
+			presetTokenBarcode,
+			true,
+			false,
+		},
+		{
+			"000000000000",
+			presetTokenBarcode,
+			true,
+			true,
+		},
+		{
+			"0000000000000",
+			presetTokenBarcode,
+			true,
+			true,
+		},
+		{
+			"00000000000000",
+			presetTokenBarcode,
+			true,
+			true,
+		},
+		{
+			"000000000000000",
+			presetTokenBarcode,
+			true,
+			false,
+		},
+		{
+			"0000000000000000",
+			presetTokenBarcode,
+			true,
+			false,
+		},
+		{
+			"00000000000000000",
+			presetTokenBarcode,
+			true,
+			false,
+		},
+		{
+			"000000000000000000",
+			presetTokenBarcode,
+			true,
+			true,
+		},
+		{
+			"0000000000000000000",
+			presetTokenBarcode,
+			true,
+			false,
+		},
+		{
+			"00000000000000000000",
+			presetTokenBarcode,
+			true,
+			false,
+		},
+		{
+			"000000000000000000000",
+			presetTokenBarcode,
+			true,
+			false,
+		},
+		{
+			"0000000000000000000000",
+			presetTokenBarcode,
+			true,
+			false,
+		},
+		{
+			"00000000000000000000000",
+			presetTokenBarcode,
+			false,
 			false,
 		},
 	}
@@ -758,6 +1244,363 @@ func TestCardNumberPreset(t *testing.T) {
 				require.True(t, ck.Check(ccn))
 			} else if rx.MatchString(ccn) {
 				require.False(t, ck.Check(ccn))
+			}
+		})
+	}
+}
+
+func TestCmyks(t *testing.T) {
+	checkCmyk := presetsRegistry.namedPresets[presetTokenCMYK]
+	checkCmyk300 := presetsRegistry.namedPresets[presetTokenCMYK300]
+	tcs := map[string]struct {
+		expectMatch bool
+		expect300Ok bool
+	}{
+		"cmyk(0,0,0,0)": {
+			true,
+			true,
+		},
+		"cmyk(0%,0%,0%,0%)": {
+			true,
+			true,
+		},
+		"cmyk(1,1,1,1)": {
+			true,
+			false,
+		},
+		"cmyk(1.0, 1.0, 1.0, 1.0)": {
+			true,
+			false,
+		},
+		"cmyk(1.1, 1.0, 1.0, 1.0)": {
+			false,
+			false,
+		},
+		"cmyk(100%, 100.0%, 100.0000%, 100.00000%)": {
+			true,
+			false,
+		},
+		"cmyk(100%, 100.0%, 100.0000%, 100.00009%)": {
+			false,
+			false,
+		},
+		"cmyk(100%, 100%, 100%, 0.1)": {
+			true,
+			false,
+		},
+		"cmyk(100%, 100%, 100%, 0.00001%)": {
+			true,
+			false,
+		},
+	}
+	for str, tc := range tcs {
+		t.Run(fmt.Sprintf("CMYK\"%s\"", str), func(t *testing.T) {
+			require.Equal(t, tc.expectMatch, checkCmyk.regex.MatchString(str))
+			require.Equal(t, tc.expectMatch, checkCmyk300.regex.MatchString(str))
+			if tc.expectMatch {
+				require.Equal(t, tc.expect300Ok, checkCmyk300.check(str))
+				require.True(t, checkCmyk.check(str))
+			}
+		})
+	}
+}
+
+func TestRgbIccs(t *testing.T) {
+	checkRgbIcc := presetsRegistry.namedPresets[presetTokenRgbIcc]
+	tcs := map[string]struct {
+		expectMatch bool
+		expectCheck bool
+	}{
+		"xxx": {
+			false,
+			false,
+		},
+		"rgb-icc(": {
+			false,
+			false,
+		},
+		"rgb-icc())": {
+			true,
+			false,
+		},
+		"rgb-icc(''')": {
+			true,
+			false,
+		},
+		"rgb-icc()": {
+			true,
+			false,
+		},
+		"rgb-icc(,)": {
+			true,
+			false,
+		},
+		"rgb-icc(255,255,255, #CMYK, 1, 0.1, 1, 1.0)": {
+			true,
+			true,
+		},
+		"rgb-icc(255,255, #CMYK, 1, 0.1, 1, 1.0)": {
+			true,
+			false,
+		},
+		"rgb-icc(256, 0, 0, #CMYK, 1, 1, 1, 1)": {
+			true,
+			false,
+		},
+		"rgb-icc(#CMYK, 1, 1, 1, 0)": {
+			true,
+			true,
+		},
+		"rgb-icc(#CMYK, 1.0, 0, 0, 0)": {
+			true,
+			true,
+		},
+		"rgb-icc(#CMYK, 1.5, 0, 0, 0)": {
+			true,
+			false,
+		},
+		"rgb-icc(#CMYK, 2, 0, 0, 0)": {
+			true,
+			false,
+		},
+		"rgb-icc(#CMYK, 0, 0, 0)": {
+			true,
+			false,
+		},
+		"rgb-icc(#Grayscale, 0.5)": {
+			true,
+			true,
+		},
+		"rgb-icc(#Grayscale)": {
+			true,
+			false,
+		},
+		"rgb-icc(#Grayscale, 1.1)": {
+			true,
+			false,
+		},
+		"rgb-icc(#Grayscale, -1)": {
+			true,
+			false,
+		},
+		"rgb-icc(#Grayscale, NaN)": {
+			true,
+			false,
+		},
+		"rgb-icc(#Grayscale, Inf)": {
+			true,
+			false,
+		},
+		"rgb-icc(#Grayscale, xxx)": {
+			true,
+			false,
+		},
+		"rgb-icc(#Grayscale, 'xxx')": {
+			true,
+			false,
+		},
+		"rgb-icc(128,128, 128,#Grayscale, 0.5)": {
+			true,
+			true,
+		},
+		"rgb-icc(128, 128, 128, #Grayscale, 0.5)": {
+			true,
+			true,
+		},
+		"rgb-icc(#Separation, 'Name')": {
+			true,
+			true,
+		},
+		"rgb-icc(#Separation, 'All')": {
+			true,
+			true,
+		},
+		"rgb-icc(#Separation)": {
+			true,
+			false,
+		},
+		"rgb-icc(#Separation, 1)": {
+			true,
+			false,
+		},
+		"rgb-icc(#Registration)": {
+			true,
+			true,
+		},
+		"rgb-icc(#Registration, 0.5)": {
+			true,
+			true,
+		},
+		"rgb-icc(#Registration, 1)": {
+			true,
+			true,
+		},
+		"rgb-icc(#Registration, 0)": {
+			true,
+			true,
+		},
+		"rgb-icc(#Registration, 0, 1)": {
+			true,
+			false,
+		},
+		"rgb-icc(#Registration, -0.5)": {
+			true,
+			false,
+		},
+		"rgb-icc(#Registration, 1.1)": {
+			true,
+			false,
+		},
+		"rgb-icc(#Registration, NaN)": {
+			true,
+			false,
+		},
+		"rgb-icc(#Registration, Inf)": {
+			true,
+			false,
+		},
+		"rgb-icc(128, 128, 128, #Registration, 0.5)": {
+			true,
+			true,
+		},
+		"rgb-icc(256, 128, 128, #Registration, 0.5)": {
+			true,
+			false,
+		},
+		"rgb-icc(1, 2, #Registration)": {
+			true,
+			false,
+		},
+		"rgb-icc(1, 2, #Registration, 0.5)": {
+			true,
+			false,
+		},
+		"rgb-icc(128, 128, 128, #Registration)": {
+			true,
+			true,
+		},
+		"rgb-icc(255,255,0, #SpotColor,'PANTONE Orange 021 C',0.33)": {
+			true,
+			true,
+		},
+		"rgb-icc(255,255,0, #SpotColor,'PANTONE 169 M',0.5, #CMYK,0,0.2,0.2,0)": {
+			true,
+			true,
+		},
+		"rgb-icc(255,255,0, #SpotColor,'PANTONE 169 M',0.5, #CMYK,0,0.2,0.2)": {
+			true,
+			false,
+		},
+		"rgb-icc(255,255,0, #SpotColor,MyColor,0.33, #Grayscale,0.5)": {
+			true,
+			true,
+		},
+		"rgb-icc(255,255,0, #SpotColor,MyColor,0.33, #Grayscale)": {
+			true,
+			false,
+		},
+		"rgb-icc(255,255,0, #SpotColor,MyColor,0.33, #Grayscale, 1.1)": {
+			true,
+			false,
+		},
+		"rgb-icc(255,255,0, #SpotColor,MyColor,0.33, #Grayscale, -0.5)": {
+			true,
+			false,
+		},
+		"rgb-icc(255,255,0, #SpotColor,MyColor,0.33, #Grayscale, NaN)": {
+			true,
+			false,
+		},
+		"rgb-icc(255,255,0, #SpotColor,MyColor,0.33, #Grayscale, Inf)": {
+			true,
+			false,
+		},
+		"rgb-icc(255,255,0, #SpotColor,MyColor,0.33, #Grayscale, xxx)": {
+			true,
+			false,
+		},
+		"rgb-icc(255,255,0, #SpotColor,MyColor,0.33, #Registration)": {
+			true,
+			true,
+		},
+		"rgb-icc(255,255,0, #SpotColor,MyColor,0.33, #Registration, 0.5)": {
+			true,
+			true,
+		},
+		"rgb-icc(255,255,0, #SpotColor,MyColor,0.33, #Registration, NaN)": {
+			true,
+			false,
+		},
+		"rgb-icc(255,255,0, #SpotColor,MyColor,0.33, #Registration, 0.5, 'what?')": {
+			true,
+			false,
+		},
+		"rgb-icc(255,255,0, #SpotColor,MyColor,0.33, #SpotColor,'pp')": {
+			true,
+			false,
+		},
+		"rgb-icc(255,255,0, #SpotColor,MyColor)": {
+			true,
+			false,
+		},
+		"rgb-icc(255,255,0, #SpotColor,MyColor,)": {
+			true,
+			false,
+		},
+		"rgb-icc(255,255,0, #SpotColor,MyColor, NaN)": {
+			true,
+			false,
+		},
+		"rgb-icc(255,255,0, #SpotColor,MyColor, +Inf)": {
+			true,
+			false,
+		},
+		"rgb-icc(255,255,0, #SpotColor,MyColor, xxx)": {
+			true,
+			false,
+		},
+		"rgb-icc(255,255,0, #SpotColor,123, 1)": {
+			true,
+			false,
+		},
+		"rgb-icc(255,255,0, #SpotColor,'', 1)": {
+			true,
+			false,
+		},
+		"rgb-icc(255,255,0, #SpotColor,MyColor, 1.1)": {
+			true,
+			false,
+		},
+		"rgb-icc(255,255,0, #SpotColor,MyColor, 1.0, #Unknown)": {
+			true,
+			false,
+		},
+		"rgb-icc(255,255,0, #SpotColor,MyColor, 1.0, #CMYK, 1, 1, 0, x)": {
+			true,
+			false,
+		},
+		"rgb-icc(255,255,0, #SpotColor,MyColor, 1.0, #CMYK, 1, 1, 0, -1)": {
+			true,
+			false,
+		},
+		"rgb-icc(255,255,0, #SpotColor,MyColor, 1.0, #CMYK, 1, 1, 0, 1.1)": {
+			true,
+			false,
+		},
+		"rgb-icc(255,255,0, #SpotColor,MyColor, 1.0, #CMYK, 1, 1, 0, NaN)": {
+			true,
+			false,
+		},
+		"rgb-icc(255,255,0, #SpotColor,MyColor, 1.0, #CMYK, 1, 1, 0, inf)": {
+			true,
+			false,
+		},
+	}
+	for str, tc := range tcs {
+		t.Run(fmt.Sprintf("RGB-ICC\"%s\"", str), func(t *testing.T) {
+			require.Equal(t, tc.expectMatch, checkRgbIcc.regex.MatchString(str))
+			if tc.expectMatch {
+				require.Equal(t, tc.expectCheck, checkRgbIcc.check(str))
 			}
 		})
 	}

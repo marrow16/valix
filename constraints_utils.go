@@ -68,13 +68,15 @@ const (
 )
 
 func defaultMessage(tcx I18nContext, msg string, def string, defArgs ...interface{}) string {
-	if len(msg) == 0 {
+	if msg == "" {
 		if len(defArgs) > 0 {
 			return obtainI18nContext(tcx).TranslateFormat(def, defArgs...)
 		}
 		return obtainI18nContext(tcx).TranslateMessage(def)
+	} else if msg == NoMessage {
+		return ""
 	}
-	return strings.Trim(obtainI18nContext(tcx).TranslateMessage(msg), " ")
+	return obtainI18nContext(tcx).TranslateMessage(msg)
 }
 
 const (
@@ -88,10 +90,7 @@ const (
 )
 
 func incExc(tcx I18nContext, exc bool) string {
-	if exc {
-		return obtainI18nContext(tcx).TranslateToken(tokenExclusive)
-	}
-	return obtainI18nContext(tcx).TranslateToken(tokenInclusive)
+	return obtainI18nContext(tcx).TranslateToken(ternary(exc).string(tokenExclusive, tokenInclusive))
 }
 
 var (

@@ -116,6 +116,11 @@ type PropertyValidator struct {
 	NotNull bool
 	// Mandatory specifies that the property must be present
 	Mandatory bool
+	// MandatoryWhen is complimentary to the Mandatory property - and limits the conditions under which the property is
+	// seen as mandatory (if this is empty and Mandatory is set - then the property is always mandatory)
+	//
+	// Note: If the Mandatory property is not set to true - this property has no effect!
+	MandatoryWhen Conditions
 	// Constraints is a slice of Constraint items and are checked in the order they are specified
 	Constraints Constraints
 	// ObjectValidator is checked, if specified, after all Constraints are checked
@@ -129,9 +134,9 @@ type PropertyValidator struct {
 	//
 	// Condition tokens can be set and unset during validation to allow polymorphism of validation
 	// (see ValidatorContext.SetCondition & ValidatorContext.ClearCondition)
-	WhenConditions []string
+	WhenConditions Conditions
 	// UnwantedConditions is the condition tokens that dictate when the property should not be present
-	UnwantedConditions []string
+	UnwantedConditions Conditions
 	// OasInfo is additional information (for OpenAPI Specification)
 	OasInfo *OasInfo
 }

@@ -75,3 +75,21 @@ func coerceToInt(value interface{}) (i int64, ok bool, isNumber bool) {
 	}
 	return
 }
+
+// ternary operations
+
+type ternary bool
+
+func (b ternary) string(t, f string) string {
+	if b {
+		return t
+	}
+	return f
+}
+
+func (b ternary) int(t, f int) int {
+	if b {
+		return t
+	}
+	return f
+}
