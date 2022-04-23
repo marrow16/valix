@@ -1821,6 +1821,212 @@ func TestConditionalNestedVariants(t *testing.T) {
 	require.Equal(t, "foo", violations[2].Property)
 }
 
+func TestConditionsSetFromRequest(t *testing.T) {
+	var grabVcx *ValidatorContext
+	validator := &Validator{
+		Constraints: Constraints{
+			NewCustomConstraint(func(value interface{}, vcx *ValidatorContext, this *CustomConstraint) (passed bool, message string) {
+				grabVcx = vcx
+				return true, ""
+			}, ""),
+		},
+	}
+
+	body := strings.NewReader(`{}`)
+	req, err := http.NewRequest("POST", "", body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ok, _, _ := validator.RequestValidate(req)
+	require.True(t, ok)
+	require.NotNil(t, grabVcx)
+
+	stackItem := grabVcx.currentStackItem()
+	require.Equal(t, 3, len(stackItem.conditions))
+	require.True(t, stackItem.conditions["METHOD_POST"])
+	require.True(t, stackItem.conditions["LANG_en"])
+	require.True(t, stackItem.conditions["RGN_"])
+
+	// and set language plus region...
+	body = strings.NewReader(`{}`)
+	req, err = http.NewRequest("PUT", "", body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set("Content-Language", "en-GB;q=0.5, fr-CA, en")
+	grabVcx = nil
+	ok, _, _ = validator.RequestValidate(req)
+	require.True(t, ok)
+	require.NotNil(t, grabVcx)
+
+	stackItem = grabVcx.currentStackItem()
+	require.Equal(t, 3, len(stackItem.conditions))
+	require.True(t, stackItem.conditions["METHOD_PUT"])
+	require.True(t, stackItem.conditions["LANG_fr"])
+	require.True(t, stackItem.conditions["RGN_CA"])
+
+}
+
+func TestValidatorInitialConditionsSet(t *testing.T) {
+	var grabVcx *ValidatorContext
+	validator := &Validator{
+		Constraints: Constraints{
+			NewCustomConstraint(func(value interface{}, vcx *ValidatorContext, this *CustomConstraint) (passed bool, message string) {
+				grabVcx = vcx
+				return true, ""
+			}, ""),
+		},
+	}
+
+	body := strings.NewReader(`{}`)
+	req, err := http.NewRequest("POST", "", body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ok, _, _ := validator.RequestValidate(req, "FOO", "BAR")
+	require.True(t, ok)
+	require.NotNil(t, grabVcx)
+	stackItem := grabVcx.currentStackItem()
+	require.Equal(t, 5, len(stackItem.conditions)) // 3 set from request
+	require.True(t, stackItem.conditions["FOO"])
+	require.True(t, stackItem.conditions["BAR"])
+
+	grabVcx = nil
+	ok, _ = validator.Validate(map[string]interface{}{}, "FOO", "BAR")
+	require.True(t, ok)
+	require.NotNil(t, grabVcx)
+	stackItem = grabVcx.currentStackItem()
+	require.Equal(t, 2, len(stackItem.conditions))
+	require.True(t, stackItem.conditions["FOO"])
+	require.True(t, stackItem.conditions["BAR"])
+
+	grabVcx = nil
+	ok, _ = validator.ValidateArrayOf([]interface{}{map[string]interface{}{}}, "FOO", "BAR")
+	require.True(t, ok)
+	require.NotNil(t, grabVcx)
+	stackItem = grabVcx.currentStackItem()
+	require.Equal(t, 2, len(stackItem.conditions))
+	require.True(t, stackItem.conditions["FOO"])
+	require.True(t, stackItem.conditions["BAR"])
+
+	grabVcx = nil
+	body = strings.NewReader(`{}`)
+	ok, _, _ = validator.ValidateReader(body, "FOO", "BAR")
+	require.True(t, ok)
+	require.NotNil(t, grabVcx)
+	stackItem = grabVcx.currentStackItem()
+	require.Equal(t, 2, len(stackItem.conditions))
+	require.True(t, stackItem.conditions["FOO"])
+	require.True(t, stackItem.conditions["BAR"])
+
+	grabVcx = nil
+	data := []byte(`{}`)
+	myObj := &intoTestStruct{}
+	err = validator.ValidateInto(data, myObj, "FOO", "BAR")
+	require.Nil(t, err)
+	require.NotNil(t, grabVcx)
+	stackItem = grabVcx.currentStackItem()
+	require.Equal(t, 2, len(stackItem.conditions))
+	require.True(t, stackItem.conditions["FOO"])
+	require.True(t, stackItem.conditions["BAR"])
+
+	grabVcx = nil
+	body = strings.NewReader(`{}`)
+	ok, _, _ = validator.ValidateReaderInto(body, myObj, "FOO", "BAR")
+	require.True(t, ok)
+	require.NotNil(t, grabVcx)
+	stackItem = grabVcx.currentStackItem()
+	require.Equal(t, 2, len(stackItem.conditions))
+	require.True(t, stackItem.conditions["FOO"])
+	require.True(t, stackItem.conditions["BAR"])
+
+	grabVcx = nil
+	ok, _, _ = validator.ValidateString(`{}`, "FOO", "BAR")
+	require.True(t, ok)
+	require.NotNil(t, grabVcx)
+	stackItem = grabVcx.currentStackItem()
+	require.Equal(t, 2, len(stackItem.conditions))
+	require.True(t, stackItem.conditions["FOO"])
+	require.True(t, stackItem.conditions["BAR"])
+
+	grabVcx = nil
+	ok, _, _ = validator.ValidateStringInto(`{}`, myObj, "FOO", "BAR")
+	require.True(t, ok)
+	require.NotNil(t, grabVcx)
+	stackItem = grabVcx.currentStackItem()
+	require.Equal(t, 2, len(stackItem.conditions))
+	require.True(t, stackItem.conditions["FOO"])
+	require.True(t, stackItem.conditions["BAR"])
+}
+
+func TestDifferentPOSTorPATCHMandatoryPropertyRequirements(t *testing.T) {
+	validator := &Validator{
+		Constraints: Constraints{
+			&ConditionalConstraint{
+				When: Conditions{"METHOD_PATCH"},
+				Constraint: &Length{
+					Minimum: 1,
+					Message: "PATCH Object must not be empty",
+				},
+			},
+		},
+		Properties: Properties{
+			"givenName": {
+				Type:          JsonString,
+				Mandatory:     true,
+				MandatoryWhen: Conditions{"METHOD_POST"},
+			},
+			"familyName": {
+				Type:          JsonString,
+				Mandatory:     true,
+				MandatoryWhen: Conditions{"METHOD_POST"},
+			},
+			"email": {
+				Type:          JsonString,
+				Mandatory:     true,
+				MandatoryWhen: Conditions{"METHOD_POST"},
+			},
+		},
+	}
+
+	body := strings.NewReader(`{}`)
+	req, err := http.NewRequest("POST", "", body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ok, violations, _ := validator.RequestValidate(req)
+	require.False(t, ok)
+	require.Equal(t, 3, len(violations))
+
+	body = strings.NewReader(`{}`)
+	req, err = http.NewRequest("PATCH", "", body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ok, violations, _ = validator.RequestValidate(req)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, "PATCH Object must not be empty", violations[0].Message)
+
+	body = strings.NewReader(`{"email": 1}`)
+	req, err = http.NewRequest("PATCH", "", body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ok, violations, _ = validator.RequestValidate(req)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, "email", violations[0].Property)
+
+	body = strings.NewReader(`{"email": "foo@example.com"}`)
+	req, err = http.NewRequest("PATCH", "", body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ok, _, _ = validator.RequestValidate(req)
+	require.True(t, ok)
+}
+
 /* Utility structs & functions */
 type myCustomConstraint struct {
 	expectedPath string

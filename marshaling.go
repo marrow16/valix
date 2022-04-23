@@ -83,6 +83,13 @@ func (pv *PropertyValidator) toJSON() (map[string]interface{}, error) {
 		}
 		result[ptyNameConstraints] = cs
 	}
+	if len(pv.MandatoryWhen) > 0 {
+		arr := make([]string, len(pv.MandatoryWhen))
+		for i, s := range pv.MandatoryWhen {
+			arr[i] = s
+		}
+		result[ptyNameMandatoryWhen] = arr
+	}
 	if len(pv.WhenConditions) > 0 {
 		arr := make([]string, len(pv.WhenConditions))
 		for i, s := range pv.WhenConditions {
@@ -173,16 +180,33 @@ func constraintsToJson(constraints Constraints) ([]map[string]interface{}, error
 }
 
 func constraintToJson(constraint Constraint) (map[string]interface{}, error) {
-	ty := reflect.TypeOf(constraint)
-	by, err := json.Marshal(constraint)
+	constraintName := reflect.TypeOf(constraint).Elem().Name()
+	useConstraint := constraint
+	isConditional := false
+	var conditions []string
+	if conditional, ok := constraint.(*ConditionalConstraint); ok {
+		isConditional = true
+		useConstraint = conditional.Constraint
+		constraintName = reflect.TypeOf(useConstraint).Elem().Name()
+		conditions = make([]string, len(conditional.When))
+		for i, s := range conditional.When {
+			conditions[i] = s
+		}
+	}
+	//	ty := reflect.TypeOf(constraint)
+	by, err := json.Marshal(useConstraint)
 	if err != nil {
 		return nil, err
 	}
 	args := make(map[string]interface{})
 	_ = json.Unmarshal(by, &args)
 	result := map[string]interface{}{
-		ptyNameName:   ty.Elem().Name(),
+		//		ptyNameName:   ty.Elem().Name(),
+		ptyNameName:   constraintName,
 		ptyNameFields: args,
+	}
+	if isConditional {
+		result[ptyNameWhenConditions] = conditions
 	}
 	return result, nil
 }

@@ -2,6 +2,8 @@ package valix
 
 import (
 	"fmt"
+	"golang.org/x/text/language"
+	"net/http"
 	"strings"
 )
 
@@ -25,6 +27,8 @@ type ValidatorContext struct {
 	// i18nContext is the actual I18nContext used to perform translations
 	i18nContext I18nContext
 }
+
+type Conditions []string
 
 func newValidatorContext(root interface{}, rootValidator *Validator, stopOnFirst bool, i18nCtx I18nContext) *ValidatorContext {
 	return &ValidatorContext{
@@ -289,7 +293,7 @@ func (vc *ValidatorContext) IsCondition(condition string) bool {
 // If any of the condition tokens, not prefixed with '!', have been set then `true` is returned
 //
 // Note: If any empty slice is passed as the conditions arg then `true` is returned (i.e. no conditions to be met)
-func (vc *ValidatorContext) meetsWhenConditions(conditions []string) bool {
+func (vc *ValidatorContext) meetsWhenConditions(conditions Conditions) bool {
 	if len(conditions) == 0 {
 		return true
 	}
@@ -313,7 +317,7 @@ func (vc *ValidatorContext) meetsWhenConditions(conditions []string) bool {
 	return !anyExcluded && (anyMet || anyCount == 0)
 }
 
-func (vc *ValidatorContext) meetsUnwantedConditions(conditions []string) bool {
+func (vc *ValidatorContext) meetsUnwantedConditions(conditions Conditions) bool {
 	if len(conditions) == 0 {
 		return true
 	}
@@ -333,6 +337,34 @@ func (vc *ValidatorContext) meetsUnwantedConditions(conditions []string) bool {
 		}
 	}
 	return result
+}
+
+func (vc *ValidatorContext) setConditionsFromRequest(req *http.Request) {
+	vc.SetCondition("METHOD_" + req.Method)
+	contentLang := DefaultLanguage
+	contentRegion := DefaultRegion
+	tags, _, err := language.ParseAcceptLanguage(req.Header.Get("Content-Language"))
+	if err == nil {
+		for _, tag := range tags {
+			baseLang, _ := tag.Base()
+			if baseLang.String() == defaultLanguage(baseLang.String()) {
+				contentLang = baseLang.String()
+				_, _, rawRgn := tag.Raw()
+				if rawRgn.String() != "ZZ" {
+					contentRegion = rawRgn.String()
+				}
+				break
+			}
+		}
+	}
+	vc.SetCondition("LANG_" + contentLang)
+	vc.SetCondition("RGN_" + contentRegion)
+}
+
+func (vc *ValidatorContext) setInitialConditions(conditions ...string) {
+	for _, c := range conditions {
+		vc.SetCondition(c)
+	}
 }
 
 func (vc *ValidatorContext) ancestorStackItem(level uint) (*pathStackItem, bool) {

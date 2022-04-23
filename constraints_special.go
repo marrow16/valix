@@ -1,5 +1,10 @@
 package valix
 
+import (
+	"encoding/json"
+	"math"
+)
+
 // FailingConstraint is a utility constraint that always fails
 type FailingConstraint struct {
 	// the violation message to be used if the constraint fails (see Violation.Message)
@@ -92,7 +97,77 @@ func (c *SetConditionFrom) Check(v interface{}, vcx *ValidatorContext) (bool, st
 	return true, c.GetMessage(vcx)
 }
 
+// GetMessage implements the Constraint.GetMessage
 func (c *SetConditionFrom) GetMessage(tcx I18nContext) string {
+	return ""
+}
+
+// SetConditionOnType constraint is a utility constraint that can be used to set a condition in the
+// ValidatorContext indicating the type of the property value to which this constraint is added.
+//
+// The condition token set will be at least one of the following:
+//   "type_null", "type_object", "type_array", "type_boolean", "type_string", "type_integer", "type_number", "type_unknown"
+// Note that an int value will set both "type_number" and "type_integer" (because an int is both)
+//
+// On detecting a value represented by a json.Number - the "type_number" will always be set.  And this may also be
+// complimented by the "type_integer" (if the json.Number holds an int value)
+//
+// Also, with json.Number values, the following condition tokens may also be set
+//   "type_invalid_number", "type_nan", "type_inf"
+// ("type_invalid_number" indicating that the json.Number could not be parsed to either int or float)
+//
+// When handling json.Number values, This constraint can be used in conjunction with a following FailWhen constraint
+// to enforce failures in case of Inf, Nan or unparseable
+type SetConditionOnType struct{}
+
+var conditionTypeTokens = []string{"null", "object", "array", "boolean", "string", "integer", "number", "invalid_number", "nan", "inf", "unknown"}
+
+// Check implements Constraint.Check
+func (c *SetConditionOnType) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
+	const prefix = "type_"
+	for _, clr := range conditionTypeTokens {
+		vcx.ClearCondition(prefix + clr)
+	}
+	if v == nil {
+		vcx.SetCondition(prefix + "null")
+	} else {
+		switch vt := v.(type) {
+		case map[string]interface{}:
+			vcx.SetCondition(prefix + "object")
+		case []interface{}:
+			vcx.SetCondition(prefix + "array")
+		case bool:
+			vcx.SetCondition(prefix + "boolean")
+		case string:
+			vcx.SetCondition(prefix + "string")
+		case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
+			// set both integer and number (an int is both an integer and a number)
+			vcx.SetCondition(prefix + "number")
+			vcx.SetCondition(prefix + "integer")
+		case float32, float64:
+			vcx.SetCondition(prefix + "number")
+		case json.Number:
+			vcx.SetCondition(prefix + "number")
+			if _, err := vt.Int64(); err == nil {
+				vcx.SetCondition(prefix + "integer")
+			} else if fv, err := vt.Float64(); err == nil {
+				if math.IsNaN(fv) {
+					vcx.SetCondition(prefix + "nan")
+				} else if math.IsInf(fv, 0) {
+					vcx.SetCondition(prefix + "inf")
+				}
+			} else {
+				vcx.SetCondition(prefix + "invalid_number")
+			}
+		default:
+			vcx.SetCondition(prefix + "unknown")
+		}
+	}
+	return true, c.GetMessage(vcx)
+}
+
+// GetMessage implements the Constraint.GetMessage
+func (c *SetConditionOnType) GetMessage(tcx I18nContext) string {
 	return ""
 }
 
@@ -135,6 +210,11 @@ func (c *SetConditionProperty) GetMessage(tcx I18nContext) string {
 const (
 	// used for marshaling, unmarshalling and tag parsing...
 	constraintVariableProperty = "VariablePropertyConstraint"
+)
+
+const (
+	// NoMessage is a special message used by constraints to indicate no message rather than default message
+	NoMessage = "[NO_MESSAGE]"
 )
 
 // VariablePropertyConstraint is a special constraint that allows properties with varying names to be validated
@@ -213,5 +293,30 @@ func (c *VariablePropertyConstraint) Check(v interface{}, vcx *ValidatorContext)
 }
 
 func (c *VariablePropertyConstraint) GetMessage(tcx I18nContext) string {
+	return ""
+}
+
+const (
+	// used for marshaling & unmarshalling...
+	conditionalConstraintName = "ConditionalConstraint"
+)
+
+// ConditionalConstraint is a special constraint that wraps another constraint - but the wrapped
+// constraint is only checked when the specified when conditions are met
+type ConditionalConstraint struct {
+	// When is the condition tokens that determine when the wrapped constraint is checked
+	When Conditions
+	// Constraint is the wrapped constraint
+	Constraint Constraint
+}
+
+func (c *ConditionalConstraint) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
+	if vcx.meetsWhenConditions(c.When) {
+		return c.Constraint.Check(v, vcx)
+	}
+	return true, c.GetMessage(vcx)
+}
+
+func (c *ConditionalConstraint) GetMessage(tcx I18nContext) string {
 	return ""
 }

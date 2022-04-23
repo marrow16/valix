@@ -105,6 +105,22 @@ const (
 			"bar": {
 				"mandatory": true,
 				"notNull": true,
+				"constraints": [
+					{
+						"fields": {
+							"ExclusiveMax": false,
+							"ExclusiveMin": false,
+							"Maximum": 0,
+							"Message": "",
+							"Minimum": 1,
+							"Stop": false
+						},
+						"name": "Length",
+						"whenConditions": [
+							"check_bar"
+						]
+					}
+				],
 				"objectValidator": {
 					"allowArray": true,
 					"allowNullJson": true,
@@ -137,6 +153,7 @@ const (
 					}
 				],
 				"mandatory": true,
+				"mandatoryWhen": ["want_foo"],
 				"notNull": true,
 				"oasInfo": {
 					"deprecated": true,
@@ -247,6 +264,7 @@ func TestValidatorUnmarshal(t *testing.T) {
 	foo := v.Properties["foo"]
 	require.Equal(t, 1, foo.Order)
 	require.True(t, foo.Mandatory)
+	require.Equal(t, 1, len(foo.MandatoryWhen))
 	require.True(t, foo.NotNull)
 	require.Equal(t, JsonString, foo.Type)
 	require.True(t, foo.OasInfo.Deprecated)
@@ -264,6 +282,9 @@ func TestValidatorUnmarshal(t *testing.T) {
 	require.Equal(t, "^([A-Z]+)$", fooConstraint2.Regexp.String())
 
 	bar := v.Properties["bar"]
+	require.Equal(t, 1, len(bar.Constraints))
+	barConstraint := bar.Constraints[0].(*ConditionalConstraint)
+	require.Equal(t, 1, len(barConstraint.When))
 	require.True(t, bar.Mandatory)
 	require.True(t, bar.NotNull)
 	require.Equal(t, 0, bar.Order)
@@ -931,7 +952,52 @@ func TestStringValidUnicodeNormalizationUnmarshalJSON(t *testing.T) {
 
 func TestValidateUnmarshallingConstraintWithNonStructConstraint(t *testing.T) {
 	var constraint nonStructConstraint = ""
-	_, err := validateUnmarshallingConstraint(&constraint, map[string]interface{}{})
+	_, err := validateUnmarshallingConstraint(&constraint, map[string]interface{}{}, nil)
 	require.NotNil(t, err)
 	require.Equal(t, msgConstraintNotStruct, err.Error())
+}
+
+func TestUnmarshalConstraintWithBadWhens(t *testing.T) {
+	// check good first...
+	obj := jsonObject(`{
+		"fields": {
+			"Minimum": 1
+		},
+		"name": "Length",
+			"whenConditions": [
+				"check_bar"
+		]
+	}`)
+	constraint, err := unmarshalConstraint(obj)
+	require.Nil(t, err)
+	condConstraint, ok := constraint.(*ConditionalConstraint)
+	require.True(t, ok)
+	require.Equal(t, 1, len(condConstraint.When))
+	require.Equal(t, "check_bar", condConstraint.When[0])
+	innerConstraint, ok := condConstraint.Constraint.(*Length)
+	require.True(t, ok)
+	require.Equal(t, 1, innerConstraint.Minimum)
+
+	// now test bad whens...
+	obj = jsonObject(`{
+		"fields": {
+			"Minimum": 1
+		},
+		"name": "Length",
+			"whenConditions": "should be an array"
+	}`)
+	constraint, err = unmarshalConstraint(obj)
+	require.NotNil(t, err)
+	require.Equal(t, fmt.Sprintf(errMsgFieldExpectedType, ptyNameWhenConditions, "array"), err.Error())
+
+	obj = jsonObject(`{
+		"fields": {
+			"Minimum": 1
+		},
+		"name": "Length",
+			"whenConditions": [1]
+	}`)
+	constraint, err = unmarshalConstraint(obj)
+	require.NotNil(t, err)
+	require.Equal(t, fmt.Sprintf(errMsgFieldExpectedType, ptyNameWhenConditions, "array of strings"), err.Error())
 }

@@ -115,6 +115,19 @@ func TestPropertyValidator_AddTagItem(t *testing.T) {
 	err = pv.addTagItem(tagTokenMandatory)
 	require.Nil(t, err)
 	require.True(t, pv.Mandatory)
+
+	pv.Mandatory = false
+	require.Equal(t, 0, len(pv.MandatoryWhen))
+	err = pv.addTagItem(tagTokenMandatory + ":FOO")
+	require.Nil(t, err)
+	require.True(t, pv.Mandatory)
+	require.Equal(t, 1, len(pv.MandatoryWhen))
+
+	err = pv.addTagItem(tagTokenMandatory + ":[BAR,BAZ]")
+	require.Nil(t, err)
+	require.True(t, pv.Mandatory)
+	require.Equal(t, 3, len(pv.MandatoryWhen))
+
 	err = pv.addTagItem(tagTokenOptional)
 	require.Nil(t, err)
 	require.False(t, pv.Mandatory)
@@ -322,6 +335,87 @@ func TestPropertyValidator_AddTagItemUnwanted(t *testing.T) {
 	require.Equal(t, 6, len(pv.UnwantedConditions))
 	require.Equal(t, "TEST5", pv.UnwantedConditions[4])
 	require.Equal(t, "TEST6", pv.UnwantedConditions[5])
+}
+
+func TestPropertyValidator_AddTagItemMandatoryWhen(t *testing.T) {
+	pv := &PropertyValidator{}
+	require.Equal(t, 0, len(pv.MandatoryWhen))
+
+	err := pv.addTagItem(tagTokenMandatory + ":TEST1")
+	require.Nil(t, err)
+	require.Equal(t, 1, len(pv.MandatoryWhen))
+	require.Equal(t, "TEST1", pv.MandatoryWhen[0])
+
+	err = pv.addTagItem(tagTokenMandatory + ":[TEST2,TEST3]")
+	require.Nil(t, err)
+	require.Equal(t, 3, len(pv.MandatoryWhen))
+	require.Equal(t, "TEST2", pv.MandatoryWhen[1])
+	require.Equal(t, "TEST3", pv.MandatoryWhen[2])
+
+	err = pv.addTagItem(tagTokenMandatory + ":[{]")
+	require.NotNil(t, err)
+	require.Equal(t, fmt.Sprintf(msgUnclosed, 0), err.Error())
+
+	err = pv.addTagItem(tagTokenMandatory + ":\"TEST4\"")
+	require.Nil(t, err)
+	require.Equal(t, 4, len(pv.MandatoryWhen))
+	require.Equal(t, "TEST4", pv.MandatoryWhen[3])
+
+	err = pv.addTagItem(tagTokenRequired + ":['TEST5','TEST6']")
+	require.Nil(t, err)
+	require.Equal(t, 6, len(pv.MandatoryWhen))
+	require.Equal(t, "TEST5", pv.MandatoryWhen[4])
+	require.Equal(t, "TEST6", pv.MandatoryWhen[5])
+}
+
+func TestPropertyValidator_AddConditionalConstraint(t *testing.T) {
+	pv := &PropertyValidator{}
+	require.Equal(t, 0, len(pv.Constraints))
+
+	err := pv.addTagItem("&[FOO]StringNotEmpty{'Foo Message'}")
+	require.Nil(t, err)
+	require.Equal(t, 1, len(pv.Constraints))
+	constraint := pv.Constraints[0].(*ConditionalConstraint)
+	require.Equal(t, 1, len(constraint.When))
+	require.Equal(t, "FOO", constraint.When[0])
+	innerConstraint, ok := constraint.Constraint.(*StringNotEmpty)
+	require.True(t, ok)
+	require.Equal(t, "Foo Message", innerConstraint.Message)
+
+	err = pv.addTagItem("&[BAR,BAZ]StringNotEmpty{}")
+	require.Nil(t, err)
+	require.Equal(t, 2, len(pv.Constraints))
+	constraint = pv.Constraints[1].(*ConditionalConstraint)
+	require.Equal(t, 2, len(constraint.When))
+	require.Equal(t, "BAR", constraint.When[0])
+	require.Equal(t, "BAZ", constraint.When[1])
+	innerConstraint, ok = constraint.Constraint.(*StringNotEmpty)
+	require.True(t, ok)
+	require.Equal(t, "", innerConstraint.Message)
+
+	err = pv.addTagItem("&[}]StringNotEmpty{}")
+	require.NotNil(t, err)
+
+	err = pv.addTagItem("&[StringNotEmpty{}")
+	require.NotNil(t, err)
+	require.Equal(t, fmt.Sprintf(msgConditionalConstraintsFormat, "&[StringNotEmpty{}"), err.Error())
+
+	err = pv.processTagItems([]string{tagTokenConstraintsPrefix + "[[foo2]StringNotEmpty,[bar2,'baz2']StringNotBlank{'Not Blank'}]"})
+	require.Nil(t, err)
+	require.Equal(t, 4, len(pv.Constraints))
+	constraint = pv.Constraints[2].(*ConditionalConstraint)
+	require.Equal(t, 1, len(constraint.When))
+	require.Equal(t, "foo2", constraint.When[0])
+	innerConstraint, ok = constraint.Constraint.(*StringNotEmpty)
+	require.True(t, ok)
+	require.Equal(t, "", innerConstraint.Message)
+	constraint = pv.Constraints[3].(*ConditionalConstraint)
+	require.Equal(t, 2, len(constraint.When))
+	require.Equal(t, "bar2", constraint.When[0])
+	require.Equal(t, "baz2", constraint.When[1])
+	innerConstraint2, ok := constraint.Constraint.(*StringNotBlank)
+	require.True(t, ok)
+	require.Equal(t, "Not Blank", innerConstraint2.Message)
 }
 
 func TestPropertyValidator_AddTagItemObjWhen(t *testing.T) {

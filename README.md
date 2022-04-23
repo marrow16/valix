@@ -376,7 +376,6 @@ In Valix, a constraint is a particular validation rule that must be satisfied. F
 by the validator it must implement the `valix.Constraint` interface.
 
 ### Common Constraints
-(Common constraints are defined in `common_contraints.go` and `changing_constraints.go`)
 
 Valix provides a rich set of pre-defined common constraints - listed here for reference:
 
@@ -468,6 +467,44 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
                         </td>
                     </tr>
                 </table>
+            </details>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <code>ConditionalConstraint</code>
+        </td>
+        <td>
+            is a special constraint that wraps another constraint - but the wrapped constraint is only checked when the specified when conditions are met
+            <details>
+                <summary>Fields</summary>
+                <table>
+                    <tr>
+                        <td>
+                            <code>When</code> <em>[]string</em>
+                        </td>
+                        <td>
+                            is the condition tokens that determine when the wrapped constraint is checked
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Constraint</code> <em>Constraint</em>
+                        </td>
+                        <td>
+                            is the wrapped constraint
+                        </td>
+                    </tr>
+                </table>
+            </details>
+            <em>This constraint does not have a <code>v8n</code> tag abbreviation and cannot be used directly in a <code>v8n</code>.  However, all other constraints can be made conditional in <code>v8n</code> tags by prefixing them with <code>[condition,...]</code></em>
+            (see <a href="#validation-tags">Validation Tags</a> )
+            <details>
+              <summary>Example</summary>
+              <pre>type Example struct {
+  Foo string `v8n:"&[bar,baz]StringNotEmpty{}"`
+}</pre>
+              <em>Makes the <code>&StringNotEmpty{}</code> constraint only checked when either <code>bar</code> or <code>baz</code> condition tokens have been set</em> 
             </details>
         </td>
     </tr>
@@ -2297,6 +2334,19 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
     </tr>
     <tr>
         <td>
+            <code>SetConditionOnType</code><br>&nbsp;&nbsp;<code>ctype</code>&nbsp;<em>(i18n tag abbr.)</em>
+        </td>
+        <td>
+            Is a utility constraint that can be used to set a condition in the
+            <code>ValidatorContext</code> indicating the type of the property value to which this constraint is added.
+            <details>
+                <summary>Fields</summary>
+                <em>None</em>
+            </details>
+        </td>
+    </tr>
+    <tr>
+        <td>
             <code>SetConditionProperty</code><br>&nbsp;&nbsp;<code>cpty</code>&nbsp;<em>(i18n tag abbr.)</em>
         </td>
         <td>
@@ -2792,14 +2842,15 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
                     </tr>
                 </table>
             </details>
-            There are 30+ built-in preset patterns (listed below) - and you can add your own using the <code>valix.RegisterPresetPattern()</code> function.
+            There are 40+ built-in preset patterns (listed below) - and you can add your own using the <code>valix.RegisterPresetPattern()</code> function.
             <details>
               <summary>List of built-in presets</summary>
+              <em>Note: Post check indicates whether value is further checked after regexp match - for example, check digits on card numbers & barcodes</em>
               <table>
                   <tr>
                       <th>token</th>
                       <th>message / description</th>
-                      <th>check digit?</th>
+                      <th>post check?</th>
                   </tr>
                   <tr>
                       <td><code>alpha</code></td>
@@ -2810,6 +2861,14 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
                       <td><code>alphaNumeric</code></td>
                       <td>Value must be only alphanumeric characters (A-Z, a-z, 0-9)</td>
                       <td>&#10005;</td>
+                  </tr>
+                  <tr>
+                      <td><code>barcode</code></td>
+                      <td>
+                        Value must be a valid barcode<br>
+                        <em>Checks against EAN, ISBN, ISSN, UPC regexps and verifies using check digit</em>
+                      </td>
+                      <td>&#9989;</td>
                   </tr>
                   <tr>
                       <td><code>base64</code></td>
@@ -2827,8 +2886,58 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
                       <td>&#9989;</td>
                   </tr>
                   <tr>
+                      <td><code>cmyk</code></td>
+                      <td>
+                        Value must be a valid cmyk() color string<br>
+                        <em>(components as <code>0.162</code> or <code>16.2%</code>)</em>
+                      </td>
+                      <td>&#10005;</td>
+                  </tr>
+                  <tr>
+                      <td><code>cmyk300</code></td>
+                      <td>
+                        Value must be a valid cmyk() color string (maximum 300%)<br>
+                        <em>Post-check ensures components do not exceed 300%</em><br>
+                        <em>(components as <code>0.162</code> or <code>16.2%</code>)</em>
+                      </td>
+                      <td>&#9989;</td>
+                  </tr>
+                  <tr>
+                      <td><code>EAN</code></td>
+                      <td>
+                        Value must be a valid EAN code<br>
+                        <em>(EAN-8, 13, 14, 18 or 99)</em>
+                      </td>
+                      <td>&#9989;</td>
+                  </tr>
+                  <tr>
+                      <td><code>EAN8</code></td>
+                      <td>Value must be a valid EAN-8 code</td>
+                      <td>&#9989;</td>
+                  </tr>
+                  <tr>
                       <td><code>EAN13</code></td>
                       <td>Value must be a valid EAN-13 code</td>
+                      <td>&#9989;</td>
+                  </tr>
+                  <tr>
+                      <td><code>DUN14</code></td>
+                      <td>Value must be a valid DUN-14 code</td>
+                      <td>&#9989;</td>
+                  </tr>
+                  <tr>
+                      <td><code>EAN14</code></td>
+                      <td>Value must be a valid EAN-14 code</td>
+                      <td>&#9989;</td>
+                  </tr>
+                  <tr>
+                      <td><code>EAN18</code></td>
+                      <td>Value must be a valid EAN-18 code</td>
+                      <td>&#9989;</td>
+                  </tr>
+                  <tr>
+                      <td><code>EAN99</code></td>
+                      <td>Value must be a valid EAN-99 code</td>
                       <td>&#9989;</td>
                   </tr>
                   <tr>
@@ -2920,6 +3029,14 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
                       <td><code>rgba</code></td>
                       <td>Value must be a valid rgba() color string</td>
                       <td>&#10005;</td>
+                  </tr>
+                  <tr>
+                      <td><code>rgb-icc</code></td>
+                      <td>
+                        Value must be a valid rgb-icc() color string<br>
+                        <em>Post-check ensures components are correct</em>
+                      </td>
+                      <td>&#9989;</td>
                   </tr>
                   <tr>
                       <td><code>ULID</code></td>
@@ -3565,6 +3682,19 @@ Where the tokens correspond to various property validation options - as listed h
       </td>
     </tr>
     <tr>
+      <td>
+        <code>mandatory:&lt;condition&gt;</code><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<em>or</em><br>
+        <code>mandatory:[&lt;condition&gt;,...]</code>
+      </td>
+      <td>
+        Specifies the JSON property must be present under specified conditions
+        <pre>type Example struct {
+  Foo string `v8n:"mandatory:[METHOD_POST,METHOD_PATCH]"`
+}</pre>
+      </td>
+    </tr>
+    <tr>
       <td><code>notNull</code></td>
       <td>
         Specifies the JSON value for the property cannot be null
@@ -3611,6 +3741,19 @@ Where the tokens correspond to various property validation options - as listed h
       </td>
     </tr>
     <tr>
+      <td>
+        <code>required:&lt;condition&gt;</code><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<em>or</em><br>
+        <code>required:[&lt;condition&gt;,...]</code>
+      </td>
+      <td>
+        <em>same as <code>mandatory:&lt;condition&gt;</code></em>
+        <pre>type Example struct {
+  Foo string `v8n:"required:[METHOD_POST,METHOD_PATCH]"`
+}</pre>
+      </td>
+    </tr>
+    <tr>
       <td><code>type:&lt;type&gt;</code>
       </td>
       <td>
@@ -3639,6 +3782,10 @@ Where the tokens correspond to various property validation options - as listed h
         Adds a constraint to the property (shorthand way of specifying constraint without <code>constraint:</code> or <code>constraints:[]</code> prefix)
         <pre>type Example struct {
   Foo string `v8n:"&amp;StringMaxLength{Value:255}"`
+}</pre>
+        The constraint can also be made conditional by prefixing the name with the condition tokens, e.g.
+        <pre>type Example struct {
+  Foo string `v8n:"&amp;[METHOD_POST]StringNotEmpty{}"`
 }</pre>
       </td>
     </tr>

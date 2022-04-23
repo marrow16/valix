@@ -314,3 +314,10 @@ func TestCoerceToInt(t *testing.T) {
 		})
 	}
 }
+
+func TestIfTernary(t *testing.T) {
+	require.Equal(t, "yes", ternary(true).string("yes", "no"))
+	require.Equal(t, "no", ternary(false).string("yes", "no"))
+	require.Equal(t, 1, ternary(true).int(1, 2))
+	require.Equal(t, 2, ternary(false).int(1, 2))
+}
