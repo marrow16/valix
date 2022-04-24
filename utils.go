@@ -76,6 +76,13 @@ func coerceToInt(value interface{}) (i int64, ok bool, isNumber bool) {
 	return
 }
 
+func defaultString(str string, def string) string {
+	if str != "" {
+		return str
+	}
+	return def
+}
+
 // ternary operations
 
 type ternary bool

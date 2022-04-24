@@ -2290,7 +2290,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             <code>SetConditionFrom</code><br>&nbsp;&nbsp;<code>cfrom</code>&nbsp;<em>(i18n tag abbr.)</em>
         </td>
         <td>
-            Is a utility constraint that can be used to set a condition in the <code>ValidatorContext</code> from string value of
+            Is a utility constraint that can be used to set a condition in the <code>ValidatorContext</code> from the value of
             the property to which this constraint is added.<br/>
             <em>(see example usage in <a href="#conditional-constraints">Conditional Constraints</a>)</em>
             <details>
@@ -2317,7 +2317,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
                             <code>Prefix</code> <em>string</em>
                         </td>
                         <td>
-                            is any prefix to be appended to the string value
+                            is any prefix to be appended to the condition token
                         </td>
                     </tr>
                     <tr>
@@ -2326,6 +2326,23 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
                         </td>
                         <td>
                             converts the string value to alternate values (if the value is not found in the map then the original value is used
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>NullToken</code> <em>string</em>
+                        </td>
+                        <td>
+                            is the condition token used if the value of the property is null/nil.  If this field is not set
+                            and the property value is null at validation - then a condition token of "null" is used
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Format</code> <em>string</em>
+                        </td>
+                        <td>
+                            is an optional format string for dealing with non-string property values
                         </td>
                     </tr>
                 </table>
@@ -2350,8 +2367,8 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             <code>SetConditionProperty</code><br>&nbsp;&nbsp;<code>cpty</code>&nbsp;<em>(i18n tag abbr.)</em>
         </td>
         <td>
-            Is a utility constraint that can be used to set a condition in the <code>ValidatorContext</code> from string value of a
-            specified property.<br/>
+            Is a utility constraint that can be used to set a condition in the <code>ValidatorContext</code> from the value of a specified property 
+            within the object to which this constraint is attached<br/>
             <em>(see example usage in <a href="#polymorphic-validation">Polymorphic Validation</a>)</em>
             <details>
                 <summary>Fields</summary>
@@ -2369,7 +2386,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
                             <code>Prefix</code> <em>string</em>
                         </td>
                         <td>
-                            is any prefix to be appended to the string value
+                            is any prefix to be appended to the condition token
                         </td>
                     </tr>
                     <tr>
@@ -2377,7 +2394,33 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
                             <code>Mapping</code> <em>map[string]string</em>
                         </td>
                         <td>
-                            converts the string value to alternate values (if the value is not found in the map then the original value is used
+                            converts the token value to alternate values (if the value is not found in the map then the original value is used
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>NullToken</code> <em>string</em>
+                        </td>
+                        <td>
+                            is the condition token used if the value of the property specified is null/nil.  If this field is not set
+                            and the property value is null at validation - then a condition token of "null" is used
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>MissingToken</code> <em>string</em>
+                        </td>
+                        <td>
+                            is the condition token used if the property specified is missing.  If this field is not set
+                            and the property is missing at validation - then a condition token of "missing" is used
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Format</code> <em>string</em>
+                        </td>
+                        <td>
+                            is an optional format string for dealing with non-string property values
                         </td>
                     </tr>
                 </table>
