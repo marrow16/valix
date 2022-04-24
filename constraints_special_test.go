@@ -261,6 +261,54 @@ func TestSetConditionFromConstraintGlobal(t *testing.T) {
 	require.False(t, conditionWasSet)
 }
 
+func TestSetConditionFromNullsAndNonString(t *testing.T) {
+	var grabVcx *ValidatorContext
+	constraint := &SetConditionFrom{
+		Global: true,
+	}
+	validator := &Validator{
+		Constraints: Constraints{
+			NewCustomConstraint(func(value interface{}, vcx *ValidatorContext, this *CustomConstraint) (bool, string) {
+				grabVcx = vcx
+				return true, ""
+			}, ""),
+		},
+		Properties: Properties{
+			"foo": {
+				Type: JsonAny,
+				Constraints: Constraints{
+					constraint,
+				},
+			},
+		},
+	}
+
+	obj := jsonObject(`{"foo": null}`)
+	ok, _ := validator.Validate(obj)
+	require.True(t, ok)
+	require.NotNil(t, grabVcx)
+	require.True(t, grabVcx.IsCondition("null"))
+
+	constraint.NullToken = "foo_is_null"
+	ok, _ = validator.Validate(obj)
+	require.True(t, ok)
+	require.NotNil(t, grabVcx)
+	require.True(t, grabVcx.IsCondition("foo_is_null"))
+
+	obj["foo"] = 1
+	ok, _ = validator.Validate(obj)
+	require.True(t, ok)
+	require.NotNil(t, grabVcx)
+	require.True(t, grabVcx.IsCondition("1"))
+
+	constraint.Format = "is_%v"
+	constraint.Prefix = "foo_"
+	ok, _ = validator.Validate(obj)
+	require.True(t, ok)
+	require.NotNil(t, grabVcx)
+	require.True(t, grabVcx.IsCondition("foo_is_1"))
+}
+
 func TestSetConditionPropertyConstraint(t *testing.T) {
 	validator := &Validator{
 		OrderedPropertyChecks: true,
@@ -369,6 +417,68 @@ func TestSetConditionPropertyConstraintWithMapping(t *testing.T) {
 	ok, violations := validator.Validate(obj)
 	require.True(t, ok)
 	require.Equal(t, 0, len(violations))
+}
+
+func TestSetConditionProperty(t *testing.T) {
+	var grabVcx *ValidatorContext
+	constraint := &SetConditionProperty{
+		PropertyName: "foo",
+	}
+	validator := &Validator{
+		Constraints: Constraints{
+			constraint,
+			NewCustomConstraint(func(value interface{}, vcx *ValidatorContext, this *CustomConstraint) (bool, string) {
+				grabVcx = vcx
+				return true, ""
+			}, ""),
+		},
+		Properties: Properties{
+			"foo": {
+				Type: JsonAny,
+			},
+		},
+	}
+
+	obj := jsonObject(`{}`)
+	ok, _ := validator.Validate(obj)
+	require.True(t, ok)
+	require.NotNil(t, grabVcx)
+	require.True(t, grabVcx.IsCondition("missing"))
+
+	constraint.MissingToken = "not_there"
+	grabVcx = nil
+	ok, _ = validator.Validate(obj)
+	require.True(t, ok)
+	require.NotNil(t, grabVcx)
+	require.True(t, grabVcx.IsCondition("not_there"))
+
+	obj["foo"] = nil
+	grabVcx = nil
+	ok, _ = validator.Validate(obj)
+	require.True(t, ok)
+	require.NotNil(t, grabVcx)
+	require.True(t, grabVcx.IsCondition("null"))
+
+	obj["foo"] = 1
+	grabVcx = nil
+	ok, _ = validator.Validate(obj)
+	require.True(t, ok)
+	require.NotNil(t, grabVcx)
+	require.True(t, grabVcx.IsCondition("1"))
+
+	constraint.Format = "is_%v"
+	grabVcx = nil
+	ok, _ = validator.Validate(obj)
+	require.True(t, ok)
+	require.NotNil(t, grabVcx)
+	require.True(t, grabVcx.IsCondition("is_1"))
+
+	constraint.Prefix = "foo_"
+	grabVcx = nil
+	ok, _ = validator.Validate(obj)
+	require.True(t, ok)
+	require.NotNil(t, grabVcx)
+	require.True(t, grabVcx.IsCondition("foo_is_1"))
 }
 
 func TestVariablePropertyNameValidation(t *testing.T) {
