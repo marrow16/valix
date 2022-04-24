@@ -196,9 +196,9 @@ type StringPresetPattern struct {
 func (c *StringPresetPattern) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
 	if str, ok := v.(string); ok {
 		if p, ok := presetsRegistry.get(c.Preset); ok {
-			if !p.check(str) {
+			if !p.Check(str) {
 				vcx.CeaseFurtherIf(c.Stop)
-				return false, c.getMessage(vcx, p.msg)
+				return false, c.getMessage(vcx, p.GetMessage())
 			}
 		} else {
 			vcx.CeaseFurtherIf(c.Stop)
@@ -222,8 +222,10 @@ func (c *StringPresetPattern) getMessage(tcx I18nContext, msg string) string {
 func (c *StringPresetPattern) GetMessage(tcx I18nContext) string {
 	if c.Message != "" {
 		return obtainI18nContext(tcx).TranslateMessage(c.Message)
-	} else if p, ok := presetsRegistry.get(c.Preset); ok && p.msg != "" {
-		return obtainI18nContext(tcx).TranslateMessage(p.msg)
+	} else if p, ok := presetsRegistry.get(c.Preset); ok {
+		if msg := p.GetMessage(); msg != "" {
+			return obtainI18nContext(tcx).TranslateMessage(msg)
+		}
 	}
 	return obtainI18nContext(tcx).TranslateMessage(msgValidPattern)
 }

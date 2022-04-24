@@ -273,6 +273,11 @@ func (r *constraintRegistry) has(name string) bool {
 	return ok
 }
 
+// GetRegisteredConstraint returns a previously registered constraint
+func GetRegisteredConstraint(name string) (Constraint, bool) {
+	return constraintsRegistry.get(name)
+}
+
 // RegisterConstraint registers a Constraint for use by ValidatorFor
 //
 // For example:

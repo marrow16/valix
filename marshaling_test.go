@@ -115,8 +115,8 @@ func TestValidator_MarshalJSON(t *testing.T) {
 	err = json.Unmarshal(b, &obj)
 	require.Nil(t, err)
 	require.NotNil(t, obj)
-	pretty, _ := json.MarshalIndent(obj, "", "\t")
-	println(string(pretty[:]))
+	//pretty, _ := json.MarshalIndent(obj, "", "\t")
+	//println(string(pretty[:]))
 
 	valid, violations := ValidatorValidator.Validate(obj)
 	require.Equal(t, 0, len(violations))
