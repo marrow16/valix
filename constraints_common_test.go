@@ -188,7 +188,7 @@ func TestStringPresetPattern(t *testing.T) {
 
 	// defaulted message when preset has no message...
 	constraint.Message = ""
-	presetsRegistry.register("fooey", patternPreset{regex: regexp.MustCompile("zzz")})
+	presetsRegistry.register("fooey", &patternPreset{regex: regexp.MustCompile("zzz")})
 	defer func() {
 		presetsRegistry.reset()
 	}()

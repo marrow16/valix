@@ -8,6 +8,14 @@ import (
 	"sync"
 )
 
+// Preset is the interface used for presets (any preset registered directly using RegisterPreset must implement this interface)
+type Preset interface {
+	Check(v string) bool
+	GetRegexp() *regexp.Regexp
+	GetPostChecker() PostPatternChecker
+	GetMessage() string
+}
+
 // RegisterPresetPattern registers a preset pattern for use by the StringPresetPattern constraint
 //
 // * the `token` arg specifies the token for the preset (as used by the StringPresetPattern.Preset field)
@@ -25,7 +33,7 @@ func RegisterPresetPattern(token string, rx *regexp.Regexp, message string, post
 	if rx == nil {
 		useRx = matchAnything
 	}
-	presetsRegistry.register(token, patternPreset{
+	presetsRegistry.register(token, &patternPreset{
 		regex:       useRx,
 		postChecker: postCheck,
 		msg:         message,
@@ -35,6 +43,23 @@ func RegisterPresetPattern(token string, rx *regexp.Regexp, message string, post
 			Preset: token,
 		})
 	}
+}
+
+// RegisterPreset registers a preset pattern for use by the StringPresetPattern constraint
+//
+// * the `asConstraint` arg, if true, means the preset is also registered as a named constraint and is available for use
+// as a `v8n` constraint tag
+func RegisterPreset(token string, preset Preset, asConstraint bool) {
+	presetsRegistry.register(token, preset)
+	if asConstraint {
+		constraintsRegistry.registerNamed(true, token, &StringPresetPattern{
+			Preset: token,
+		})
+	}
+}
+
+func GetRegisteredPreset(token string) (Preset, bool) {
+	return presetsRegistry.get(token)
 }
 
 const (
@@ -72,7 +97,7 @@ var (
 )
 
 type presetRegistry struct {
-	namedPresets map[string]patternPreset
+	namedPresets map[string]Preset
 	sync         *sync.Mutex
 }
 
@@ -85,7 +110,7 @@ func init() {
 	}
 }
 
-func (r *presetRegistry) register(token string, preset patternPreset) {
+func (r *presetRegistry) register(token string, preset Preset) {
 	defer r.sync.Unlock()
 	r.sync.Lock()
 	r.namedPresets[token] = preset
@@ -98,11 +123,11 @@ func (r *presetRegistry) reset() {
 	r.namedPresets = getBuiltInPresets()
 }
 
-func (r *presetRegistry) get(token string) (*patternPreset, bool) {
+func (r *presetRegistry) get(token string) (Preset, bool) {
 	defer r.sync.Unlock()
 	r.sync.Lock()
 	if p, ok := r.namedPresets[token]; ok {
-		return &p, true
+		return p, true
 	}
 	return nil, false
 }
@@ -113,7 +138,7 @@ type patternPreset struct {
 	msg         string
 }
 
-func (pp *patternPreset) check(v string) bool {
+func (pp *patternPreset) Check(v string) bool {
 	result := pp.regex.MatchString(v)
 	if result && pp.postChecker != nil {
 		result = pp.postChecker.Check(v)
@@ -121,227 +146,239 @@ func (pp *patternPreset) check(v string) bool {
 	return result
 }
 
-func getBuiltInPresets() map[string]patternPreset {
-	return map[string]patternPreset{
-		presetTokenAlpha: {
+func (pp *patternPreset) GetRegexp() *regexp.Regexp {
+	return pp.regex
+}
+
+func (pp *patternPreset) GetPostChecker() PostPatternChecker {
+	return pp.postChecker
+}
+
+func (pp *patternPreset) GetMessage() string {
+	return pp.msg
+}
+
+func getBuiltInPresets() map[string]Preset {
+	return map[string]Preset{
+		presetTokenAlpha: &patternPreset{
 			regex: regexp.MustCompile("^[a-zA-Z]+$"),
 			msg:   msgPresetAlpha,
 		},
-		presetTokenAlphaNumeric: {
+		presetTokenAlphaNumeric: &patternPreset{
 			regex: regexp.MustCompile("^[a-zA-Z0-9]+$"),
 			msg:   msgPresetAlphaNumeric,
 		},
-		presetTokenCMYK: {
+		presetTokenCMYK: &patternPreset{
 			regex:       cmykRegexp,
 			postChecker: cmyk{400},
 			msg:         msgPresetCMYK,
 		},
-		presetTokenCMYK300: {
+		presetTokenCMYK300: &patternPreset{
 			regex:       cmykRegexp,
 			postChecker: cmyk{300},
 			msg:         msgPresetCMYK300,
 		},
-		presetTokenBarcode: {
+		presetTokenBarcode: &patternPreset{
 			regex:       regexp.MustCompile("^[0-9X()]{8,22}$"),
 			postChecker: barcode{},
 			msg:         msgPresetBarcode,
 		},
-		presetTokenBase64: {
+		presetTokenBase64: &patternPreset{
 			regex: regexp.MustCompile("^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{4})$"),
 			msg:   msgPresetBase64,
 		},
-		presetTokenBase64URL: {
+		presetTokenBase64URL: &patternPreset{
 			regex: regexp.MustCompile("^(?:[A-Za-z0-9-_]{4})*(?:[A-Za-z0-9-_]{2}==|[A-Za-z0-9-_]{3}=|[A-Za-z0-9-_]{4})$"),
 			msg:   msgPresetBase64URL,
 		},
-		presetTokenCard: {
+		presetTokenCard: &patternPreset{
 			regex:       regexp.MustCompile("^(([0-9]{12,19})|([0-9]{4} [0-9]{4} [0-9]{4})|([0-9]{4} [0-9]{4} [0-9]{4} [0-9]{1,4})|([0-9]{4} [0-9]{4} [0-9]{4} [0-9]{4} [0-9]{1,3}))$"),
 			postChecker: cardNumber{},
 			msg:         msgValidCardNumber,
 		},
-		presetTokenE164: {
+		presetTokenE164: &patternPreset{
 			regex: regexp.MustCompile("^\\+[1-9]?[0-9]{7,14}$"),
 			msg:   msgPresetE164,
 		},
-		presetTokenEAN: {
+		presetTokenEAN: &patternPreset{
 			regex:       regexp.MustCompile("^(([0-9]{8,18})|(\\(01\\)[0-9]{14})|(\\(00\\)[0-9]{18}))$"),
 			postChecker: &ean{},
 			msg:         msgPresetEAN,
 		},
-		presetTokenEAN8: {
+		presetTokenEAN8: &patternPreset{
 			regex:       ean8Regexp,
 			postChecker: ean8,
 			msg:         msgPresetEAN8,
 		},
-		presetTokenEAN13: {
+		presetTokenEAN13: &patternPreset{
 			regex:       ean13Regexp,
 			postChecker: ean13,
 			msg:         msgPresetEAN13,
 		},
-		presetTokenDUN14: {
+		presetTokenDUN14: &patternPreset{
 			regex:       regexp.MustCompile("^(([0-9]{14})|(\\(01\\)[0-9]{14}))$"),
 			postChecker: ean14,
 			msg:         msgPresetDUN14,
 		},
-		presetTokenEAN14: {
+		presetTokenEAN14: &patternPreset{
 			regex:       ean14Regexp,
 			postChecker: ean14,
 			msg:         msgPresetEAN14,
 		},
-		presetTokenEAN18: {
+		presetTokenEAN18: &patternPreset{
 			regex:       ean18Regexp,
 			postChecker: ean18,
 			msg:         msgPresetEAN18,
 		},
-		presetTokenEAN99: {
+		presetTokenEAN99: &patternPreset{
 			regex:       ean99Regexp,
 			postChecker: ean13,
 			msg:         msgPresetEAN99,
 		},
-		presetTokenHexadecimal: {
+		presetTokenHexadecimal: &patternPreset{
 			regex: regexp.MustCompile("^(0[xX])?[0-9a-fA-F]+$"),
 			msg:   msgPresetHexadecimal,
 		},
-		presetTokenHsl: {
+		presetTokenHsl: &patternPreset{
 			regex: regexp.MustCompile("^hsl\\(\\s*(?:0|[1-9]\\d?|[12]\\d\\d|3[0-5]\\d|360)\\s*,\\s*(?:0|[1-9]\\d?|100)%\\s*,\\s*(?:0|[1-9]\\d?|100)%\\s*\\)$"),
 			msg:   msgPresetHsl,
 		},
-		presetTokenHsla: {
+		presetTokenHsla: &patternPreset{
 			regex: regexp.MustCompile("^hsla\\(\\s*(?:0|[1-9]\\d?|[12]\\d\\d|3[0-5]\\d|360)\\s*,\\s*(?:0|[1-9]\\d?|100)%\\s*,\\s*(?:0|[1-9]\\d?|100)%\\s*,\\s*(?:0.[1-9]*|[01])\\s*\\)$"),
 			msg:   msgPresetHsla,
 		},
-		presetTokenHtmlColor: {
+		presetTokenHtmlColor: &patternPreset{
 			regex: regexp.MustCompile("^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$"),
 			msg:   msgPresetHtmlColor,
 		},
-		presetTokenInteger: {
+		presetTokenInteger: &patternPreset{
 			regex: regexp.MustCompile("^[0-9]+$"),
 			msg:   msgPresetInteger,
 		},
-		presetTokenISBN: {
+		presetTokenISBN: &patternPreset{
 			regex:       regexp.MustCompile("^((97[89][0-9]{10})|(?:[0-9]{9}X|[0-9]{10}))$"),
 			postChecker: isbn{},
 			msg:         msgPresetISBN,
 		},
-		presetTokenISBN10: {
+		presetTokenISBN10: &patternPreset{
 			regex:       isbn10Regexp,
 			postChecker: isbn10,
 			msg:         msgPresetISBN10,
 		},
-		presetTokenISBN13: {
+		presetTokenISBN13: &patternPreset{
 			regex:       isbn13Regexp,
 			postChecker: isbn13,
 			msg:         msgPresetISBN13,
 		},
-		presetTokenISSN: {
+		presetTokenISSN: &patternPreset{
 			regex:       regexp.MustCompile("^((977[0-9]{10})|(?:[0-9]{7}X|[0-9]{8}))$"),
 			postChecker: issn{},
 			msg:         msgPresetISSN,
 		},
-		presetTokenISSN8: {
+		presetTokenISSN8: &patternPreset{
 			regex:       issn8Regexp,
 			postChecker: issn8,
 			msg:         msgPresetISSN8,
 		},
-		presetTokenISSN13: {
+		presetTokenISSN13: &patternPreset{
 			regex:       issn13Regexp,
 			postChecker: isbn13,
 			msg:         msgPresetISSN13,
 		},
-		presetTokenNumeric: {
+		presetTokenNumeric: &patternPreset{
 			regex: regexp.MustCompile(numericPattern),
 			msg:   msgPresetNumeric,
 		},
-		presetTokenNumericE: {
+		presetTokenNumericE: &patternPreset{
 			regex: regexp.MustCompile(numericWithScientific),
 			msg:   msgPresetNumeric,
 		},
-		presetTokenNumericX: {
+		presetTokenNumericX: &patternPreset{
 			regex: regexp.MustCompile(numericFull),
 			msg:   msgPresetNumeric,
 		},
-		presetTokenPublication: {
+		presetTokenPublication: &patternPreset{
 			regex:       regexp.MustCompile("^((97[789][0-9]{10})|(?:[0-9]{9}X|[0-9]{10})|(?:[0-9]{7}X|[0-9]{8}))$"),
 			postChecker: publication{},
 			msg:         msgPresetPublication,
 		},
-		presetTokenRgb: {
+		presetTokenRgb: &patternPreset{
 			regex: regexp.MustCompile("^rgb\\(\\s*(?:(?:0|[1-9]\\d?|1\\d\\d?|2[0-4]\\d|25[0-5])\\s*,\\s*(?:0|[1-9]\\d?|1\\d\\d?|2[0-4]\\d|25[0-5])\\s*,\\s*(?:0|[1-9]\\d?|1\\d\\d?|2[0-4]\\d|25[0-5])|(?:0|[1-9]\\d?|1\\d\\d?|2[0-4]\\d|25[0-5])%\\s*,\\s*(?:0|[1-9]\\d?|1\\d\\d?|2[0-4]\\d|25[0-5])%\\s*,\\s*(?:0|[1-9]\\d?|1\\d\\d?|2[0-4]\\d|25[0-5])%)\\s*\\)$"),
 			msg:   msgPresetRgb,
 		},
-		presetTokenRgba: {
+		presetTokenRgba: &patternPreset{
 			regex: regexp.MustCompile("^rgba\\(\\s*(?:(?:0|[1-9]\\d?|1\\d\\d?|2[0-4]\\d|25[0-5])\\s*,\\s*(?:0|[1-9]\\d?|1\\d\\d?|2[0-4]\\d|25[0-5])\\s*,\\s*(?:0|[1-9]\\d?|1\\d\\d?|2[0-4]\\d|25[0-5])|(?:0|[1-9]\\d?|1\\d\\d?|2[0-4]\\d|25[0-5])%\\s*,\\s*(?:0|[1-9]\\d?|1\\d\\d?|2[0-4]\\d|25[0-5])%\\s*,\\s*(?:0|[1-9]\\d?|1\\d\\d?|2[0-4]\\d|25[0-5])%)\\s*,\\s*(?:0.[1-9]*|[01])\\s*\\)$"),
 			msg:   msgPresetRgba,
 		},
-		presetTokenRgbIcc: {
+		presetTokenRgbIcc: &patternPreset{
 			regex:       rgbIccRegexp,
 			postChecker: rgbIcc{},
 			msg:         msgPresetRgbIcc,
 		},
-		presetTokenULID: {
+		presetTokenULID: &patternPreset{
 			regex: regexp.MustCompile("^[01234567][0123456789ABCDEFGHJKMNPQRSTVWXYZ]{25}$"),
 			msg:   msgPresetULID,
 		},
-		presetTokenUPC: {
+		presetTokenUPC: &patternPreset{
 			regex:       regexp.MustCompile("^(([0-9]{12})|(0[0-9]{7}))$"),
 			postChecker: upc{},
 			msg:         msgPresetUPC,
 		},
-		presetTokenUPCA: {
+		presetTokenUPCA: &patternPreset{
 			regex:       upcARegexp,
 			postChecker: upcA,
 			msg:         msgPresetUPCA,
 		},
-		presetTokenUPCE: {
+		presetTokenUPCE: &patternPreset{
 			regex:       upcERegexp,
 			postChecker: upcE,
 			msg:         msgPresetUPCE,
 		},
-		presetTokenUuid: {
+		presetTokenUuid: &patternPreset{
 			regex: regexp.MustCompile("^([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})$"),
 			msg:   msgValidUuid,
 		},
-		presetTokenUUID: {
+		presetTokenUUID: &patternPreset{
 			regex: regexp.MustCompile("^([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})$"),
 			msg:   msgValidUuid,
 		},
-		presetTokenUuid1: {
+		presetTokenUuid1: &patternPreset{
 			regex: regexp.MustCompile("^[0-9a-f]{8}-[0-9a-f]{4}-1[0-9a-f]{3}-[0-9a-f]{4}-[0-9a-f]{12}$"),
 			msg:   msgPresetUuid1,
 		},
-		presetTokenUUID1: {
+		presetTokenUUID1: &patternPreset{
 			regex: regexp.MustCompile("^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-1[0-9A-Fa-f]{3}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}$"),
 			msg:   msgPresetUuid1,
 		},
-		presetTokenUuid2: {
+		presetTokenUuid2: &patternPreset{
 			regex: regexp.MustCompile("^[0-9a-f]{8}-[0-9a-f]{4}-2[0-9a-f]{3}-[0-9a-f]{4}-[0-9a-f]{12}$"),
 			msg:   msgPresetUuid2,
 		},
-		presetTokenUUID2: {
+		presetTokenUUID2: &patternPreset{
 			regex: regexp.MustCompile("^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-2[0-9A-Fa-f]{3}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}$"),
 			msg:   msgPresetUuid2,
 		},
-		presetTokenUuid3: {
+		presetTokenUuid3: &patternPreset{
 			regex: regexp.MustCompile("^[0-9a-f]{8}-[0-9a-f]{4}-3[0-9a-f]{3}-[0-9a-f]{4}-[0-9a-f]{12}$"),
 			msg:   msgPresetUuid3,
 		},
-		presetTokenUUID3: {
+		presetTokenUUID3: &patternPreset{
 			regex: regexp.MustCompile("^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-3[0-9A-Fa-f]{3}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}$"),
 			msg:   msgPresetUuid3,
 		},
-		presetTokenUuid4: {
+		presetTokenUuid4: &patternPreset{
 			regex: regexp.MustCompile("^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"),
 			msg:   msgPresetUuid4,
 		},
-		presetTokenUUID4: {
+		presetTokenUUID4: &patternPreset{
 			regex: regexp.MustCompile("^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-4[0-9A-Fa-f]{3}-[89abAB][0-9A-Fa-f]{3}-[0-9A-Fa-f]{12}$"),
 			msg:   msgPresetUuid4,
 		},
-		presetTokenUuid5: {
+		presetTokenUuid5: &patternPreset{
 			regex: regexp.MustCompile("^[0-9a-f]{8}-[0-9a-f]{4}-5[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"),
 			msg:   msgPresetUuid5,
 		},
-		presetTokenUUID5: {
+		presetTokenUUID5: &patternPreset{
 			regex: regexp.MustCompile("^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-5[0-9A-Fa-f]{3}-[89abAB][0-9A-Fa-f]{3}-[0-9A-Fa-f]{12}$"),
 			msg:   msgPresetUuid5,
 		},

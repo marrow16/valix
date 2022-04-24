@@ -23,7 +23,7 @@ func TestPresetsRegistryResets(t *testing.T) {
 	presetsRegistry.reset()
 	require.Equal(t, builtInPresetsCount, len(presetsRegistry.namedPresets))
 
-	presetsRegistry.register("fooey", patternPreset{})
+	presetsRegistry.register("fooey", &patternPreset{})
 	require.Equal(t, builtInPresetsCount+1, len(presetsRegistry.namedPresets))
 	// and didn't corrupt builtins...
 	require.Equal(t, builtInPresetsCount, len(getBuiltInPresets()))
@@ -37,7 +37,7 @@ func TestPresetsRegistryInternalRegister(t *testing.T) {
 	_, ok := presetsRegistry.get("fooey")
 	require.False(t, ok)
 
-	presetsRegistry.register("fooey", patternPreset{})
+	presetsRegistry.register("fooey", &patternPreset{})
 	_, ok = presetsRegistry.get("fooey")
 	require.True(t, ok)
 	require.Equal(t, builtInPresetsCount+1, len(presetsRegistry.namedPresets))
@@ -64,6 +64,100 @@ func TestPresetsRegistryExternalRegister(t *testing.T) {
 	require.True(t, ok)
 	require.Equal(t, builtInPresetsCount+1, len(presetsRegistry.namedPresets))
 	require.True(t, constraintsRegistry.has(testName))
+}
+
+type mySpecialCardPreset struct {
+	wrapped       Preset
+	msg           string
+	approvedBanks map[string]bool
+}
+
+func (my *mySpecialCardPreset) Check(v string) bool {
+	if my.wrapped.GetRegexp().MatchString(v) {
+		if my.approvedBanks[v[0:4]] {
+			return my.wrapped.GetPostChecker().Check(v)
+		}
+	}
+	return false
+}
+
+func (my *mySpecialCardPreset) GetRegexp() *regexp.Regexp {
+	return my.wrapped.GetRegexp()
+}
+
+func (my *mySpecialCardPreset) GetPostChecker() PostPatternChecker {
+	return my.wrapped.GetPostChecker()
+}
+
+func (my *mySpecialCardPreset) GetMessage() string {
+	return my.msg
+}
+
+func TestPresetsRegistryExternalRegisterWrapped(t *testing.T) {
+	const testName = "approved_cards"
+	defer func() {
+		presetsRegistry.reset()
+		constraintsRegistry.reset()
+	}()
+	presetsRegistry.reset()
+	constraintsRegistry.reset()
+	require.False(t, constraintsRegistry.has(testName))
+	require.Nil(t, presetsRegistry.namedPresets[testName])
+
+	builtinCardPreset, _ := GetRegisteredPreset("card")
+	special := &mySpecialCardPreset{
+		wrapped: builtinCardPreset,
+		msg:     "Must be a valid card number (from approved bank)",
+		approvedBanks: map[string]bool{
+			// Visa...
+			"4902": true,
+			"4556": true,
+			"4969": true,
+			// MasterCard...
+			"5385": true,
+			"5321": true,
+			"5316": true,
+		},
+	}
+
+	RegisterPreset(testName, special, true)
+	require.True(t, constraintsRegistry.has(testName))
+	require.NotNil(t, presetsRegistry.namedPresets[testName])
+
+	constraint, ok := GetRegisteredConstraint(testName)
+	require.True(t, ok)
+	testCardNumbers := map[string]bool{
+		// valid VISA...
+		"4902498374064506":    true,
+		"4556494687321500":    true,
+		"4969975508508776718": true,
+		// invalid VISA (bad check digit)...
+		"4902498374064509":    false,
+		"4556494687321509":    false,
+		"4969975508508776719": false,
+		// valid MasterCard...
+		"5385096580406173": true,
+		"5321051022936318": true,
+		"5316711656334695": true,
+		// invalid MasterCard (bad check digit)...
+		"5385096580406179": false,
+		"5321051022936319": false,
+		"5316711656334699": false,
+		// invalid - sorry, we don't accept AMEX...
+		"344349836405221": false,
+		"370579317661267": false,
+		"379499960274519": false,
+	}
+	vcx := newValidatorContext(nil, nil, false, nil)
+	for cn, expect := range testCardNumbers {
+		t.Run(fmt.Sprintf("ApprovedBankCardNumbers:\"%s\"", cn), func(t *testing.T) {
+			ok, msg := constraint.Check(cn, vcx)
+			require.Equal(t, expect, ok)
+			if !ok {
+				require.Equal(t, "Must be a valid card number (from approved bank)", msg)
+			}
+		})
+	}
 }
 
 func TestRegisteredPresetUsedAsV8nTag(t *testing.T) {
@@ -775,11 +869,11 @@ func TestBarcodesWithModuloChecked(t *testing.T) {
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("[%d]%s:\"%s\",regexp:%t,modck:%t", i+1, tc.preset, tc.code, tc.expectRegex, tc.expectCheck), func(t *testing.T) {
 			pp, _ := presetsRegistry.get(tc.preset)
-			rx := pp.regex
+			rx := pp.GetRegexp()
 			matches := rx.MatchString(tc.code)
 			require.Equal(t, tc.expectRegex, matches)
-			if matches && pp.postChecker != nil {
-				require.Equal(t, tc.expectCheck, pp.postChecker.Check(tc.code))
+			if matches && pp.GetPostChecker() != nil {
+				require.Equal(t, tc.expectCheck, pp.GetPostChecker().Check(tc.code))
 			}
 		})
 	}
@@ -1235,8 +1329,8 @@ func TestCardNumberPreset(t *testing.T) {
 		"4902 4983 7406 4506 ": false,
 	}
 	pp, _ := presetsRegistry.get("card")
-	rx := pp.regex
-	ck := pp.postChecker
+	rx := pp.GetRegexp()
+	ck := pp.GetPostChecker()
 	for ccn, expect := range testCardNumbers {
 		t.Run(fmt.Sprintf("CardNumber:\"%s\"", ccn), func(t *testing.T) {
 			if expect {
@@ -1295,11 +1389,11 @@ func TestCmyks(t *testing.T) {
 	}
 	for str, tc := range tcs {
 		t.Run(fmt.Sprintf("CMYK\"%s\"", str), func(t *testing.T) {
-			require.Equal(t, tc.expectMatch, checkCmyk.regex.MatchString(str))
-			require.Equal(t, tc.expectMatch, checkCmyk300.regex.MatchString(str))
+			require.Equal(t, tc.expectMatch, checkCmyk.GetRegexp().MatchString(str))
+			require.Equal(t, tc.expectMatch, checkCmyk300.GetRegexp().MatchString(str))
 			if tc.expectMatch {
-				require.Equal(t, tc.expect300Ok, checkCmyk300.check(str))
-				require.True(t, checkCmyk.check(str))
+				require.Equal(t, tc.expect300Ok, checkCmyk300.GetPostChecker().Check(str))
+				require.True(t, checkCmyk.GetPostChecker().Check(str))
 			}
 		})
 	}
@@ -1598,9 +1692,9 @@ func TestRgbIccs(t *testing.T) {
 	}
 	for str, tc := range tcs {
 		t.Run(fmt.Sprintf("RGB-ICC\"%s\"", str), func(t *testing.T) {
-			require.Equal(t, tc.expectMatch, checkRgbIcc.regex.MatchString(str))
+			require.Equal(t, tc.expectMatch, checkRgbIcc.GetRegexp().MatchString(str))
 			if tc.expectMatch {
-				require.Equal(t, tc.expectCheck, checkRgbIcc.check(str))
+				require.Equal(t, tc.expectCheck, checkRgbIcc.GetPostChecker().Check(str))
 			}
 		})
 	}
