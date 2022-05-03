@@ -3603,6 +3603,53 @@ type MyRequest struct {
 }
 ```
 
+### Required/Unwanted Properties
+
+When properties are required, or unwanted, according to the presence of other properties - use the `v8n` tag tokens `required_with:<expr>` or `unwanted_with:<expr>` (abbreviated forms `+:` and `-:` respectively).
+
+The simplest expression is just the name of another property - the following example shows making two properties `foo` and `bar` mutually inclusive (i.e. if one is present then the other is required):
+```go
+type ExampleMutuallyInclusive struct {
+    Foo string `json:"foo" v8n:"+:bar, +msg:'foo required when bar present'"`
+    Bar string `json:"bar" v8n:"+:foo, +msg:'bar required when foo present'"`
+}
+```
+Or another example, using the `unwanted_with:` token, to make two properties mutually exclusive (i.e. if one is present then the other must not):
+```go
+type ExampleMutuallyExclusive struct {
+    Foo string `json:"foo" v8n:"-:bar, -msg:'foo and bar are mutually exclusive'"`
+    Bar string `json:"bar" v8n:"-:foo, -msg:'foo and bar are mutually exclusive'"`
+}
+```
+
+The `required_with:` and `unwanted_with` can also use more complex boolean expressions - the following example demonstrates making two out of three properties mutually inclusive but not all three:  
+```go
+type ExampleTwoOfThreeMutuallyInclusive struct {
+    Foo string `json:"foo" v8n:"+:(bar || baz) && !(bar && baz), -:bar && baz"`
+    Bar string `json:"bar" v8n:"+:(foo || baz) && !(foo && baz), -:foo && baz"`
+    Baz string `json:"baz" v8n:"+:(foo || bar) && !(foo && bar), -:foo && bar"`
+}
+```
+
+The boolean property expressions can also traverse up and down the object tree (using JSON `.` path style notation).  The following demonstrates:
+```go
+type ExampleUpAndDownRequired struct {
+    Foo string `json:"foo" v8n:"+:sub.foo"`
+    Bar string `json:"bar" v8n:"+:sub.bar"`
+    Sub struct {
+        SubFoo string `json:"foo" v8n:"+:..foo"`
+        SubBar string `json:"bar" v8n:"+:..bar"`
+    } `json:"sub"`
+}
+```
+
+Additional expression functionality notes:
+* Path traversal also supports going up to the root object - e.g. `/.foo.bar` will go up to the root object and then descend down path `foo.bar`
+* Prefixing property name with `~` (tilde) means check a context condition rather than property existence - e.g. `~METHOD_POST` checks whether the `METHOD_POST` condition token has been set in the context
+* The `+:` and `-:` validation tag tokens correspond to the `valix.PropertyValidator.RequiredWith` and `valix.PropertyValidator.UnwantedWith` fields respectively
+* Use the `valix.ParseExpression` or `valix.MustParseExpression` functions to programmatically parse boolean property expressions
+* Unfortunately, array index notation (e.g. `sub[0]`) is not *currently* supported (and neither is traversing array values)
+
 ### Conditional Constraints
 
 Sometimes, the model of JSON requests needs to vary according to some property condition.  For example, the following is a beverage order for a tea and coffee shop:
@@ -3719,9 +3766,12 @@ Where the tokens correspond to various property validation options - as listed h
       <td><code>mandatory</code></td>
       <td>
         Specifies the JSON property must be present
-        <pre>type Example struct {
+        <details>
+          <summary>Example</summary>
+          <pre>type Example struct {
   Foo string `v8n:"mandatory"`
 }</pre>
+        </details>
       </td>
     </tr>
     <tr>
@@ -3732,55 +3782,115 @@ Where the tokens correspond to various property validation options - as listed h
       </td>
       <td>
         Specifies the JSON property must be present under specified conditions
-        <pre>type Example struct {
+        <details>
+          <summary>Example</summary>
+          <pre>type Example struct {
   Foo string `v8n:"mandatory:[METHOD_POST,METHOD_PATCH]"`
 }</pre>
+        </details>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <code>required_with:&lt;expr&gt;</code><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<em>or</em><br>
+        <code>+:&lt;expr&gt;</code>
+      </td>
+      <td>
+        Specifies the JSON property is required according to the presence/non-presence of other properties (as determined by the <code>&lt;expr&gt;</code>)<br>
+        You can also control the violation message used when the property is required but missing using a <code>required_with_msg:</code> or <code>+msg:</code> tag token
+        <details>
+          <summary>Example</summary>
+          <pre>type Example struct {
+  Foo string `json:"foo" v8n:"required_with:bar && baz,+msg:'Sometimes foo is required'"`
+  Bar string `json:"bar"`
+  Baz string `json:"baz"`
+}</pre>
+          <em>Means the property <code>foo</code> is required when both <code>bar</code> and <code>baz</code> properties are present</em>
+        </details>
+        <br><em>(see also <a href="#required_unwanted_properties">Required/Unwanted Properties</a> for further notes and examples on expressions)</em>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <code>unwanted_with:&lt;expr&gt;</code><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<em>or</em><br>
+        <code>-:&lt;expr&gt;</code>
+      </td>
+      <td>
+        Specifies the JSON property is required according to the presence/non-presence of other properties (as determined by the <code>&lt;expr&gt;</code>)<br>
+        You can also control the violation message used when the property is present but unwanted using a <code>unwanted_with_msg:</code> or <code>-msg:</code> tag token
+        <details>
+          <summary>Example</summary>
+          <pre>type Example struct {
+  Foo string `json:"foo" v8n:"unwanted_with:bar || baz,-msg:'Sometimes foo is unwanted'"`
+  Bar string `json:"bar"`
+  Baz string `json:"baz"`
+}</pre>
+          <em>Means the property <code>foo</code> is unwanted when either the <code>bar</code> or <code>baz</code> properties are present</em>
+        </details>
+        <br><em>(see also <a href="#required_unwanted_properties">Required/Unwanted Properties</a> for further notes and examples on expressions)</em>
       </td>
     </tr>
     <tr>
       <td><code>notNull</code></td>
       <td>
         Specifies the JSON value for the property cannot be null
-        <pre>type Example struct {
+        <details>
+          <summary>Example</summary>
+          <pre>type Example struct {
   Foo string `v8n:"notNull"`
 }</pre>
+        </details>
       </td>
     </tr>
     <tr>
       <td><code>nullable</code></td>
       <td>
         Specifies the JSON value for the property can be null (<em>opposite of <code>notNull</code></em>)
-        <pre>type Example struct {
+        <details>
+          <summary>Example</summary>
+          <pre>type Example struct {
   Foo string `v8n:"nullable"`
 }</pre>
+        </details>
       </td>
     </tr>
     <tr>
       <td><code>optional</code></td>
       <td>
         Specifies the JSON property does not have to be present (<em>opposite of <code>mandatory</code></em>)
-        <pre>type Example struct {
+        <details>
+          <summary>Example</summary>
+          <pre>type Example struct {
   Foo string `v8n:"optional"`
 }</pre>
+        </details>
       </td>
     </tr>
     <tr>
       <td><code>order:&lt;n&gt;</code></td>
       <td>
         Specifies the order in which the property should be validated (only respected if parent object is tagged as <code>obj.ordered</code> or parent validator is set to <code>OrderedPropertyChecks</code>)
-        <pre>type Example struct {
+        <details>
+          <summary>Example</summary>
+          <pre>type Example struct {
   Foo string `v8n:"order:0"`
   Bar string `v8n:"order:1"`
 }</pre>
+        </details>
       </td>
     </tr>
     <tr>
       <td><code>required</code></td>
       <td>
         <em>same as <code>mandatory</code></em>
-        <pre>type Example struct {
+        <details>
+          <summary>Example</summary>
+          <pre>type Example struct {
   Foo string `v8n:"required"`
 }</pre>
+        </details>
       </td>
     </tr>
     <tr>
@@ -3791,9 +3901,12 @@ Where the tokens correspond to various property validation options - as listed h
       </td>
       <td>
         <em>same as <code>mandatory:&lt;condition&gt;</code></em>
-        <pre>type Example struct {
+        <details>
+          <summary>Example</summary>
+          <pre>type Example struct {
   Foo string `v8n:"required:[METHOD_POST,METHOD_PATCH]"`
 }</pre>
+        </details>
       </td>
     </tr>
     <tr>
@@ -3803,9 +3916,12 @@ Where the tokens correspond to various property validation options - as listed h
         Specifies (overrides) the type expected for the JSON property value<br>
         Where <code>&lt;type&gt;</code> must be one of (case-insensitive):<br>
         &nbsp;&nbsp;&nbsp;<code>string</code>, <code>number</code>, <code>integer</code>, <code>boolean</code>, <code>object</code>, <code>array</code> or <code>any</code>
-        <pre>type Example struct {
+        <details>
+          <summary>Example</summary>
+          <pre>type Example struct {
   Foo json.Number `v8n:"type:integer"`
 }</pre>
+        </details>
       </td>
     </tr>
     <tr>
@@ -3814,31 +3930,40 @@ Where the tokens correspond to various property validation options - as listed h
         Adds a constraint to the property (this token can be specified multiple times within the <code>v8n</code> tag.
         The <code>&lt;name&gt;</code> must be a Valix common constraint or a previously registered constraint.
         The constraint `fields` can optionally be set.
-        <pre>type Example struct {
+        <details>
+          <summary>Example</summary>
+          <pre>type Example struct {
   Foo string `v8n:"constraint:StringMaxLength{Value:255}"`
 }</pre>
+        </details>
       </td>
     </tr>
     <tr>
       <td><code>&amp;&lt;constraint-name&gt;{fields}</code></td>
       <td>
         Adds a constraint to the property (shorthand way of specifying constraint without <code>constraint:</code> or <code>constraints:[]</code> prefix)
-        <pre>type Example struct {
+        <details>
+          <summary>Example</summary>
+          <pre>type Example struct {
   Foo string `v8n:"&amp;StringMaxLength{Value:255}"`
 }</pre>
         The constraint can also be made conditional by prefixing the name with the condition tokens, e.g.
         <pre>type Example struct {
   Foo string `v8n:"&amp;[METHOD_POST]StringNotEmpty{}"`
 }</pre>
+        </details>
       </td>
     </tr>
     <tr>
       <td><code>constraints:[&lt;name&gt;{},...]</code></td>
       <td>
         Adds multiple constraints to the property
-        <pre>type Example struct {
+        <details>
+          <summary>Example</summary>
+          <pre>type Example struct {
   Foo string `v8n:"constraints:[StringNotEmpty{},StringNoControlCharacters{}]"`
 }</pre>
+        </details>
       </td>
     </tr>
     <tr>
@@ -3850,9 +3975,12 @@ Where the tokens correspond to various property validation options - as listed h
       <td>
         Adds when condition(s) for the property - where <code>&lt;condition&gt;</code> is a condition token (that may have been set during validation)<br>
         The property is only validated when these conditions are met (see <a href="#conditional-constraints">Conditional Constraints</a>)
-        <pre>type Example struct {
+        <details>
+          <summary>Example</summary>
+          <pre>type Example struct {
   Foo string `v8n:"when:YES_FOO"`
 }</pre>
+        </details>
       </td>
     </tr>
     <tr>
@@ -3864,42 +3992,54 @@ Where the tokens correspond to various property validation options - as listed h
       <td>
         Adds unwanted condition(s) for the property - where <code>&lt;condition&gt;</code> is a condition token (that may have been set during validation)<br>
         If the unwanted condition(s) is met but the property is present then this is a validation violation (see <a href="#conditional-constraints">Conditional Constraints</a>)
-        <pre>type Example struct {
+        <details>
+          <summary>Example</summary>
+          <pre>type Example struct {
   Foo string `v8n:"unwanted:NO_FOO"`
 }</pre>
+        </details>
       </td>
     </tr>
     <tr>
       <td><code>obj.ignoreUnknownProperties</code></td>
       <td>
         Sets an object (or array of objects) to ignore unknown properties (ignoring unknown properties means that the validator will not fail if an unknown property is found)
-        <pre>type Example struct {
+        <details>
+          <summary>Example</summary>
+          <pre>type Example struct {
   SubObj struct{
     Foo string
   } `json:"subObj" v8n:"obj.ignoreUnknownProperties"`
 }</pre>
+        </details>
       </td>
     </tr>
     <tr>
       <td><code>obj.unknownProperties:true|false</code></td>
       <td>
         Sets whether an object is to allow/ignore (<code>true</code>) or disallow (<code>false</code>) unknown properties
-        <pre>type Example struct {
+        <details>
+          <summary>Example</summary>
+          <pre>type Example struct {
   SubObj struct{
     Foo string
   } `json:"subObj" v8n:"obj.unknownProperties:false"`
 }</pre>
+        </details>
       </td>
     </tr>
     <tr>
       <td><code>obj.constraint:&lt;name&gt;{}</code></td>
       <td>
         Sets a constraint on an entire object or array
-        <pre>type Example struct {
+        <details>
+          <summary>Example</summary>
+          <pre>type Example struct {
   SubObj struct{
     Foo string
   } `json:"subObj" v8n:"obj.constraint:Length{Minimum:1,Maximum:16}"`
 }</pre>
+        </details>
       </td>
     </tr>
     <tr>
@@ -3907,19 +4047,22 @@ Where the tokens correspond to various property validation options - as listed h
       <td>
         Sets the object validator to check properties in order<br/>
         (same as <code>Validator.OrderedPropertyChecks</code> in <a href="#additional-validator-options">Additional validator options</a>)
-        <pre>type Example struct {
+        <details>
+          <summary>Example</summary>
+          <pre>type Example struct {
   SubObj struct{
     Foo string `v8n:"order:0"`
     Bar string `v8n:"order:1"`
   } `v8n:"obj.ordered"`
 }</pre>
 the above will check the properties in order specified by their <code>order:</code> - whereas the following will check the properties in alphabetical order of name...
-        <pre>type Example struct {
+         <pre>type Example struct {
   SubObj struct{
     Foo string `json:"foo"`
     Bar string `json:"bar"`
   } `v8n:"obj.ordered"`
 }</pre>
+        </details>
       </td>
     </tr>
     <tr>
@@ -3931,15 +4074,31 @@ the above will check the properties in order specified by their <code>order:</co
       <td>
         Adds when condition(s) for the object or array - where <code>&lt;condition&gt;</code> is a condition token (that may have been set during validation)<br>
         The object/array is only validated when these conditions are met (see <a href="#conditional-constraints">Conditional Constraints</a>)
-        <pre>type Example struct {
+        <details>
+          <summary>Example</summary>
+          <pre>type Example struct {
   SubObj struct{
     Foo string
   } `json:"subObj" v8n:"obj.when:YES_SUB"`
 }</pre>
+        </details>
       </td>
     </tr>
   </tbody>
 </table>
+
+#### Registering your own tag tokens
+
+The `v8n` tag can also support custom tokens which can be registered using `valix.RegisterCustomTagToken`.
+Any registered custom tag tokens can be used in the `v8n` tag and will be processed when building a validator for a struct using `valix.ValidatorFor`
+
+An example of how this is used can be found in [examples/custom_tag_tokens_test.go](https://github.com/marrow16/valix/blob/master/examples/custom_tag_tokens_test.go)
+
+#### Tag token aliases
+
+If you find that you're using the same `v8n` tag tokens repeatedly - you can create aliases for these and then just reference the alias using a `$` prefix.
+
+An example of how this is used can be found in [examples/tag_aliases_test.go](https://github.com/marrow16/valix/blob/master/examples/tag_aliases_test.go)
 
 #### Abbreviating constraints in tags
 
@@ -3949,6 +4108,7 @@ type MyStruct struct {
     Foo string `json:"foo" v8n:"&StringNoControlCharacters{},&StringMinLength{Value:10}"`
 }
 ```
+
 To overcome this, there are several things you can do:
 1. Where there are no args for the constraint, the `{}` at the end can be dropped
 2. Where the constraint struct has only one field or has a default field (tagged with <code>&#96;v8n:"default"&#96;</code>) then the arg name can be dropped

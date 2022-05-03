@@ -107,6 +107,10 @@ const (
 	CodeInvalidPropertyName           = 42217
 	msgPropertyValueMustBeObject      = "Property value must be an object"
 	CodePropertyValueMustBeObject     = 42218
+	msgPropertyRequiredWhen           = "Property is required under certain criteria"
+	CodePropertyRequiredWhen          = 42219
+	msgPropertyUnwantedWhen           = "Property must not be present under certain criteria"
+	CodePropertyUnwantedWhen          = 42220
 	CodeValidatorConstraintFail       = 42298
 )
 
@@ -424,7 +428,7 @@ func (v *Validator) validate(obj map[string]interface{}, vcx *ValidatorContext) 
 		return
 	}
 	if has, variant := getMatchingVariant(vcx, v.ConditionalVariants); has {
-		v.variantValidate(obj, vcx, *variant, v.ConditionalVariants, v.Properties.clone(), v.Properties.clone())
+		v.variantValidate(obj, vcx, *variant, v.ConditionalVariants, v.Properties.Clone(), v.Properties.Clone())
 		return
 	}
 	if checkUnknownProperties(obj, vcx, v.IgnoreUnknownProperties, v.Properties, nil) {
@@ -465,8 +469,14 @@ func (v *Validator) variantValidate(obj map[string]interface{}, vcx *ValidatorCo
 	v.checkProperties(obj, vcx, properties)
 }
 
-func (v *Validator) checkProperties(obj map[string]interface{}, vcx *ValidatorContext, properties Properties) (stops bool) {
+func (v *Validator) checkProperties(obj map[string]interface{}, vcx *ValidatorContext, properties Properties) {
+	//func (v *Validator) checkProperties(obj map[string]interface{}, vcx *ValidatorContext, properties Properties) (stops bool) {
 	names, pvs := v.orderedProperties(properties)
+	// before we check the property values, we need to check property required/not required...
+	names, pvs, cont := checkPropertiesRequiredWithWithout(obj, vcx, names, pvs)
+	if !cont {
+		return
+	}
 	for i, propertyName := range names {
 		pv := pvs[i]
 		actualValue, present := obj[propertyName]
@@ -484,18 +494,49 @@ func (v *Validator) checkProperties(obj map[string]interface{}, vcx *ValidatorCo
 			}
 		}
 		if !vcx.continueAll {
-			return true
+			return
 		}
 	}
-	return false
+}
+
+func checkPropertiesRequiredWithWithout(obj map[string]interface{}, vcx *ValidatorContext, names []string, pvs []*PropertyValidator) ([]string, []*PropertyValidator, bool) {
+	rNames := names
+	rPvs := pvs
+	for i := 0; i < len(rNames); {
+		propertyName := rNames[i]
+		pv := rPvs[i]
+		_, exists := obj[propertyName]
+		if !exists && len(pv.RequiredWith) > 0 && pv.RequiredWith.Evaluate(obj, vcx.ValuesAncestry(), vcx) {
+			vcx.addViolationPropertyForCurrent(propertyName,
+				ternary(pv.RequiredWithMessage == "").string(msgPropertyRequiredWhen, pv.RequiredWithMessage),
+				CodePropertyRequiredWhen)
+			// it's not present but required - leave it in the list
+			i++
+		}
+		if exists && len(pv.UnwantedWith) > 0 && pv.UnwantedWith.Evaluate(obj, vcx.ValuesAncestry(), vcx) {
+			vcx.addViolationPropertyForCurrent(propertyName,
+				ternary(pv.UnwantedWithMessage == "").string(msgPropertyUnwantedWhen, pv.UnwantedWithMessage),
+				CodePropertyUnwantedWhen)
+			// if it's present but unwanted, need to remove it from the list so the value isn't also checked
+			rNames = append(rNames[:i], rNames[i+1:]...)
+			rPvs = append(rPvs[:i], rPvs[i+1:]...)
+		} else {
+			i++
+		}
+		if !vcx.continueAll {
+			break
+		}
+	}
+	return rNames, rPvs, vcx.continueAll
 }
 
 func (v *Validator) orderedProperties(properties Properties) ([]string, []*PropertyValidator) {
 	needsSorting := v.OrderedPropertyChecks
-	names := make([]string, len(properties))
-	validators := make([]*PropertyValidator, len(properties))
+	useProperties := propertiesRepo.fetch(properties)
+	names := make([]string, len(useProperties))
+	validators := make([]*PropertyValidator, len(useProperties))
 	i := 0
-	for pn, pv := range properties {
+	for pn, pv := range useProperties {
 		names[i] = pn
 		validators[i] = pv
 		needsSorting = needsSorting || pv.Order != 0
@@ -604,12 +645,4 @@ func (v *Validator) IsOrderedPropertyChecks() bool {
 		return false
 	}
 	return true
-}
-
-func (p Properties) clone() Properties {
-	result := make(Properties, len(p))
-	for k, v := range p {
-		result[k] = v
-	}
-	return result
 }

@@ -71,10 +71,12 @@ func (pv *PropertyValidator) MarshalJSON() ([]byte, error) {
 
 func (pv *PropertyValidator) toJSON() (map[string]interface{}, error) {
 	result := map[string]interface{}{
-		ptyNameType:      pv.Type.String(),
-		ptyNameMandatory: pv.Mandatory,
-		ptyNameNotNull:   pv.NotNull,
-		ptyNameOrder:     pv.Order,
+		ptyNameType:                pv.Type.String(),
+		ptyNameMandatory:           pv.Mandatory,
+		ptyNameNotNull:             pv.NotNull,
+		ptyNameOrder:               pv.Order,
+		ptyNameRequiredWithMessage: pv.RequiredWithMessage,
+		ptyNameUnwantedWithMessage: pv.UnwantedWithMessage,
 	}
 	if len(pv.Constraints) > 0 {
 		cs, err := constraintsToJson(pv.Constraints)
@@ -103,6 +105,12 @@ func (pv *PropertyValidator) toJSON() (map[string]interface{}, error) {
 			arr[i] = s
 		}
 		result[ptyNameUnwantedConditions] = arr
+	}
+	if pv.RequiredWith != nil {
+		result[ptyNameRequiredWith] = pv.RequiredWith.String()
+	}
+	if pv.UnwantedWith != nil {
+		result[ptyNameUnwantedWith] = pv.UnwantedWith.String()
 	}
 	if pv.ObjectValidator != nil {
 		ov, err := pv.ObjectValidator.toJSON()

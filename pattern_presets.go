@@ -192,7 +192,7 @@ func getBuiltInPresets() map[string]Preset {
 			msg:   msgPresetBase64URL,
 		},
 		presetTokenCard: &patternPreset{
-			regex:       regexp.MustCompile("^(([0-9]{12,19})|([0-9]{4} [0-9]{4} [0-9]{4})|([0-9]{4} [0-9]{4} [0-9]{4} [0-9]{1,4})|([0-9]{4} [0-9]{4} [0-9]{4} [0-9]{4} [0-9]{1,3}))$"),
+			regex:       regexp.MustCompile("^(([0-9]{10,19})|([0-9]{4} [0-9]{4} [0-9]{2,4})|([0-9]{4} [0-9]{4} [0-9]{4} [0-9]{1,4})|([0-9]{4} [0-9]{4} [0-9]{4} [0-9]{4} [0-9]{1,3}))$"),
 			postChecker: cardNumber{},
 			msg:         msgValidCardNumber,
 		},

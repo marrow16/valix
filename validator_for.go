@@ -2,15 +2,19 @@ package valix
 
 import (
 	"errors"
+	"fmt"
 	"reflect"
 	"strings"
 )
 
 const (
-	tagNameV8n  = "v8n"
-	tagNameJson = "json"
+	tagNameV8n   = "v8n"
+	tagNameV8nAs = "v8n-as"
+	tagNameJson  = "json"
 )
 
+// ValidatorForOptions is used by ValidatorFor and MustCompileValidatorFor to set
+// the initial overall validator for the struct
 type ValidatorForOptions struct {
 	// IgnoreUnknownProperties is whether to ignore unknown properties (default false)
 	//
@@ -43,7 +47,9 @@ type ValidatorForOptions struct {
 }
 
 const (
-	errMsgValidatorForStructOnly = "ValidatorFor can only be used with struct arg"
+	errMsgValidatorForStructOnly   = "ValidatorFor can only be used with struct arg"
+	errMsgCannotFindPropertyInRepo = tagNameV8nAs + " tag cannot find property name '%s' in properties repository"
+	errMsgIncompatiblePropertyType = tagNameV8nAs + " tag has incompatible field type for property name '%s'"
 )
 
 // ValidatorFor creates a Validator for a specified struct
@@ -108,8 +114,8 @@ func emptyValidatorFromOptions(options *ValidatorForOptions) *Validator {
 }
 
 func buildPropertyValidators(ty reflect.Type) (Properties, error) {
-	result := Properties{}
 	cnt := ty.NumField()
+	result := make(Properties, cnt)
 	newTy := reflect.New(ty)
 	for i := 0; i < cnt; i++ {
 		fld := ty.Field(i)
@@ -127,25 +133,20 @@ func buildPropertyValidators(ty reflect.Type) (Properties, error) {
 
 func propertyValidatorFromField(fld reflect.StructField) (*PropertyValidator, string, error) {
 	name := getFieldName(fld)
-	result := &PropertyValidator{
-		Type:        detectFieldType(fld),
-		NotNull:     false,
-		Mandatory:   false,
-		Constraints: Constraints{},
-		ObjectValidator: &Validator{
-			IgnoreUnknownProperties: false,
-			Properties:              Properties{},
-			Constraints:             Constraints{},
-			AllowArray:              false,
-			DisallowObject:          false,
-		},
+	result, err := initialPropertyValidator(fld, name)
+	if err != nil {
+		return nil, name, err
 	}
-	if err := result.processV8nTag(fld); err != nil {
+	if err := result.processV8nTag(fld.Name, name, fld); err != nil {
+		return nil, name, err
+	}
+	if err := customTagsRegistry.processField(fld, result); err != nil {
 		return nil, name, err
 	}
 	if err := result.processOasTag(fld); err != nil {
 		return nil, name, err
 	}
+
 	if fld.Type.Kind() == reflect.Struct && result.Type == JsonObject {
 		ptys, err := buildPropertyValidators(fld.Type)
 		if err != nil {
@@ -166,6 +167,50 @@ func propertyValidatorFromField(fld reflect.StructField) (*PropertyValidator, st
 		result.ObjectValidator = nil
 	}
 	return result, name, nil
+}
+
+func initialPropertyValidator(fld reflect.StructField, name string) (*PropertyValidator, error) {
+	jsonFldType := detectFieldType(fld)
+	if tag, ok := fld.Tag.Lookup(tagNameV8nAs); ok {
+		asName := ternary(tag == "").string(name, tag)
+		result := propertiesRepo.getNamed(asName)
+		if result == nil {
+			return nil, fmt.Errorf(errMsgCannotFindPropertyInRepo, asName)
+		}
+		result = result.Clone()
+		// check types are compatible...
+		if result.Type != JsonAny && result.Type != jsonFldType {
+			return nil, fmt.Errorf(errMsgIncompatiblePropertyType, asName)
+		}
+		result.Type = jsonFldType
+		// make sure constraints and object validator are initialised...
+		if result.Constraints == nil {
+			result.Constraints = Constraints{}
+		}
+		if result.ObjectValidator == nil {
+			result.ObjectValidator = &Validator{
+				IgnoreUnknownProperties: false,
+				Properties:              Properties{},
+				Constraints:             Constraints{},
+				AllowArray:              false,
+				DisallowObject:          false,
+			}
+		}
+		return result, nil
+	}
+	return &PropertyValidator{
+		Type:        jsonFldType,
+		NotNull:     false,
+		Mandatory:   false,
+		Constraints: Constraints{},
+		ObjectValidator: &Validator{
+			IgnoreUnknownProperties: false,
+			Properties:              Properties{},
+			Constraints:             Constraints{},
+			AllowArray:              false,
+			DisallowObject:          false,
+		},
+	}, nil
 }
 
 func getFieldName(fld reflect.StructField) string {

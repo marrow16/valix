@@ -9,18 +9,26 @@ import (
 )
 
 const (
-	tagTokenNotNull           = "notNull"
-	tagTokenNullable          = "nullable"
-	tagTokenMandatory         = "mandatory"
-	tagTokenRequired          = "required"
-	tagTokenOptional          = "optional"
-	tagTokenType              = "type"
-	tagTokenConstraint        = "constraint"
-	tagTokenConstraints       = "constraints"
-	tagTokenConstraintsPrefix = tagTokenConstraints + ":"
-	tagTokenOrder             = "order"
-	tagTokenWhen              = "when"
-	tagTokenUnwanted          = "unwanted"
+	tagTokenNotNull            = "notNull"
+	tagTokenNullable           = "nullable"
+	tagTokenMandatory          = "mandatory"
+	tagTokenRequired           = "required"
+	tagTokenOptional           = "optional"
+	tagTokenType               = "type"
+	tagTokenConstraint         = "constraint"
+	tagTokenConstraints        = "constraints"
+	tagTokenConstraintsPrefix  = tagTokenConstraints + ":"
+	tagTokenOrder              = "order"
+	tagTokenWhen               = "when"
+	tagTokenUnwanted           = "unwanted"
+	tagTokenRequiredWith       = "required_with"
+	tagTokenRequiredWithAlt    = "+"
+	tagTokenRequiredWithMsg    = "required_with_msg"
+	tagTokenRequiredWithAltMsg = "+msg"
+	tagTokenUnwantedWith       = "unwanted_with"
+	tagTokenUnwantedWithAlt    = "-"
+	tagTokenUnwantedWithMsg    = "unwanted_with_msg"
+	tagTokenUnwantedWithAltMsg = "-msg"
 	// object level tag items...
 	tagTokenObjPrefix                  = "obj."
 	tagTokenObjIgnoreUnknownProperties = tagTokenObjPrefix + "ignoreUnknownProperties"
@@ -50,6 +58,7 @@ const (
 	msgPropertyNotObject            = msgV8nPrefix + "token '%s' cannot be used on non object/array field"
 	msgUnclosed                     = "unclosed parenthesis or quote started at position %d"
 	msgUnopened                     = "unopened parenthesis at position %d"
+	msgWrapped                      = "field '%s' (property '%s') - %s"
 )
 
 var (
@@ -58,20 +67,30 @@ var (
 	regexpKind = reflect.TypeOf(rx).Elem().Kind()
 )
 
-func (pv *PropertyValidator) processV8nTag(fld reflect.StructField) error {
+func (pv *PropertyValidator) processV8nTag(fieldName string, propertyName string, fld reflect.StructField) error {
 	if tag, ok := fld.Tag.Lookup(tagNameV8n); ok {
-		tagItems, err := parseCommas(tag)
-		if err != nil {
-			return err
-		}
-		return pv.processTagItems(tagItems)
+		return pv.processV8nTagValue(fieldName, propertyName, tag)
 	}
 	return nil
 }
 
-func (pv *PropertyValidator) processTagItems(tagItems []string) error {
-	for _, ti := range tagItems {
-		tagItem := strings.Trim(ti, " ")
+func (pv *PropertyValidator) processV8nTagValue(fieldName string, propertyName string, tagValue string) error {
+	tagItems, err := parseCommas(tagValue)
+	if err != nil {
+		return fmt.Errorf(msgWrapped, fieldName, propertyName, err.Error())
+	}
+	tagItems, err = tagAliasesRepo.resolve(tagItems)
+	if err != nil {
+		return fmt.Errorf(msgWrapped, fieldName, propertyName, err.Error())
+	}
+	if err := pv.processTagItems(fieldName, propertyName, tagItems); err != nil {
+		return fmt.Errorf(msgWrapped, fieldName, propertyName, err.Error())
+	}
+	return nil
+}
+
+func (pv *PropertyValidator) processTagItems(fieldName string, propertyName string, tagItems []string) error {
+	for _, tagItem := range tagItems {
 		if tagItem != "" {
 			cs, is, err := isConstraintsList(tagItem)
 			if err != nil {
@@ -82,7 +101,7 @@ func (pv *PropertyValidator) processTagItems(tagItems []string) error {
 						return e2
 					}
 				}
-			} else if e3 := pv.addTagItem(tagItem); e3 != nil {
+			} else if e3 := pv.addTagItem(fieldName, propertyName, tagItem); e3 != nil {
 				return e3
 			}
 		}
@@ -106,7 +125,7 @@ func isConstraintsList(tagItem string) ([]string, bool, error) {
 	return nil, false, nil
 }
 
-func (pv *PropertyValidator) addTagItem(tagItem string) (result error) {
+func (pv *PropertyValidator) addTagItem(fieldName string, propertyName string, tagItem string) (result error) {
 	result = nil
 	tagToken := tagItem
 	tagValue := ""
@@ -173,6 +192,34 @@ func (pv *PropertyValidator) addTagItem(tagItem string) (result error) {
 			result = pv.setTagUnwanted(tagValue)
 		}
 		break
+	case tagTokenRequiredWith, tagTokenRequiredWithAlt:
+		noColonErr = !hasColon
+		if !noColonErr {
+			result = pv.addRequiredWith(tagValue)
+		}
+	case tagTokenUnwantedWith, tagTokenUnwantedWithAlt:
+		noColonErr = !hasColon
+		if !noColonErr {
+			result = pv.addUnwantedWith(tagValue)
+		}
+	case tagTokenRequiredWithMsg, tagTokenRequiredWithAltMsg:
+		noColonErr = !hasColon
+		if !noColonErr {
+			if isQuotedStr(tagValue, true) {
+				pv.RequiredWithMessage = tagValue[1 : len(tagValue)-1]
+			} else {
+				pv.RequiredWithMessage = tagValue
+			}
+		}
+	case tagTokenUnwantedWithMsg, tagTokenUnwantedWithAltMsg:
+		noColonErr = !hasColon
+		if !noColonErr {
+			if isQuotedStr(tagValue, true) {
+				pv.UnwantedWithMessage = tagValue[1 : len(tagValue)-1]
+			} else {
+				pv.UnwantedWithMessage = tagValue
+			}
+		}
 	case tagTokenObjIgnoreUnknownProperties:
 		colonErr = hasColon
 		if !colonErr {
@@ -211,6 +258,8 @@ func (pv *PropertyValidator) addTagItem(tagItem string) (result error) {
 			if err := pv.addConstraint(tagItem); err != nil {
 				result = err
 			}
+		} else if ok, err := customTagTokenRegistry.handle(tagToken, hasColon, tagValue, pv, propertyName, fieldName); ok {
+			result = err
 		} else {
 			result = fmt.Errorf(msgUnknownTokenInTag, tagToken)
 		}
@@ -325,6 +374,36 @@ func (pv *PropertyValidator) addConstraint(tagValue string) error {
 		return err
 	}
 	pv.Constraints = append(pv.Constraints, c)
+	return nil
+}
+
+func (pv *PropertyValidator) addRequiredWith(tagValue string) error {
+	expr, err := ParseExpression(tagValue)
+	if err != nil {
+		return err
+	}
+	if pv.RequiredWith == nil {
+		pv.RequiredWith = expr
+	} else {
+		for _, x := range expr {
+			pv.RequiredWith = append(pv.RequiredWith, x)
+		}
+	}
+	return nil
+}
+
+func (pv *PropertyValidator) addUnwantedWith(tagValue string) error {
+	expr, err := ParseExpression(tagValue)
+	if err != nil {
+		return err
+	}
+	if pv.UnwantedWith == nil {
+		pv.UnwantedWith = expr
+	} else {
+		for _, x := range expr {
+			pv.UnwantedWith = append(pv.UnwantedWith, x)
+		}
+	}
 	return nil
 }
 
@@ -668,7 +747,8 @@ func firstValidColonAt(str string) int {
 		if ch == ':' {
 			result = i
 			break
-		} else if !(ch == ' ' || ch == '_' || ch == '.' || (ch >= '0' && ch <= '9') || (ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z')) {
+		} else if !(ch == ' ' || ch == '_' || ch == '.' || ch == '+' || ch == '-' ||
+			(ch >= '0' && ch <= '9') || (ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z')) {
 			break
 		}
 	}
@@ -684,8 +764,7 @@ func parseCommas(str string) ([]string, error) {
 		switch r {
 		case ',':
 			if !stk.inAny() {
-				part := string(runes[lastTokenAt:i])
-				result = append(result, strings.Trim(part, " "))
+				result = append(result, strings.Trim(string(runes[lastTokenAt:i]), " "))
 				lastTokenAt = i + 1
 			}
 			break
@@ -700,8 +779,7 @@ func parseCommas(str string) ([]string, error) {
 		return nil, fmt.Errorf(msgUnclosed, stk.current.pos)
 	}
 	if lastTokenAt < len(runes) {
-		last := string(runes[lastTokenAt:])
-		result = append(result, strings.Trim(last, " "))
+		result = append(result, strings.Trim(string(runes[lastTokenAt:]), " "))
 	}
 	return result, nil
 }

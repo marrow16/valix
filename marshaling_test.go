@@ -64,11 +64,14 @@ func TestValidator_MarshalJSON(t *testing.T) {
 					&StringNotEmpty{Message: "message 4"},
 					&StringPattern{Message: "message 5", Regexp: *regexp.MustCompile("^([A-Z]+)$")},
 				},
-				Order:              1,
-				WhenConditions:     []string{"when_foo"},
-				UnwantedConditions: []string{"!when_foo"},
-				ObjectValidator:    nil,
-				OasInfo:            &OasInfo{Deprecated: true},
+				Order:               1,
+				WhenConditions:      []string{"when_foo"},
+				UnwantedConditions:  []string{"!when_foo"},
+				RequiredWith:        MustParseExpression("(foo || bar) && !(foo && bar)"),
+				RequiredWithMessage: "only sometimes",
+				UnwantedWith:        MustParseExpression("(foo || bar) && !(foo && bar)"),
+				ObjectValidator:     nil,
+				OasInfo:             &OasInfo{Deprecated: true},
 			},
 			"bar": {
 				Type:      JsonObject,
@@ -115,8 +118,8 @@ func TestValidator_MarshalJSON(t *testing.T) {
 	err = json.Unmarshal(b, &obj)
 	require.Nil(t, err)
 	require.NotNil(t, obj)
-	//pretty, _ := json.MarshalIndent(obj, "", "\t")
-	//println(string(pretty[:]))
+	pretty, _ := json.MarshalIndent(obj, "", "\t")
+	println(string(pretty[:]))
 
 	valid, violations := ValidatorValidator.Validate(obj)
 	require.Equal(t, 0, len(violations))
@@ -178,10 +181,12 @@ func TestValidator_MarshalJSON(t *testing.T) {
 	require.Equal(t, 3, len(sub))
 
 	pty := sub["foo"].(map[string]interface{})
-	require.Equal(t, 9, len(pty))
+	require.Equal(t, 13, len(pty))
 	require.Equal(t, "string", pty[ptyNameType])
 	require.Equal(t, true, pty[ptyNameMandatory])
 	require.Equal(t, true, pty[ptyNameNotNull])
+	require.Equal(t, "(foo || bar) && !(foo && bar)", pty[ptyNameRequiredWith])
+	require.Equal(t, "(foo || bar) && !(foo && bar)", pty[ptyNameUnwantedWith])
 	require.Equal(t, float64(1), pty[ptyNameOrder])
 	_, present := pty[ptyNameObjectValidator]
 	require.False(t, present)
@@ -212,7 +217,7 @@ func TestValidator_MarshalJSON(t *testing.T) {
 	require.True(t, subSub[ptyNameOasDeprecated].(bool))
 
 	pty = sub["bar"].(map[string]interface{})
-	require.Equal(t, 6, len(pty))
+	require.Equal(t, 8, len(pty))
 	require.Equal(t, "object", pty[ptyNameType])
 	require.Equal(t, true, pty[ptyNameMandatory])
 	require.Equal(t, true, pty[ptyNameNotNull])
@@ -348,7 +353,7 @@ func TestPropertyValidator_MarshalJSON_WithAllCommonConstraints(t *testing.T) {
 	err = json.Unmarshal(b, &obj)
 	require.Nil(t, err)
 	require.NotNil(t, obj)
-	require.Equal(t, 5, len(obj))
+	require.Equal(t, 7, len(obj))
 
 	constraints := obj[ptyNameConstraints].([]interface{})
 	require.Equal(t, len(all), len(constraints))

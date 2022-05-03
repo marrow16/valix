@@ -174,7 +174,7 @@ func TestRegisteredPresetUsedAsV8nTag(t *testing.T) {
 
 	_, err := ValidatorFor(FooTest{}, nil)
 	require.NotNil(t, err)
-	require.Equal(t, fmt.Sprintf(msgUnknownConstraint, testName), err.Error())
+	require.Equal(t, fmt.Sprintf(msgWrapped, "Foo", "foo", fmt.Sprintf(msgUnknownConstraint, testName)), err.Error())
 
 	RegisterPresetPattern(testName, nil, "", nil, true)
 	v, err := ValidatorFor(FooTest{}, nil)
@@ -1275,6 +1275,8 @@ func TestCardNumberPreset(t *testing.T) {
 		"6382441564848878": true,
 		"6371830528023664": true,
 		// valid all zeroes...
+		"0000000000":          true,
+		"00000000000":         true,
 		"000000000000":        true,
 		"0000000000000":       true,
 		"00000000000000":      true,
@@ -1284,7 +1286,7 @@ func TestCardNumberPreset(t *testing.T) {
 		"000000000000000000":  true,
 		"0000000000000000000": true,
 		// invalid all zeroes...
-		"00000000000":          false,
+		"000000000":            false,
 		"00000000000000000000": false,
 		// invalids...
 		"1234567890123":        false, // too short
@@ -1315,6 +1317,8 @@ func TestCardNumberPreset(t *testing.T) {
 		"5020 7998 6746 4796":     true,
 		"4917 9585 3121 5104":     true,
 		"6387 2947 3492 3401":     true,
+		"0000 0000 00":            true,
+		"0000 0000 000":           true,
 		"0000 0000 0000":          true,
 		"0000 0000 0000 0":        true,
 		"0000 0000 0000 00":       true,

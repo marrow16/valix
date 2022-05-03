@@ -167,6 +167,8 @@ var internalMessages = map[string]string{
 	msgInvalidProperty:                msgInvalidProperty,
 	msgInvalidPropertyName:            msgInvalidPropertyName,
 	msgPropertyValueMustBeObject:      msgPropertyValueMustBeObject,
+	msgPropertyRequiredWhen:           msgPropertyRequiredWhen,
+	msgPropertyUnwantedWhen:           msgPropertyUnwantedWhen,
 	msgValueCannotBeNull:              msgValueCannotBeNull,
 	msgValueMustBeObject:              msgValueMustBeObject,
 	msgValueMustBeArray:               msgValueMustBeArray,

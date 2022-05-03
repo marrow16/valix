@@ -224,6 +224,16 @@ func (vc *ValidatorContext) AncestorValue(level uint) (interface{}, bool) {
 	return nil, false
 }
 
+// ValuesAncestry returns the values ancestry (where the first item is parent, second is grandparent etc.)
+func (vc *ValidatorContext) ValuesAncestry() []interface{} {
+	l := len(vc.pathStack)
+	result := make([]interface{}, l)
+	for i, sti := range vc.pathStack {
+		result[l-1-i] = sti.value
+	}
+	return result
+}
+
 // SetCondition sets a specified condition (token)
 //
 // Note: if the condition (token) is prefixed with '!' then this is the same as calling ClearCondition

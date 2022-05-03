@@ -579,3 +579,51 @@ func (i *dummyI18nProvider) ContextFromRequest(r *http.Request) I18nContext {
 func (i *dummyI18nProvider) DefaultContext() I18nContext {
 	return nil
 }
+
+func TestValuesAncestry(t *testing.T) {
+	obj3 := map[string]interface{}{
+		"level": 3,
+	}
+	obj2 := map[string]interface{}{
+		"foo":   obj3,
+		"level": 2,
+	}
+	arr2 := []interface{}{obj2}
+	obj1 := map[string]interface{}{
+		"foo":   arr2,
+		"level": 1,
+	}
+	rootObj := map[string]interface{}{
+		"foo":   obj1,
+		"level": 0,
+	}
+	vcx := newValidatorContext(rootObj, nil, false, nil)
+
+	vcx.pushPathProperty("foo", obj1, nil)
+	vcx.pushPathProperty("foo", arr2, nil)
+	vcx.pushPathIndex(0, obj2, nil)
+	vcx.pushPathProperty("foo", obj3, nil)
+
+	values := vcx.ValuesAncestry()
+	require.Equal(t, 5, len(values))
+
+	require.Equal(t, rootObj, values[4])
+	av, _ := vcx.AncestorValue(3)
+	require.Equal(t, rootObj, av)
+
+	require.Equal(t, obj1, values[3])
+	av, _ = vcx.AncestorValue(2)
+	require.Equal(t, obj1, av)
+
+	require.Equal(t, arr2, values[2])
+	av, _ = vcx.AncestorValue(1)
+	require.Equal(t, arr2, av)
+
+	require.Equal(t, obj2, values[1])
+	av, _ = vcx.AncestorValue(0)
+	require.Equal(t, obj2, av)
+
+	require.Equal(t, obj3, values[0])
+	av = vcx.CurrentValue()
+	require.Equal(t, obj3, av)
+}
