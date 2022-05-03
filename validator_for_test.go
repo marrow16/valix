@@ -308,7 +308,7 @@ func TestValidatorForWithBadOrderTagValue(t *testing.T) {
 	v, err := ValidatorFor(myStruct, nil)
 	require.Nil(t, v)
 	require.NotNil(t, err)
-	require.Equal(t, fmt.Sprintf(msgUnknownTagValue, tagTokenOrder, "int", "not_a_number"), err.Error())
+	require.Equal(t, fmt.Sprintf(msgWrapped, "Aaa", "aaa", fmt.Sprintf(msgUnknownTagValue, tagTokenOrder, "int", "not_a_number")), err.Error())
 }
 
 type subStruct struct {
@@ -340,7 +340,7 @@ func TestValidatorForWithNestedStructTagError(t *testing.T) {
 	}{}
 	_, err := ValidatorFor(myStruct, nil)
 	require.NotNil(t, err)
-	require.Equal(t, fmt.Sprintf(msgUnknownTokenInTag, "BAD_TOKEN"), err.Error())
+	require.Equal(t, fmt.Sprintf(msgWrapped, "Sub2", "Sub2", fmt.Sprintf(msgUnknownTokenInTag, "BAD_TOKEN")), err.Error())
 }
 
 func TestValidatorForWithNestedStruct_SetsValidatorTypeCorrectly(t *testing.T) {
@@ -408,7 +408,7 @@ func TestValidatorForFailsWithBadTagInSliceStruct(t *testing.T) {
 		} `json:"slice"`
 	}{}, nil)
 	require.NotNil(t, err)
-	require.Equal(t, fmt.Sprintf(msgUnknownTokenInTag, "bad_token"), err.Error())
+	require.Equal(t, fmt.Sprintf(msgWrapped, "Foo", "Foo", fmt.Sprintf(msgUnknownTokenInTag, "bad_token")), err.Error())
 }
 
 func TestValidatorForDeepStruct(t *testing.T) {
@@ -597,7 +597,7 @@ func TestConstraintTagWithDefinedConstraintWithUnexportedField(t *testing.T) {
 	v, err = ValidatorFor(myStruct2{}, nil)
 	require.Nil(t, v)
 	require.NotNil(t, err)
-	require.Equal(t, fmt.Sprintf(msgConstraintFieldNotExported, "MyDefined", "msg"), err.Error())
+	require.Equal(t, fmt.Sprintf(msgWrapped, "Foo", "foo", fmt.Sprintf(msgConstraintFieldNotExported, "MyDefined", "msg")), err.Error())
 }
 
 func TestValidatorForStopsOnFirst(t *testing.T) {
@@ -618,4 +618,41 @@ func TestValidatorForStopsOnFirst(t *testing.T) {
 	ok, violations, _ = v.ValidateStringInto(json, s)
 	require.False(t, ok)
 	require.Equal(t, 3, len(violations))
+}
+
+func TestValidatorForWithPropertiesFromRepo(t *testing.T) {
+	propertiesRepo.reset()
+	defer propertiesRepo.reset()
+
+	type myStruct struct {
+		Fooey string `json:"fooey" v8n-as:"foo"`
+	}
+	v, err := ValidatorFor(myStruct{}, nil)
+	require.NotNil(t, err)
+	require.Equal(t, fmt.Sprintf(errMsgCannotFindPropertyInRepo, "foo"), err.Error())
+	require.Nil(t, v)
+
+	RegisterProperties(Properties{
+		"foo": {
+			Type: JsonInteger,
+		},
+	})
+	v, err = ValidatorFor(myStruct{}, nil)
+	require.NotNil(t, err)
+	require.Equal(t, fmt.Sprintf(errMsgIncompatiblePropertyType, "foo"), err.Error())
+	require.Nil(t, v)
+
+	propertiesRepo.reset()
+	RegisterProperties(Properties{
+		"foo": {
+			Type:                JsonAny,
+			Mandatory:           true,
+			RequiredWithMessage: "oh fooey",
+		},
+	})
+	v, err = ValidatorFor(myStruct{}, nil)
+	require.Nil(t, err)
+	require.True(t, v.Properties["fooey"].Mandatory)
+	require.Equal(t, "oh fooey", v.Properties["fooey"].RequiredWithMessage)
+	require.Nil(t, v.Properties["fooey"].ObjectValidator)
 }

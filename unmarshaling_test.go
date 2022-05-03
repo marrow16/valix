@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"golang.org/x/text/unicode/norm"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -154,6 +155,8 @@ const (
 				],
 				"mandatory": true,
 				"mandatoryWhen": ["want_foo"],
+				"requiredWith": "(foo || bar) && !(foo && bar)",
+				"requiredWithMessage": "only sometimes",
 				"notNull": true,
 				"oasInfo": {
 					"deprecated": true,
@@ -280,6 +283,8 @@ func TestValidatorUnmarshal(t *testing.T) {
 	require.True(t, fooConstraint2.Stop)
 	require.Equal(t, "message 5", fooConstraint2.Message)
 	require.Equal(t, "^([A-Z]+)$", fooConstraint2.Regexp.String())
+	require.Equal(t, 2, len(foo.RequiredWith))
+	require.Equal(t, "only sometimes", foo.RequiredWithMessage)
 
 	bar := v.Properties["bar"]
 	require.Equal(t, 1, len(bar.Constraints))
@@ -1000,4 +1005,74 @@ func TestUnmarshalConstraintWithBadWhens(t *testing.T) {
 	constraint, err = unmarshalConstraint(obj)
 	require.NotNil(t, err)
 	require.Equal(t, fmt.Sprintf(errMsgFieldExpectedType, ptyNameWhenConditions, "array of strings"), err.Error())
+}
+
+func TestUnmarshalPropertyValidatorWithBadWithExprs(t *testing.T) {
+	pv := &PropertyValidator{}
+	js := `{
+		"requiredWith": ""
+	}`
+	err := json.Unmarshal([]byte(js), pv)
+	require.Nil(t, err)
+	require.NotNil(t, pv.RequiredWith)
+	require.Equal(t, 0, len(pv.RequiredWith))
+
+	pv.RequiredWith = nil
+	js = `{
+		"requiredWith": null
+	}`
+	err = json.Unmarshal([]byte(js), pv)
+	require.Nil(t, err)
+	require.NotNil(t, pv.RequiredWith)
+	require.Equal(t, 0, len(pv.RequiredWith))
+
+	js = `{
+		"requiredWith": 0
+	}`
+	err = json.Unmarshal([]byte(js), pv)
+	require.NotNil(t, err)
+
+	// with bad expression (missing boolean operators)...
+	js = `{
+		"requiredWith": "foo bar baz"
+	}`
+	err = json.Unmarshal([]byte(js), pv)
+	require.NotNil(t, err)
+	require.True(t, strings.Contains(err.Error(), fmt.Sprintf("at position %d", 4)))
+
+	pv.RequiredWith = nil
+	js = `{
+		"requiredWith": "foo || !bar"
+	}`
+	err = json.Unmarshal([]byte(js), pv)
+	require.Nil(t, err)
+	require.NotNil(t, pv.RequiredWith)
+	require.Equal(t, 2, len(pv.RequiredWith))
+	opt := pv.RequiredWith[0].(*OtherProperty)
+	require.Equal(t, "foo", opt.Name)
+	opt = pv.RequiredWith[1].(*OtherProperty)
+	require.Equal(t, "bar", opt.Name)
+	require.True(t, opt.Not)
+	require.Equal(t, Or, opt.Op)
+}
+
+func TestPropertyValidatorValidatorFailsWithBadWiths(t *testing.T) {
+	obj := jsonObject(`{
+		"requiredWith": null
+	}`)
+	ok, violations := PropertyValidatorValidator.Validate(obj)
+	require.True(t, ok)
+	require.Equal(t, 0, len(violations))
+
+	obj[ptyNameRequiredWith] = 0
+	ok, violations = PropertyValidatorValidator.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, fmt.Sprintf(fmtMsgValueExpectedType, "string"), violations[0].Message)
+
+	obj[ptyNameRequiredWith] = "foo bar"
+	ok, violations = PropertyValidatorValidator.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.True(t, strings.Contains(violations[0].Message, fmt.Sprintf("at position %d", 4)))
 }

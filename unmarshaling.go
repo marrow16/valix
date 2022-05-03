@@ -30,6 +30,10 @@ const (
 	ptyNameNotNull                 = "notNull"
 	ptyNameOrder                   = "order"
 	ptyNameUnwantedConditions      = "unwantedConditions"
+	ptyNameRequiredWith            = "requiredWith"
+	ptyNameRequiredWithMessage     = "requiredWithMessage"
+	ptyNameUnwantedWith            = "unwantedWith"
+	ptyNameUnwantedWithMessage     = "unwantedWithMessage"
 	ptyNameObjectValidator         = "objectValidator"
 	ptyNameName                    = "name"
 	ptyNameFields                  = "fields"
@@ -190,6 +194,32 @@ func init() {
 					&ArrayOf{Type: JsonString.String(), AllowNullElement: false},
 				},
 			},
+			ptyNameRequiredWith: {
+				Type:      JsonString,
+				Mandatory: false,
+				NotNull:   false,
+				Constraints: Constraints{
+					&parseCheckPropertiesExpression{pty: ptyNameRequiredWith},
+				},
+			},
+			ptyNameRequiredWithMessage: {
+				Type:      JsonString,
+				Mandatory: false,
+				NotNull:   false,
+			},
+			ptyNameUnwantedWith: {
+				Type:      JsonString,
+				Mandatory: false,
+				NotNull:   false,
+				Constraints: Constraints{
+					&parseCheckPropertiesExpression{pty: ptyNameUnwantedWith},
+				},
+			},
+			ptyNameUnwantedWithMessage: {
+				Type:      JsonString,
+				Mandatory: false,
+				NotNull:   false,
+			},
 			ptyNameOasInfo: {
 				Type:            JsonObject,
 				Mandatory:       false,
@@ -313,6 +343,24 @@ func init() {
 	}
 	// prevent initialisation loop...
 	PropertyValidatorValidator.Properties[ptyNameObjectValidator].ObjectValidator = ValidatorValidator
+}
+
+type parseCheckPropertiesExpression struct {
+	pty string
+}
+
+func (ck *parseCheckPropertiesExpression) Check(value interface{}, vcx *ValidatorContext) (bool, string) {
+	if str, ok := value.(string); ok {
+		_, _, err := parseExpressionTokens(str)
+		if err != nil {
+			return false, fmt.Sprintf(ck.GetMessage(vcx)+" - %s", err.Error())
+		}
+	}
+	return true, ""
+}
+
+func (ck *parseCheckPropertiesExpression) GetMessage(tcx I18nContext) string {
+	return fmt.Sprintf("Property '%s' must be a valid properties expression", ck.pty)
 }
 
 func validatorPropertiesCheck(value interface{}, vcx *ValidatorContext, this *CustomConstraint) (bool, string) {
@@ -654,5 +702,19 @@ func (c *StringValidUnicodeNormalization) UnmarshalJSON(data []byte) error {
 			return fmt.Errorf(errMsgFieldExpectedType, constraintPtyNameStop, "string (\"NFC\", \"NFD\", \"NFKC\" or \"NFKD\")")
 		}
 	}
+	return nil
+}
+
+func (o *OthersExpr) UnmarshalJSON(data []byte) error {
+	expr := ""
+	err := json.Unmarshal(data, &expr)
+	if err != nil {
+		return err
+	}
+	newO, err := ParseExpression(expr)
+	if err != nil {
+		return fmt.Errorf("unable to parse properties expression - %w", err)
+	}
+	*o = newO
 	return nil
 }

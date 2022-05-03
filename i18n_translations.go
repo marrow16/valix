@@ -610,6 +610,20 @@ var defaultInternalTranslator = &internalTranslator{
 			"it": "Il valore della proprietà deve essere un oggetto",
 			"de": "Eigenschaftswert muss ein Objekt sein",
 		},
+		msgPropertyRequiredWhen: {
+			"en": msgPropertyRequiredWhen,
+			"fr": "La propriété est requise selon certains critères",
+			"es": "Se requiere propiedad bajo ciertos criterios",
+			"it": "L'immobile è richiesto secondo determinati criteri",
+			"de": "Eigentum wird unter bestimmten Kriterien benötigt",
+		},
+		msgPropertyUnwantedWhen: {
+			"en": msgPropertyUnwantedWhen,
+			"fr": "La propriété ne doit pas être présente dans certaines conditions",
+			"es": "La propiedad no debe estar presente bajo ciertas condiciones",
+			"it": "L'immobile non deve essere presente in determinate condizioni",
+			"de": "Die Immobilie darf unter bestimmten Voraussetzungen nicht vorhanden sein",
+		},
 		msgRequestBodyEmpty: {
 			"en": msgRequestBodyEmpty,
 			"fr": "Le corps de la requête est vide",

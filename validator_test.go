@@ -2027,6 +2027,87 @@ func TestDifferentPOSTorPATCHMandatoryPropertyRequirements(t *testing.T) {
 	require.True(t, ok)
 }
 
+func TestValidatorWithPropertyRequiredWith(t *testing.T) {
+	validator := &Validator{
+		StopOnFirst: true,
+		Properties: Properties{
+			"foo": {},
+			"bar": {},
+			"baz": {},
+			"qux": {
+				Type:         JsonString,
+				RequiredWith: MustParseExpression("(foo && bar) || (foo && baz) || (bar && baz) && !(foo && bar && baz)"),
+			},
+		},
+	}
+	obj := jsonObject(`{}`)
+
+	ok, violations := validator.Validate(obj)
+	require.True(t, ok)
+	require.Equal(t, 0, len(violations))
+
+	obj["foo"] = "present"
+	ok, violations = validator.Validate(obj)
+	require.True(t, ok)
+	require.Equal(t, 0, len(violations))
+
+	obj["bar"] = "present"
+	ok, violations = validator.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, msgPropertyRequiredWhen, violations[0].Message)
+
+	obj["baz"] = "present"
+	ok, violations = validator.Validate(obj)
+	require.True(t, ok)
+	require.Equal(t, 0, len(violations))
+}
+
+func TestValidatorWithPropertyUnwantedWith(t *testing.T) {
+	validator := &Validator{
+		Properties: Properties{
+			"foo": {},
+			"bar": {},
+			"baz": {},
+			"qux": {
+				Type: JsonString,
+				Constraints: Constraints{
+					// always fail this property - so we can see it doesn't get checked when it's unwanted
+					&FailingConstraint{
+						Message: "Always fails",
+					},
+				},
+				UnwantedWith: MustParseExpression("(foo && bar) || (foo && baz) || (bar && baz) && !(foo && bar && baz)"),
+			},
+		},
+	}
+	obj := jsonObject(`{"qux": "present"}`)
+
+	ok, violations := validator.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, "Always fails", violations[0].Message)
+
+	obj["foo"] = "present"
+	ok, violations = validator.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, "Always fails", violations[0].Message)
+
+	// foo & bar now present - so qux is unwanted and its value should NOT be checked
+	obj["bar"] = "present"
+	ok, violations = validator.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, msgPropertyUnwantedWhen, violations[0].Message)
+
+	obj["baz"] = "present"
+	ok, violations = validator.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, "Always fails", violations[0].Message)
+}
+
 /* Utility structs & functions */
 type myCustomConstraint struct {
 	expectedPath string

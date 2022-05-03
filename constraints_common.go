@@ -1308,7 +1308,7 @@ func (c *DatetimePastOrPresent) GetMessage(tcx I18nContext) string {
 }
 
 // StringValidCardNumber constraint checks that a string contains a valid card number according
-// to Luhn Algorithm and checking that card number is 14 to 19 digits
+// to Luhn Algorithm and checking that card number is 10 to 19 digits
 type StringValidCardNumber struct {
 	// if set to true, AllowSpaces accepts space separators in the card number (but must appear between each 4 digits)
 	AllowSpaces bool
@@ -1342,7 +1342,7 @@ func (c *StringValidCardNumber) Check(v interface{}, vcx *ValidatorContext) (boo
 			buffer = stripBuffer
 			l = len(buffer)
 		}
-		if l < 12 || l > 19 {
+		if l < 10 || l > 19 {
 			vcx.CeaseFurtherIf(c.Stop)
 			return false, c.GetMessage(vcx)
 		}

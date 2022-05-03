@@ -137,6 +137,22 @@ type PropertyValidator struct {
 	WhenConditions Conditions
 	// UnwantedConditions is the condition tokens that dictate when the property should not be present
 	UnwantedConditions Conditions
+	// RequiredWith is an expression of when this property is required according to the presence of other properties
+	//
+	// Use MustParseExpression or ParseExpression to build the expression - or build in code directly using
+	// combinations of OthersExpr, OtherProperty and OtherGrouping
+	RequiredWith OthersExpr
+	// RequiredWithMessage is the violation message to use when the RequiredWith fails (if this string is empty, then
+	// the default message is used)
+	RequiredWithMessage string
+	// UnwantedWith is an expression of when this property is unwanted according to the presence of other properties
+	//
+	// Use MustParseExpression or ParseExpression to build the expression - or build in code directly using
+	// combinations of OthersExpr, OtherProperty and OtherGrouping
+	UnwantedWith OthersExpr
+	// UnwantedWithMessage is the violation message to use when the UnwantedWith fails (if this string is empty, then
+	// the default message is used)
+	UnwantedWithMessage string
 	// OasInfo is additional information (for OpenAPI Specification)
 	OasInfo *OasInfo
 }

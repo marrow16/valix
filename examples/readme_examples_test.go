@@ -456,3 +456,192 @@ func buildTestRequest(t *testing.T, body string) *http.Request {
 	}
 	return req
 }
+
+func TestExampleMutuallyInclusive(t *testing.T) {
+	type ExampleMutuallyInclusive struct {
+		Foo string `json:"foo" v8n:"+:bar, +msg:'foo required when bar present'"`
+		Bar string `json:"bar" v8n:"+:foo, +msg:'bar required when foo present'"`
+	}
+
+	validator, err := valix.ValidatorFor(ExampleMutuallyInclusive{}, nil)
+	require.Nil(t, err)
+
+	req := &ExampleMutuallyInclusive{}
+
+	reader := strings.NewReader(`{
+		"foo": "here"
+	}`)
+	ok, violations, _ := validator.ValidateReaderInto(reader, req)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, "bar required when foo present", violations[0].Message)
+
+	reader = strings.NewReader(`{
+		"bar": "here"
+	}`)
+	ok, violations, _ = validator.ValidateReaderInto(reader, req)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, "foo required when bar present", violations[0].Message)
+
+	reader = strings.NewReader(`{
+		"foo": "here",
+		"bar": "here"
+	}`)
+	ok, violations, _ = validator.ValidateReaderInto(reader, req)
+	require.True(t, ok)
+	require.Equal(t, 0, len(violations))
+}
+
+func TestExampleMutuallyExclusive(t *testing.T) {
+	type ExampleMutuallyExclusive struct {
+		Foo string `json:"foo" v8n:"-:bar, -msg:'foo and bar are mutually exclusive'"`
+		Bar string `json:"bar" v8n:"-:foo, -msg:'foo and bar are mutually exclusive'"`
+	}
+
+	validator, err := valix.ValidatorFor(ExampleMutuallyExclusive{}, nil)
+	require.Nil(t, err)
+
+	req := &ExampleMutuallyExclusive{}
+
+	reader := strings.NewReader(`{
+		"foo": "here",
+		"bar": "here"
+	}`)
+	ok, violations, _ := validator.ValidateReaderInto(reader, req)
+	require.False(t, ok)
+	require.Equal(t, 2, len(violations))
+	require.Equal(t, "foo and bar are mutually exclusive", violations[0].Message)
+	require.True(t, violations[0].Property == "foo" || violations[0].Property == "bar")
+	require.Equal(t, "foo and bar are mutually exclusive", violations[1].Message)
+	require.True(t, violations[1].Property == "foo" || violations[1].Property == "bar")
+
+	reader = strings.NewReader(`{
+		"foo": "here"
+	}`)
+	ok, _, _ = validator.ValidateReaderInto(reader, req)
+	require.True(t, ok)
+
+	reader = strings.NewReader(`{
+		"bar": "here"
+	}`)
+	ok, _, _ = validator.ValidateReaderInto(reader, req)
+	require.True(t, ok)
+}
+
+func TestExampleTwoOfThreeMutuallyInclusive(t *testing.T) {
+	type ExampleTwoOfThreeMutuallyInclusive struct {
+		Foo string `json:"foo" v8n:"+:(bar || baz) && !(bar && baz), -:bar && baz"`
+		Bar string `json:"bar" v8n:"+:(foo || baz) && !(foo && baz), -:foo && baz"`
+		Baz string `json:"baz" v8n:"+:(foo || bar) && !(foo && bar), -:foo && bar"`
+	}
+
+	validator, err := valix.ValidatorFor(ExampleTwoOfThreeMutuallyInclusive{},
+		&valix.ValidatorForOptions{
+			OrderedPropertyChecks: true,
+			StopOnFirst:           true})
+	require.Nil(t, err)
+
+	req := &ExampleTwoOfThreeMutuallyInclusive{}
+
+	reader := strings.NewReader(`{
+		"foo": "here",
+		"bar": "here"
+	}`)
+	ok, _, _ := validator.ValidateReaderInto(reader, req)
+	require.True(t, ok)
+
+	reader = strings.NewReader(`{
+		"foo": "here",
+		"baz": "here"
+	}`)
+	ok, _, _ = validator.ValidateReaderInto(reader, req)
+	require.True(t, ok)
+
+	reader = strings.NewReader(`{
+		"bar": "here",
+		"baz": "here"
+	}`)
+	ok, _, _ = validator.ValidateReaderInto(reader, req)
+	require.True(t, ok)
+
+	reader = strings.NewReader(`{
+		"foo": "here",
+		"bar": "here",
+		"baz": "here"
+	}`)
+	ok, violations, _ := validator.ValidateReaderInto(reader, req)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+
+	reader = strings.NewReader(`{
+		"foo": "here"
+	}`)
+	ok, violations, _ = validator.ValidateReaderInto(reader, req)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+
+	reader = strings.NewReader(`{
+		"bar": "here"
+	}`)
+	ok, violations, _ = validator.ValidateReaderInto(reader, req)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+
+	reader = strings.NewReader(`{
+		"baz": "here"
+	}`)
+	ok, violations, _ = validator.ValidateReaderInto(reader, req)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+}
+
+func TestExampleUpAndDownRequired(t *testing.T) {
+	type ExampleUpAndDownRequired struct {
+		Foo string `json:"foo" v8n:"+:sub.foo"`
+		Bar string `json:"bar" v8n:"+:sub.bar"`
+		Sub struct {
+			SubFoo string `json:"foo" v8n:"+:..foo"`
+			SubBar string `json:"bar" v8n:"+:..bar"`
+		} `json:"sub"`
+	}
+
+	validator, err := valix.ValidatorFor(ExampleUpAndDownRequired{},
+		&valix.ValidatorForOptions{
+			OrderedPropertyChecks: true,
+			StopOnFirst:           true})
+	require.Nil(t, err)
+
+	req := &ExampleUpAndDownRequired{}
+
+	reader := strings.NewReader(`{
+		"sub": {
+			"foo": "here"
+		}
+	}`)
+	ok, violations, _ := validator.ValidateReaderInto(reader, req)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, "foo", violations[0].Property)
+	require.Equal(t, "", violations[0].Path)
+
+	reader = strings.NewReader(`{
+		"foo": "here",
+		"sub": {
+			"foo": "here"
+		}
+	}`)
+	ok, _, _ = validator.ValidateReaderInto(reader, req)
+	require.True(t, ok)
+
+	reader = strings.NewReader(`{
+		"foo": "here",
+		"sub": {
+		}
+	}`)
+	ok, violations, _ = validator.ValidateReaderInto(reader, req)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, "foo", violations[0].Property)
+	require.Equal(t, "sub", violations[0].Path)
+}

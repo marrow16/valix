@@ -63,40 +63,40 @@ func TestArgsStringToArgs(t *testing.T) {
 
 func TestPropertyValidator_ProcessTagItems(t *testing.T) {
 	pv := &PropertyValidator{}
-	err := pv.processTagItems([]string{})
+	err := pv.processTagItems("", "", []string{})
 	require.Nil(t, err)
 
 	require.False(t, pv.Mandatory)
 	require.False(t, pv.NotNull)
-	err = pv.processTagItems([]string{tagTokenNotNull, tagTokenMandatory})
+	err = pv.processTagItems("", "", []string{tagTokenNotNull, tagTokenMandatory})
 	require.True(t, pv.Mandatory)
 	require.True(t, pv.NotNull)
 
 	require.Equal(t, 0, len(pv.Constraints))
-	err = pv.processTagItems([]string{tagTokenConstraintsPrefix + "StringNotEmpty{}"})
+	err = pv.processTagItems("", "", []string{tagTokenConstraintsPrefix + "StringNotEmpty{}"})
 	require.Nil(t, err)
 	require.Equal(t, 1, len(pv.Constraints))
-	err = pv.processTagItems([]string{tagTokenConstraintsPrefix + "&StringNotEmpty{}"})
+	err = pv.processTagItems("", "", []string{tagTokenConstraintsPrefix + "&StringNotEmpty{}"})
 	require.Nil(t, err)
 	require.Equal(t, 2, len(pv.Constraints))
 
-	err = pv.processTagItems([]string{tagTokenConstraintsPrefix + "[StringNotEmpty{}, &StringNotEmpty{}]"})
+	err = pv.processTagItems("", "", []string{tagTokenConstraintsPrefix + "[StringNotEmpty{}, &StringNotEmpty{}]"})
 	require.Nil(t, err)
 	require.Equal(t, 4, len(pv.Constraints))
 
-	err = pv.processTagItems([]string{tagTokenConstraintsPrefix + "[)(]"})
+	err = pv.processTagItems("", "", []string{tagTokenConstraintsPrefix + "[)(]"})
 	require.NotNil(t, err)
 	require.Equal(t, fmt.Sprintf(msgUnopened, 0), err.Error())
 
-	err = pv.processTagItems([]string{tagTokenConstraintsPrefix + "[,]"})
+	err = pv.processTagItems("", "", []string{tagTokenConstraintsPrefix + "[,]"})
 	require.NotNil(t, err)
 	require.Equal(t, fmt.Sprintf(msgUnknownConstraint, ""), err.Error())
 
-	err = pv.processTagItems([]string{"&Bad{}X"})
+	err = pv.processTagItems("", "", []string{"&Bad{}X"})
 	require.NotNil(t, err)
 	require.Equal(t, fmt.Sprintf(msgConstraintsFormat, "&Bad{}X"), err.Error())
 
-	err = pv.processTagItems([]string{"UNKNOWN:x"})
+	err = pv.processTagItems("", "", []string{"UNKNOWN:x"})
 	require.NotNil(t, err)
 	require.Equal(t, fmt.Sprintf(msgUnknownTokenInTag, "UNKNOWN"), err.Error())
 }
@@ -104,34 +104,34 @@ func TestPropertyValidator_ProcessTagItems(t *testing.T) {
 func TestPropertyValidator_AddTagItem(t *testing.T) {
 	pv := &PropertyValidator{}
 	require.False(t, pv.NotNull)
-	err := pv.addTagItem(tagTokenNotNull)
+	err := pv.addTagItem("", "", tagTokenNotNull)
 	require.Nil(t, err)
 	require.True(t, pv.NotNull)
-	err = pv.addTagItem(tagTokenNullable)
+	err = pv.addTagItem("", "", tagTokenNullable)
 	require.Nil(t, err)
 	require.False(t, pv.NotNull)
 
 	require.False(t, pv.Mandatory)
-	err = pv.addTagItem(tagTokenMandatory)
+	err = pv.addTagItem("", "", tagTokenMandatory)
 	require.Nil(t, err)
 	require.True(t, pv.Mandatory)
 
 	pv.Mandatory = false
 	require.Equal(t, 0, len(pv.MandatoryWhen))
-	err = pv.addTagItem(tagTokenMandatory + ":FOO")
+	err = pv.addTagItem("", "", tagTokenMandatory+":FOO")
 	require.Nil(t, err)
 	require.True(t, pv.Mandatory)
 	require.Equal(t, 1, len(pv.MandatoryWhen))
 
-	err = pv.addTagItem(tagTokenMandatory + ":[BAR,BAZ]")
+	err = pv.addTagItem("", "", tagTokenMandatory+":[BAR,BAZ]")
 	require.Nil(t, err)
 	require.True(t, pv.Mandatory)
 	require.Equal(t, 3, len(pv.MandatoryWhen))
 
-	err = pv.addTagItem(tagTokenOptional)
+	err = pv.addTagItem("", "", tagTokenOptional)
 	require.Nil(t, err)
 	require.False(t, pv.Mandatory)
-	err = pv.addTagItem(tagTokenRequired)
+	err = pv.addTagItem("", "", tagTokenRequired)
 	require.Nil(t, err)
 	require.True(t, pv.Mandatory)
 
@@ -147,52 +147,52 @@ func TestPropertyValidator_AddTagItem(t *testing.T) {
 	}
 	for _, ty := range types {
 		t.Run(fmt.Sprintf("AddTagItem-Type-%s", ty), func(t *testing.T) {
-			err = pv.addTagItem(tagTokenType + ":" + ty)
+			err = pv.addTagItem("", "", tagTokenType+":"+ty)
 			require.Nil(t, err)
 			require.Equal(t, pv.Type.String(), ty)
 		})
 	}
 
-	err = pv.addTagItem(tagTokenType + ": BAD")
+	err = pv.addTagItem("", "", tagTokenType+": BAD")
 	require.NotNil(t, err)
 	require.Equal(t, fmt.Sprintf(msgUnknownPropertyType, "BAD"), err.Error())
-	err = pv.addTagItem(tagTokenType + ": " + jsonTypeTokenString + "  ") //extra spaces
+	err = pv.addTagItem("", "", tagTokenType+": "+jsonTypeTokenString+"  ") //extra spaces
 	require.Nil(t, err)
 	require.Equal(t, JsonString, pv.Type)
 
-	err = pv.addTagItem("UNKNOWN:xxx")
+	err = pv.addTagItem("", "", "UNKNOWN:xxx")
 	require.NotNil(t, err)
 }
 
 func TestPropertyValidator_AddTagItemConstraintWithNoCurly(t *testing.T) {
 	pv := &PropertyValidator{}
-	err := pv.addTagItem("&StringNotEmpty")
+	err := pv.addTagItem("", "", "&StringNotEmpty")
 	require.Nil(t, err)
 	require.Equal(t, 1, len(pv.Constraints))
 }
 
 func TestPropertyValidator_AddTagItemConstraintWithSingleValue(t *testing.T) {
 	pv := &PropertyValidator{}
-	err := pv.addTagItem("&StringMinLength{1}")
+	err := pv.addTagItem("", "", "&StringMinLength{1}")
 	require.Nil(t, err)
 	require.Equal(t, 1, len(pv.Constraints))
 	c := pv.Constraints[0].(*StringMinLength)
 	require.Equal(t, 1, c.Value)
 
 	// constraints with tagged default field...
-	err = pv.addTagItem("&StringNotBlank{'test message'}")
+	err = pv.addTagItem("", "", "&StringNotBlank{'test message'}")
 	require.Nil(t, err)
 	require.Equal(t, 2, len(pv.Constraints))
 	c2 := pv.Constraints[1].(*StringNotBlank)
 	require.Equal(t, "test message", c2.Message)
 
-	err = pv.addTagItem("&StringPattern{'^([A-Z]{3})$'}")
+	err = pv.addTagItem("", "", "&StringPattern{'^([A-Z]{3})$'}")
 	require.Nil(t, err)
 	require.Equal(t, 3, len(pv.Constraints))
 	c3 := pv.Constraints[2].(*StringPattern)
 	require.Equal(t, "^([A-Z]{3})$", c3.Regexp.String())
 
-	err = pv.addTagItem("&StringValidToken{['FOO','BAR']}")
+	err = pv.addTagItem("", "", "&StringValidToken{['FOO','BAR']}")
 	require.Nil(t, err)
 	require.Equal(t, 4, len(pv.Constraints))
 	c4 := pv.Constraints[3].(*StringValidToken)
@@ -204,14 +204,14 @@ func TestPropertyValidator_AddTagItemConstraintWithSingleValue(t *testing.T) {
 	defer func() {
 		constraintsRegistry.reset()
 	}()
-	err = pv.addTagItem("&constraintWithOneField{'FOO'}")
+	err = pv.addTagItem("", "", "&constraintWithOneField{'FOO'}")
 	require.Nil(t, err)
 	require.Equal(t, 5, len(pv.Constraints))
 	c5 := pv.Constraints[4].(*constraintWithOneField)
 	require.Equal(t, "FOO", c5.Message)
 
 	// and a constraint that doesn't have a default or 'Value' field...
-	err = pv.addTagItem("&StringLength{1}")
+	err = pv.addTagItem("", "", "&StringLength{1}")
 	require.NotNil(t, err)
 	require.Equal(t, fmt.Sprintf(msgConstraintNoDefaultValue, "StringLength"), err.Error())
 }
@@ -229,9 +229,9 @@ func (c *constraintWithOneField) GetMessage(tcx I18nContext) string {
 
 func TestPropertyValidator_AddTagItemsIgnoresEmpties(t *testing.T) {
 	pv := &PropertyValidator{}
-	err := pv.processTagItems([]string{"", "optional"})
+	err := pv.processTagItems("", "", []string{"", "optional"})
 	require.Nil(t, err)
-	err = pv.processTagItems([]string{"", "optional", ""})
+	err = pv.processTagItems("", "", []string{"", "optional", ""})
 	require.Nil(t, err)
 }
 
@@ -239,25 +239,25 @@ func TestPropertyValidator_AddTagItemConstraint(t *testing.T) {
 	pv := &PropertyValidator{}
 	require.Equal(t, 0, len(pv.Constraints))
 
-	err := pv.addTagItem(tagTokenConstraint + ":StringNotEmpty{}")
+	err := pv.addTagItem("", "", tagTokenConstraint+":StringNotEmpty{}")
 	require.Nil(t, err)
 	require.Equal(t, 1, len(pv.Constraints))
 
-	err = pv.addTagItem(tagTokenConstraint + ":UNKNOWN{}")
+	err = pv.addTagItem("", "", tagTokenConstraint+":UNKNOWN{}")
 	require.NotNil(t, err)
 	require.Equal(t, fmt.Sprintf(msgUnknownConstraint, "UNKNOWN"), err.Error())
 	require.Equal(t, 1, len(pv.Constraints))
 
-	err = pv.addTagItem("&StringNotEmpty{}")
+	err = pv.addTagItem("", "", "&StringNotEmpty{}")
 	require.Nil(t, err)
 	require.Equal(t, 2, len(pv.Constraints))
 
-	err = pv.addTagItem("&UNKNOWN{}")
+	err = pv.addTagItem("", "", "&UNKNOWN{}")
 	require.NotNil(t, err)
 	require.Equal(t, fmt.Sprintf(msgUnknownConstraint, "UNKNOWN"), err.Error())
 	require.Equal(t, 2, len(pv.Constraints))
 
-	err = pv.addTagItem("&StringValidToken{Tokens:['XXX',\"YYY\",'ZZZ']}")
+	err = pv.addTagItem("", "", "&StringValidToken{Tokens:['XXX',\"YYY\",'ZZZ']}")
 	require.Nil(t, err)
 	require.Equal(t, 3, len(pv.Constraints))
 	c := pv.Constraints[2].(*StringValidToken)
@@ -271,31 +271,31 @@ func TestPropertyValidator_AddTagItemWhen(t *testing.T) {
 	pv := &PropertyValidator{}
 	require.Equal(t, 0, len(pv.WhenConditions))
 
-	err := pv.addTagItem(tagTokenWhen + ":TEST1")
+	err := pv.addTagItem("", "", tagTokenWhen+":TEST1")
 	require.Nil(t, err)
 	require.Equal(t, 1, len(pv.WhenConditions))
 	require.Equal(t, "TEST1", pv.WhenConditions[0])
 
-	err = pv.addTagItem(tagTokenWhen + ":[TEST2,TEST3]")
+	err = pv.addTagItem("", "", tagTokenWhen+":[TEST2,TEST3]")
 	require.Nil(t, err)
 	require.Equal(t, 3, len(pv.WhenConditions))
 	require.Equal(t, "TEST2", pv.WhenConditions[1])
 	require.Equal(t, "TEST3", pv.WhenConditions[2])
 
-	err = pv.addTagItem(tagTokenWhen)
+	err = pv.addTagItem("", "", tagTokenWhen)
 	require.NotNil(t, err)
 	require.Equal(t, fmt.Sprintf(msgExpectedColon, tagTokenWhen), err.Error())
 
-	err = pv.addTagItem(tagTokenWhen + ":[{]")
+	err = pv.addTagItem("", "", tagTokenWhen+":[{]")
 	require.NotNil(t, err)
 	require.Equal(t, fmt.Sprintf(msgUnclosed, 0), err.Error())
 
-	err = pv.addTagItem(tagTokenWhen + ":\"TEST4\"")
+	err = pv.addTagItem("", "", tagTokenWhen+":\"TEST4\"")
 	require.Nil(t, err)
 	require.Equal(t, 4, len(pv.WhenConditions))
 	require.Equal(t, "TEST4", pv.WhenConditions[3])
 
-	err = pv.addTagItem(tagTokenWhen + ":['TEST5','TEST6']")
+	err = pv.addTagItem("", "", tagTokenWhen+":['TEST5','TEST6']")
 	require.Nil(t, err)
 	require.Equal(t, 6, len(pv.WhenConditions))
 	require.Equal(t, "TEST5", pv.WhenConditions[4])
@@ -306,31 +306,31 @@ func TestPropertyValidator_AddTagItemUnwanted(t *testing.T) {
 	pv := &PropertyValidator{}
 	require.Equal(t, 0, len(pv.UnwantedConditions))
 
-	err := pv.addTagItem(tagTokenUnwanted + ":TEST1")
+	err := pv.addTagItem("", "", tagTokenUnwanted+":TEST1")
 	require.Nil(t, err)
 	require.Equal(t, 1, len(pv.UnwantedConditions))
 	require.Equal(t, "TEST1", pv.UnwantedConditions[0])
 
-	err = pv.addTagItem(tagTokenUnwanted + ":[TEST2,TEST3]")
+	err = pv.addTagItem("", "", tagTokenUnwanted+":[TEST2,TEST3]")
 	require.Nil(t, err)
 	require.Equal(t, 3, len(pv.UnwantedConditions))
 	require.Equal(t, "TEST2", pv.UnwantedConditions[1])
 	require.Equal(t, "TEST3", pv.UnwantedConditions[2])
 
-	err = pv.addTagItem(tagTokenUnwanted)
+	err = pv.addTagItem("", "", tagTokenUnwanted)
 	require.NotNil(t, err)
 	require.Equal(t, fmt.Sprintf(msgExpectedColon, tagTokenUnwanted), err.Error())
 
-	err = pv.addTagItem(tagTokenUnwanted + ":[{]")
+	err = pv.addTagItem("", "", tagTokenUnwanted+":[{]")
 	require.NotNil(t, err)
 	require.Equal(t, fmt.Sprintf(msgUnclosed, 0), err.Error())
 
-	err = pv.addTagItem(tagTokenUnwanted + ":\"TEST4\"")
+	err = pv.addTagItem("", "", tagTokenUnwanted+":\"TEST4\"")
 	require.Nil(t, err)
 	require.Equal(t, 4, len(pv.UnwantedConditions))
 	require.Equal(t, "TEST4", pv.UnwantedConditions[3])
 
-	err = pv.addTagItem(tagTokenUnwanted + ":['TEST5','TEST6']")
+	err = pv.addTagItem("", "", tagTokenUnwanted+":['TEST5','TEST6']")
 	require.Nil(t, err)
 	require.Equal(t, 6, len(pv.UnwantedConditions))
 	require.Equal(t, "TEST5", pv.UnwantedConditions[4])
@@ -341,27 +341,27 @@ func TestPropertyValidator_AddTagItemMandatoryWhen(t *testing.T) {
 	pv := &PropertyValidator{}
 	require.Equal(t, 0, len(pv.MandatoryWhen))
 
-	err := pv.addTagItem(tagTokenMandatory + ":TEST1")
+	err := pv.addTagItem("", "", tagTokenMandatory+":TEST1")
 	require.Nil(t, err)
 	require.Equal(t, 1, len(pv.MandatoryWhen))
 	require.Equal(t, "TEST1", pv.MandatoryWhen[0])
 
-	err = pv.addTagItem(tagTokenMandatory + ":[TEST2,TEST3]")
+	err = pv.addTagItem("", "", tagTokenMandatory+":[TEST2,TEST3]")
 	require.Nil(t, err)
 	require.Equal(t, 3, len(pv.MandatoryWhen))
 	require.Equal(t, "TEST2", pv.MandatoryWhen[1])
 	require.Equal(t, "TEST3", pv.MandatoryWhen[2])
 
-	err = pv.addTagItem(tagTokenMandatory + ":[{]")
+	err = pv.addTagItem("", "", tagTokenMandatory+":[{]")
 	require.NotNil(t, err)
 	require.Equal(t, fmt.Sprintf(msgUnclosed, 0), err.Error())
 
-	err = pv.addTagItem(tagTokenMandatory + ":\"TEST4\"")
+	err = pv.addTagItem("", "", tagTokenMandatory+":\"TEST4\"")
 	require.Nil(t, err)
 	require.Equal(t, 4, len(pv.MandatoryWhen))
 	require.Equal(t, "TEST4", pv.MandatoryWhen[3])
 
-	err = pv.addTagItem(tagTokenRequired + ":['TEST5','TEST6']")
+	err = pv.addTagItem("", "", tagTokenRequired+":['TEST5','TEST6']")
 	require.Nil(t, err)
 	require.Equal(t, 6, len(pv.MandatoryWhen))
 	require.Equal(t, "TEST5", pv.MandatoryWhen[4])
@@ -372,7 +372,7 @@ func TestPropertyValidator_AddConditionalConstraint(t *testing.T) {
 	pv := &PropertyValidator{}
 	require.Equal(t, 0, len(pv.Constraints))
 
-	err := pv.addTagItem("&[FOO]StringNotEmpty{'Foo Message'}")
+	err := pv.addTagItem("", "", "&[FOO]StringNotEmpty{'Foo Message'}")
 	require.Nil(t, err)
 	require.Equal(t, 1, len(pv.Constraints))
 	constraint := pv.Constraints[0].(*ConditionalConstraint)
@@ -382,7 +382,7 @@ func TestPropertyValidator_AddConditionalConstraint(t *testing.T) {
 	require.True(t, ok)
 	require.Equal(t, "Foo Message", innerConstraint.Message)
 
-	err = pv.addTagItem("&[BAR,BAZ]StringNotEmpty{}")
+	err = pv.addTagItem("", "", "&[BAR,BAZ]StringNotEmpty{}")
 	require.Nil(t, err)
 	require.Equal(t, 2, len(pv.Constraints))
 	constraint = pv.Constraints[1].(*ConditionalConstraint)
@@ -393,14 +393,14 @@ func TestPropertyValidator_AddConditionalConstraint(t *testing.T) {
 	require.True(t, ok)
 	require.Equal(t, "", innerConstraint.Message)
 
-	err = pv.addTagItem("&[}]StringNotEmpty{}")
+	err = pv.addTagItem("", "", "&[}]StringNotEmpty{}")
 	require.NotNil(t, err)
 
-	err = pv.addTagItem("&[StringNotEmpty{}")
+	err = pv.addTagItem("", "", "&[StringNotEmpty{}")
 	require.NotNil(t, err)
 	require.Equal(t, fmt.Sprintf(msgConditionalConstraintsFormat, "&[StringNotEmpty{}"), err.Error())
 
-	err = pv.processTagItems([]string{tagTokenConstraintsPrefix + "[[foo2]StringNotEmpty,[bar2,'baz2']StringNotBlank{'Not Blank'}]"})
+	err = pv.processTagItems("", "", []string{tagTokenConstraintsPrefix + "[[foo2]StringNotEmpty,[bar2,'baz2']StringNotBlank{'Not Blank'}]"})
 	require.Nil(t, err)
 	require.Equal(t, 4, len(pv.Constraints))
 	constraint = pv.Constraints[2].(*ConditionalConstraint)
@@ -418,42 +418,144 @@ func TestPropertyValidator_AddConditionalConstraint(t *testing.T) {
 	require.Equal(t, "Not Blank", innerConstraint2.Message)
 }
 
+func TestPropertyValidator_AddObjectTagItem_RequiredWith(t *testing.T) {
+	pv := &PropertyValidator{}
+	require.Equal(t, 0, len(pv.RequiredWith))
+
+	err := pv.addTagItem("", "", tagTokenRequiredWithAlt+":!foo")
+	require.Nil(t, err)
+	require.Equal(t, 1, len(pv.RequiredWith))
+	otherPty := pv.RequiredWith[0].(*OtherProperty)
+	require.Equal(t, "foo", otherPty.Name)
+	require.True(t, otherPty.Not)
+	require.Equal(t, And, otherPty.Op)
+
+	err = pv.addTagItem("", "", tagTokenRequiredWithAlt+":!bar")
+	require.Nil(t, err)
+	require.Equal(t, 2, len(pv.RequiredWith))
+	otherPty = pv.RequiredWith[1].(*OtherProperty)
+	require.Equal(t, "bar", otherPty.Name)
+	require.True(t, otherPty.Not)
+	require.Equal(t, And, otherPty.Op)
+
+	err = pv.addTagItem("", "", tagTokenRequiredWithAlt+":(!bar || !baz)")
+	require.Nil(t, err)
+	require.Equal(t, 3, len(pv.RequiredWith))
+	otherGrp := pv.RequiredWith[2].(*OtherGrouping)
+	require.Equal(t, 2, len(otherGrp.Of))
+	otherPty = otherGrp.Of[0].(*OtherProperty)
+	require.Equal(t, "bar", otherPty.Name)
+	require.True(t, otherPty.Not)
+	require.Equal(t, And, otherPty.Op)
+	otherPty = otherGrp.Of[1].(*OtherProperty)
+	require.Equal(t, "baz", otherPty.Name)
+	require.True(t, otherPty.Not)
+	require.Equal(t, Or, otherPty.Op)
+
+	err = pv.addTagItem("", "", tagTokenRequiredWithAlt+":bad expression")
+	require.NotNil(t, err)
+}
+
+func TestPropertyValidator_AddObjectTagItem_RequiredWithMsg(t *testing.T) {
+	pv := &PropertyValidator{}
+	require.Equal(t, "", pv.RequiredWithMessage)
+
+	err := pv.addTagItem("", "", tagTokenRequiredWithAltMsg+":fooey")
+	require.Nil(t, err)
+	require.Equal(t, "fooey", pv.RequiredWithMessage)
+
+	err = pv.addTagItem("", "", tagTokenRequiredWithAltMsg+":'fooey'")
+	require.Nil(t, err)
+	require.Equal(t, "fooey", pv.RequiredWithMessage)
+}
+
+func TestPropertyValidator_AddObjectTagItem_UnwantedWith(t *testing.T) {
+	pv := &PropertyValidator{}
+	require.Equal(t, 0, len(pv.UnwantedWith))
+
+	err := pv.addTagItem("", "", tagTokenUnwantedWithAlt+":!foo")
+	require.Nil(t, err)
+	require.Equal(t, 1, len(pv.UnwantedWith))
+	otherPty := pv.UnwantedWith[0].(*OtherProperty)
+	require.Equal(t, "foo", otherPty.Name)
+	require.True(t, otherPty.Not)
+	require.Equal(t, And, otherPty.Op)
+
+	err = pv.addTagItem("", "", tagTokenUnwantedWithAlt+":!bar")
+	require.Nil(t, err)
+	require.Equal(t, 2, len(pv.UnwantedWith))
+	otherPty = pv.UnwantedWith[1].(*OtherProperty)
+	require.Equal(t, "bar", otherPty.Name)
+	require.True(t, otherPty.Not)
+	require.Equal(t, And, otherPty.Op)
+
+	err = pv.addTagItem("", "", tagTokenUnwantedWithAlt+":(!bar || !baz)")
+	require.Nil(t, err)
+	require.Equal(t, 3, len(pv.UnwantedWith))
+	otherGrp := pv.UnwantedWith[2].(*OtherGrouping)
+	require.Equal(t, 2, len(otherGrp.Of))
+	otherPty = otherGrp.Of[0].(*OtherProperty)
+	require.Equal(t, "bar", otherPty.Name)
+	require.True(t, otherPty.Not)
+	require.Equal(t, And, otherPty.Op)
+	otherPty = otherGrp.Of[1].(*OtherProperty)
+	require.Equal(t, "baz", otherPty.Name)
+	require.True(t, otherPty.Not)
+	require.Equal(t, Or, otherPty.Op)
+
+	err = pv.addTagItem("", "", tagTokenUnwantedWithAlt+":bad expression")
+	require.NotNil(t, err)
+}
+
+func TestPropertyValidator_AddObjectTagItem_UnwantedWithMsg(t *testing.T) {
+	pv := &PropertyValidator{}
+	require.Equal(t, "", pv.UnwantedWithMessage)
+
+	err := pv.addTagItem("", "", tagTokenUnwantedWithAltMsg+":fooey")
+	require.Nil(t, err)
+	require.Equal(t, "fooey", pv.UnwantedWithMessage)
+
+	err = pv.addTagItem("", "", tagTokenUnwantedWithAltMsg+":'fooey'")
+	require.Nil(t, err)
+	require.Equal(t, "fooey", pv.UnwantedWithMessage)
+}
+
 func TestPropertyValidator_AddTagItemObjWhen(t *testing.T) {
 	pv := &PropertyValidator{ObjectValidator: &Validator{}}
 	require.Equal(t, 0, len(pv.ObjectValidator.WhenConditions))
 
-	err := pv.addTagItem(tagTokenObjWhen + ":TEST1")
+	err := pv.addTagItem("", "", tagTokenObjWhen+":TEST1")
 	require.Nil(t, err)
 	require.Equal(t, 1, len(pv.ObjectValidator.WhenConditions))
 	require.Equal(t, "TEST1", pv.ObjectValidator.WhenConditions[0])
 
-	err = pv.addTagItem(tagTokenObjWhen + ":[TEST2,TEST3]")
+	err = pv.addTagItem("", "", tagTokenObjWhen+":[TEST2,TEST3]")
 	require.Nil(t, err)
 	require.Equal(t, 3, len(pv.ObjectValidator.WhenConditions))
 	require.Equal(t, "TEST2", pv.ObjectValidator.WhenConditions[1])
 	require.Equal(t, "TEST3", pv.ObjectValidator.WhenConditions[2])
 
-	err = pv.addTagItem(tagTokenObjWhen)
+	err = pv.addTagItem("", "", tagTokenObjWhen)
 	require.NotNil(t, err)
 	require.Equal(t, fmt.Sprintf(msgExpectedColon, tagTokenObjWhen), err.Error())
 
-	err = pv.addTagItem(tagTokenObjWhen + ":[{]")
+	err = pv.addTagItem("", "", tagTokenObjWhen+":[{]")
 	require.NotNil(t, err)
 	require.Equal(t, fmt.Sprintf(msgUnclosed, 0), err.Error())
 
-	err = pv.addTagItem(tagTokenObjWhen + ":\"TEST4\"")
+	err = pv.addTagItem("", "", tagTokenObjWhen+":\"TEST4\"")
 	require.Nil(t, err)
 	require.Equal(t, 4, len(pv.ObjectValidator.WhenConditions))
 	require.Equal(t, "TEST4", pv.ObjectValidator.WhenConditions[3])
 
-	err = pv.addTagItem(tagTokenObjWhen + ":['TEST5','TEST6']")
+	err = pv.addTagItem("", "", tagTokenObjWhen+":['TEST5','TEST6']")
 	require.Nil(t, err)
 	require.Equal(t, 6, len(pv.ObjectValidator.WhenConditions))
 	require.Equal(t, "TEST5", pv.ObjectValidator.WhenConditions[4])
 	require.Equal(t, "TEST6", pv.ObjectValidator.WhenConditions[5])
 
 	pv = &PropertyValidator{}
-	err = pv.addTagItem(tagTokenObjWhen + ":TEST1")
+	err = pv.addTagItem("", "", tagTokenObjWhen+":TEST1")
 	require.NotNil(t, err)
 	require.Equal(t, fmt.Sprintf(msgPropertyNotObject, tagTokenObjWhen), err.Error())
 }
@@ -462,12 +564,12 @@ func TestPropertyValidator_AddObjectTagItem_IgnoreUnknownProperties(t *testing.T
 	pv := &PropertyValidator{ObjectValidator: &Validator{}}
 	require.False(t, pv.ObjectValidator.IgnoreUnknownProperties)
 
-	err := pv.addTagItem(tagTokenObjIgnoreUnknownProperties)
+	err := pv.addTagItem("", "", tagTokenObjIgnoreUnknownProperties)
 	require.Nil(t, err)
 	require.True(t, pv.ObjectValidator.IgnoreUnknownProperties)
 
 	pv = &PropertyValidator{}
-	err = pv.addTagItem(tagTokenObjIgnoreUnknownProperties)
+	err = pv.addTagItem("", "", tagTokenObjIgnoreUnknownProperties)
 	require.NotNil(t, err)
 	require.Equal(t, fmt.Sprintf(msgPropertyNotObject, tagTokenObjIgnoreUnknownProperties), err.Error())
 }
@@ -476,20 +578,20 @@ func TestPropertyValidator_AddObjectTagItem_UnknownProperties(t *testing.T) {
 	pv := &PropertyValidator{ObjectValidator: &Validator{}}
 	require.False(t, pv.ObjectValidator.IgnoreUnknownProperties)
 
-	err := pv.addTagItem(tagTokenObjUnknownProperties + ": true")
+	err := pv.addTagItem("", "", tagTokenObjUnknownProperties+": true")
 	require.Nil(t, err)
 	require.True(t, pv.ObjectValidator.IgnoreUnknownProperties)
 
-	err = pv.addTagItem(tagTokenObjUnknownProperties + ": FALSE")
+	err = pv.addTagItem("", "", tagTokenObjUnknownProperties+": FALSE")
 	require.Nil(t, err)
 	require.False(t, pv.ObjectValidator.IgnoreUnknownProperties)
 
-	err = pv.addTagItem(tagTokenObjUnknownProperties + ": INVALID_BOOL_VALUE")
+	err = pv.addTagItem("", "", tagTokenObjUnknownProperties+": INVALID_BOOL_VALUE")
 	require.NotNil(t, err)
 	require.Equal(t, fmt.Sprintf(msgUnknownTagValue, tagTokenObjUnknownProperties, "boolean", "INVALID_BOOL_VALUE"), err.Error())
 
 	pv = &PropertyValidator{}
-	err = pv.addTagItem(tagTokenObjUnknownProperties + ": FALSE")
+	err = pv.addTagItem("", "", tagTokenObjUnknownProperties+": FALSE")
 	require.NotNil(t, err)
 	require.Equal(t, fmt.Sprintf(msgPropertyNotObject, tagTokenObjUnknownProperties), err.Error())
 }
@@ -498,12 +600,12 @@ func TestPropertyValidator_AddObjectTagItem_Ordered(t *testing.T) {
 	pv := &PropertyValidator{ObjectValidator: &Validator{}}
 	require.False(t, pv.ObjectValidator.OrderedPropertyChecks)
 
-	err := pv.addTagItem(tagTokenObjOrdered)
+	err := pv.addTagItem("", "", tagTokenObjOrdered)
 	require.Nil(t, err)
 	require.True(t, pv.ObjectValidator.OrderedPropertyChecks)
 
 	pv = &PropertyValidator{}
-	err = pv.addTagItem(tagTokenObjOrdered)
+	err = pv.addTagItem("", "", tagTokenObjOrdered)
 	require.NotNil(t, err)
 	require.Equal(t, fmt.Sprintf(msgPropertyNotObject, tagTokenObjOrdered), err.Error())
 }
@@ -514,21 +616,21 @@ func TestPropertyValidator_AddObjectTagItem_Constraint(t *testing.T) {
 	}}
 	require.Equal(t, 0, len(pv.ObjectValidator.Constraints))
 
-	err := pv.addTagItem(tagTokenObjConstraint + ":&StringNotEmpty{}")
+	err := pv.addTagItem("", "", tagTokenObjConstraint+":&StringNotEmpty{}")
 	require.Nil(t, err)
 	require.Equal(t, 1, len(pv.ObjectValidator.Constraints))
 
-	err = pv.addTagItem(tagTokenObjConstraint + ":StringNotEmpty{}")
+	err = pv.addTagItem("", "", tagTokenObjConstraint+":StringNotEmpty{}")
 	require.Nil(t, err)
 	require.Equal(t, 2, len(pv.ObjectValidator.Constraints))
 
-	err = pv.addTagItem(tagTokenObjConstraint + ":&Unknown{}")
+	err = pv.addTagItem("", "", tagTokenObjConstraint+":&Unknown{}")
 	require.NotNil(t, err)
 	require.Equal(t, fmt.Sprintf(msgUnknownConstraint, "Unknown"), err.Error())
 	require.Equal(t, 2, len(pv.ObjectValidator.Constraints))
 
 	pv = &PropertyValidator{}
-	err = pv.addTagItem(tagTokenObjConstraint + ":&WontGetUsed{}")
+	err = pv.addTagItem("", "", tagTokenObjConstraint+":&WontGetUsed{}")
 	require.NotNil(t, err)
 	require.Equal(t, fmt.Sprintf(msgPropertyNotObject, tagTokenObjConstraint), err.Error())
 }
@@ -539,7 +641,7 @@ func TestParseConstraintSet(t *testing.T) {
 	}}
 	require.Equal(t, 0, len(pv.Constraints))
 
-	err := pv.addTagItem("&ConstraintSet{Message:'Foo',Constraints:[&StringNotEmpty{Message:'msg1'},&StringNotBlank{Message:'msg2'}],Stop:true,OneOf:true}")
+	err := pv.addTagItem("", "", "&ConstraintSet{Message:'Foo',Constraints:[&StringNotEmpty{Message:'msg1'},&StringNotBlank{Message:'msg2'}],Stop:true,OneOf:true}")
 	require.Nil(t, err)
 	require.Equal(t, 1, len(pv.Constraints))
 	constraintSet, ok := pv.Constraints[0].(*ConstraintSet)
@@ -693,7 +795,7 @@ func TestBuildConstraintFromTagValueFailsWithBadArgs(t *testing.T) {
 
 func TestUnexpectedColonAfterTagToken(t *testing.T) {
 	pv := &PropertyValidator{}
-	err := pv.addTagItem(tagTokenNotNull + ":")
+	err := pv.addTagItem("", "", tagTokenNotNull+":")
 	require.NotNil(t, err)
 	require.Equal(t, fmt.Sprintf(msgUnexpectedColon, tagTokenNotNull), err.Error())
 }
