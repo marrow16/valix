@@ -3644,6 +3644,7 @@ type ExampleUpAndDownRequired struct {
 ```
 
 Additional expression functionality notes:
+* Boolean operator `^^` (XOr) is also supported
 * Path traversal also supports going up to the root object - e.g. `/.foo.bar` will go up to the root object and then descend down path `foo.bar`
 * Prefixing property name with `~` (tilde) means check a context condition rather than property existence - e.g. `~METHOD_POST` checks whether the `METHOD_POST` condition token has been set in the context
 * The `+:` and `-:` validation tag tokens correspond to the `valix.PropertyValidator.RequiredWith` and `valix.PropertyValidator.UnwantedWith` fields respectively

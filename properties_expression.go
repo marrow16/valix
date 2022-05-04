@@ -12,6 +12,7 @@ type BooleanOperator int
 const (
 	And BooleanOperator = iota
 	Or
+	Xor
 )
 
 // MustParseExpression is the same as ParseExpression - but panics if there is an error
@@ -143,6 +144,16 @@ func parseExpressionTokens(expr string) (tokens []*parsedToken, groupStarts int,
 					currentToken.end = i + 1
 				} else {
 					err = fmt.Errorf("invaid operator character '%s' - expected '||' (at position %d)", string(ch), i)
+					return
+				}
+			case '^':
+				if i < max && runes[i+1] == '^' {
+					startNewToken(i, tokenTypeOperator)
+					currentToken.operator = Xor
+					i++
+					currentToken.end = i + 1
+				} else {
+					err = fmt.Errorf("invaid operator character '%s' - expected '^^' (at position %d)", string(ch), i)
 					return
 				}
 			case '(':
@@ -342,6 +353,8 @@ func (o *OthersExpr) Evaluate(currentObj map[string]interface{}, ancestryValues 
 			result = itemResult
 		} else if item.GetOperator() == Or {
 			result = result || itemResult
+		} else if item.GetOperator() == Xor {
+			result = (result && !itemResult) || (!result && itemResult)
 		} else {
 			result = result && itemResult
 		}
@@ -353,9 +366,12 @@ func (o *OthersExpr) String() string {
 	var sb strings.Builder
 	for i, other := range *o {
 		if i > 0 {
-			if other.GetOperator() == Or {
+			switch other.GetOperator() {
+			case Or:
 				sb.WriteString(" || ")
-			} else {
+			case Xor:
+				sb.WriteString(" ^^ ")
+			default:
 				sb.WriteString(" && ")
 			}
 		}
@@ -394,6 +410,16 @@ func (o *OthersExpr) AddOrNotProperty(name string) *OthersExpr {
 	return o
 }
 
+func (o *OthersExpr) AddXorProperty(name string) *OthersExpr {
+	*o = append(*o, &OtherProperty{Name: name, Op: Xor})
+	return o
+}
+
+func (o *OthersExpr) AddXorNotProperty(name string) *OthersExpr {
+	*o = append(*o, &OtherProperty{Name: name, Op: Xor, Not: true})
+	return o
+}
+
 func (o *OthersExpr) AddGroup(of *OthersExpr) *OthersExpr {
 	*o = append(*o, &OtherGrouping{Of: *of, Op: And})
 	return o
@@ -421,6 +447,16 @@ func (o *OthersExpr) AddOrGroup(of *OthersExpr) *OthersExpr {
 
 func (o *OthersExpr) AddOrNotGroup(of *OthersExpr) *OthersExpr {
 	*o = append(*o, &OtherGrouping{Of: *of, Op: Or, Not: true})
+	return o
+}
+
+func (o *OthersExpr) AddXorGroup(of *OthersExpr) *OthersExpr {
+	*o = append(*o, &OtherGrouping{Of: *of, Op: Xor})
+	return o
+}
+
+func (o *OthersExpr) AddXorNotGroup(of *OthersExpr) *OthersExpr {
+	*o = append(*o, &OtherGrouping{Of: *of, Op: Xor, Not: true})
 	return o
 }
 
@@ -464,6 +500,11 @@ func (p *OtherProperty) ANDed() *OtherProperty {
 
 func (p *OtherProperty) ORed() *OtherProperty {
 	p.Op = Or
+	return p
+}
+
+func (p *OtherProperty) XORed() *OtherProperty {
+	p.Op = Xor
 	return p
 }
 
@@ -670,6 +711,11 @@ func (g *OtherGrouping) ORed() *OtherGrouping {
 	return g
 }
 
+func (g *OtherGrouping) XORed() *OtherGrouping {
+	g.Op = Xor
+	return g
+}
+
 func (g *OtherGrouping) AddProperty(name string) *OtherGrouping {
 	g.Of.AddProperty(name)
 	return g
@@ -700,6 +746,16 @@ func (g *OtherGrouping) AddOrNotProperty(name string) *OtherGrouping {
 	return g
 }
 
+func (g *OtherGrouping) AddXorProperty(name string) *OtherGrouping {
+	g.Of.AddXorProperty(name)
+	return g
+}
+
+func (g *OtherGrouping) AddXorNotProperty(name string) *OtherGrouping {
+	g.Of.AddXorNotProperty(name)
+	return g
+}
+
 func (g *OtherGrouping) AddGroup(of *OthersExpr) *OtherGrouping {
 	g.Of.AddGroup(of)
 	return g
@@ -727,5 +783,15 @@ func (g *OtherGrouping) AddOrGroup(of *OthersExpr) *OtherGrouping {
 
 func (g *OtherGrouping) AddOrNotGroup(of *OthersExpr) *OtherGrouping {
 	g.Of.AddOrNotGroup(of)
+	return g
+}
+
+func (g *OtherGrouping) AddXorGroup(of *OthersExpr) *OtherGrouping {
+	g.Of.AddXorGroup(of)
+	return g
+}
+
+func (g *OtherGrouping) AddXorNotGroup(of *OthersExpr) *OtherGrouping {
+	g.Of.AddXorNotGroup(of)
 	return g
 }
