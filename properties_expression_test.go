@@ -108,6 +108,18 @@ func TestParseExpressions(t *testing.T) {
 			false,
 			0,
 		},
+		"||": {
+			false,
+			0,
+		},
+		"^": {
+			false,
+			0,
+		},
+		"^^": {
+			false,
+			0,
+		},
 		"&& foo": {
 			false,
 			0,
@@ -210,6 +222,73 @@ func TestEmptyExpressionAlwaysResolvesTrue(t *testing.T) {
 
 	result := expr.Evaluate(map[string]interface{}{}, nil, nil)
 	require.True(t, result)
+}
+
+func TestAndOperator(t *testing.T) {
+	expr, err := ParseExpression("foo && bar")
+	require.Nil(t, err)
+
+	obj := map[string]interface{}{}
+	result := expr.Evaluate(obj, nil, nil)
+	require.False(t, result)
+
+	obj["foo"] = "here"
+	result = expr.Evaluate(obj, nil, nil)
+	require.False(t, result)
+
+	obj["bar"] = "here"
+	result = expr.Evaluate(obj, nil, nil)
+	require.True(t, result)
+}
+
+func TestOrOperator(t *testing.T) {
+	expr, err := ParseExpression("foo || bar")
+	require.Nil(t, err)
+
+	obj := map[string]interface{}{}
+	result := expr.Evaluate(obj, nil, nil)
+	require.False(t, result)
+
+	obj["foo"] = "here"
+	result = expr.Evaluate(obj, nil, nil)
+	require.True(t, result)
+
+	obj["bar"] = "here"
+	result = expr.Evaluate(obj, nil, nil)
+	require.True(t, result)
+
+	delete(obj, "foo")
+	result = expr.Evaluate(obj, nil, nil)
+	require.True(t, result)
+
+	delete(obj, "bar")
+	result = expr.Evaluate(obj, nil, nil)
+	require.False(t, result)
+}
+
+func TestXorOperator(t *testing.T) {
+	expr, err := ParseExpression("foo ^^ bar")
+	require.Nil(t, err)
+
+	obj := map[string]interface{}{}
+	result := expr.Evaluate(obj, nil, nil)
+	require.False(t, result)
+
+	obj["foo"] = "here"
+	result = expr.Evaluate(obj, nil, nil)
+	require.True(t, result)
+
+	obj["bar"] = "here"
+	result = expr.Evaluate(obj, nil, nil)
+	require.False(t, result)
+
+	delete(obj, "foo")
+	result = expr.Evaluate(obj, nil, nil)
+	require.True(t, result)
+
+	delete(obj, "bar")
+	result = expr.Evaluate(obj, nil, nil)
+	require.False(t, result)
 }
 
 func TestOthersOpIsAlwaysAnd(t *testing.T) {
@@ -469,6 +548,14 @@ func TestOthersFluentBuildingToStringAndParseBack(t *testing.T) {
 			"(foo || bar)",
 		},
 		{
+			(&OthersExpr{}).AddGroup((&OthersExpr{}).AddProperty("foo").AddXorProperty("bar")),
+			"(foo ^^ bar)",
+		},
+		{
+			(&OthersExpr{}).AddGroup((&OthersExpr{}).AddProperty("foo").AddXorNotProperty("bar")),
+			"(foo ^^ !bar)",
+		},
+		{
 			(&OthersExpr{}).AddGroup(&OthersExpr{NewOtherProperty("foo"), NewOtherProperty("bar").ORed()}),
 			"(foo || bar)",
 		},
@@ -479,11 +566,30 @@ func TestOthersFluentBuildingToStringAndParseBack(t *testing.T) {
 			"(foo && bar) || (bar && baz)",
 		},
 		{
+			(&OthersExpr{}).
+				AddGroup((&OthersExpr{}).AddProperty("foo").AddAndProperty("bar")).
+				AddXorGroup((&OthersExpr{}).AddProperty("bar").AddAndProperty("baz")),
+			"(foo && bar) ^^ (bar && baz)",
+		},
+		{
+			(&OthersExpr{}).
+				AddGroup((&OthersExpr{}).AddProperty("foo").AddAndProperty("bar")).
+				AddXorNotGroup((&OthersExpr{}).AddProperty("bar").AddAndProperty("baz")),
+			"(foo && bar) ^^ !(bar && baz)",
+		},
+		{
 			&OthersExpr{
 				NewOtherGrouping("foo", "bar"),
 				NewOtherGrouping("bar", "baz").ORed(),
 			},
 			"(foo && bar) || (bar && baz)",
+		},
+		{
+			&OthersExpr{
+				NewOtherGrouping("foo", "bar"),
+				NewOtherGrouping("bar", "baz").XORed(),
+			},
+			"(foo && bar) ^^ (bar && baz)",
 		},
 		{
 			(&OthersExpr{}).
@@ -570,6 +676,20 @@ func TestOthersFluentBuildingToStringAndParseBack(t *testing.T) {
 		},
 		{
 			&OthersExpr{
+				NewOtherGrouping().NOTed().AddProperty("foo").AddXorProperty("bar"),
+				NewOtherGrouping("bar", "baz").ORed(),
+			},
+			"!(foo ^^ bar) || (bar && baz)",
+		},
+		{
+			&OthersExpr{
+				NewOtherGrouping().NOTed().AddProperty("foo").AddXorNotProperty("bar"),
+				NewOtherGrouping("bar", "baz").ORed(),
+			},
+			"!(foo ^^ !bar) || (bar && baz)",
+		},
+		{
+			&OthersExpr{
 				NewOtherGrouping().NOTed().AddProperty("foo").
 					AddOrProperty("bar").
 					AddNotProperty("baz"),
@@ -620,6 +740,22 @@ func TestOthersFluentBuildingToStringAndParseBack(t *testing.T) {
 				NewOtherGrouping("foo").AddOrNotGroup((&OthersExpr{}).AddProperty("bar").AddOrProperty("baz")),
 			},
 			"(foo || !(bar || baz))",
+		},
+		{
+			&OthersExpr{
+				NewOtherGrouping("foo").AddXorGroup((&OthersExpr{}).AddProperty("bar").AddOrProperty("baz")),
+			},
+			"(foo ^^ (bar || baz))",
+		},
+		{
+			&OthersExpr{
+				NewOtherGrouping("foo").AddXorNotGroup((&OthersExpr{}).AddProperty("bar").AddOrProperty("baz")),
+			},
+			"(foo ^^ !(bar || baz))",
+		},
+		{
+			&OthersExpr{NewOtherProperty("foo").XORed(), NewOtherProperty("bar").XORed()},
+			"foo ^^ bar",
 		},
 	}
 	for i, tc := range testCases {
