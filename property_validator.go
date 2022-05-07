@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"math"
 	"strings"
+	"time"
 )
 
 const (
@@ -30,6 +31,8 @@ const (
 	JsonAny JsonType = iota
 	// JsonString checks JSON value type is a string
 	JsonString
+	// JsonDatetime checks JSON value type is a string and is a valid parseable datetime
+	JsonDatetime
 	// JsonNumber checks JSON value type is a number
 	JsonNumber
 	// JsonInteger checks JSON value type is a number (that is or can be expressed as an int)
@@ -43,14 +46,15 @@ const (
 )
 
 const (
-	jsonTypeTokenString  = "string"
-	jsonTypeTokenNumber  = "number"
-	jsonTypeTokenInteger = "integer"
-	jsonTypeTokenBoolean = "boolean"
-	jsonTypeTokenObject  = "object"
-	jsonTypeTokenArray   = "array"
-	jsonTypeTokenAny     = "any"
-	jsonTypeTokensList   = "\"" + jsonTypeTokenAny + "\",\"" + jsonTypeTokenString +
+	jsonTypeTokenString   = "string"
+	jsonTypeTokenDatetime = "datetime"
+	jsonTypeTokenNumber   = "number"
+	jsonTypeTokenInteger  = "integer"
+	jsonTypeTokenBoolean  = "boolean"
+	jsonTypeTokenObject   = "object"
+	jsonTypeTokenArray    = "array"
+	jsonTypeTokenAny      = "any"
+	jsonTypeTokensList    = "\"" + jsonTypeTokenAny + "\",\"" + jsonTypeTokenString + "\",\"" + jsonTypeTokenDatetime +
 		"\",\"" + jsonTypeTokenNumber + "\",\"" + jsonTypeTokenInteger +
 		"\",\"" + jsonTypeTokenObject +
 		"\",\"" + jsonTypeTokenObject + "\",\"" + jsonTypeTokenArray
@@ -61,6 +65,8 @@ func (jt JsonType) String() string {
 	switch jt {
 	case JsonString:
 		result = jsonTypeTokenString
+	case JsonDatetime:
+		result = jsonTypeTokenDatetime
 	case JsonNumber:
 		result = jsonTypeTokenNumber
 	case JsonInteger:
@@ -83,6 +89,9 @@ func JsonTypeFromString(str string) (JsonType, bool) {
 	switch strings.ToLower(str) {
 	case jsonTypeTokenString:
 		result = JsonString
+		ok = true
+	case jsonTypeTokenDatetime:
+		result = JsonDatetime
 		ok = true
 	case jsonTypeTokenNumber:
 		result = JsonNumber
@@ -184,28 +193,30 @@ func checkValueType(value interface{}, t JsonType) bool {
 	switch t {
 	case JsonString:
 		_, ok = value.(string)
-		break
+	case JsonDatetime:
+		ok = false
+		switch av := value.(type) {
+		case time.Time, *time.Time, Time, *Time:
+			ok = true
+		case string:
+			_, ok = stringToDatetime(av, false)
+		}
 	case JsonBoolean:
 		_, ok = value.(bool)
-		break
 	case JsonNumber:
 		ok = checkNumeric(value, false)
-		break
 	case JsonInteger:
 		ok = checkNumeric(value, true)
-		break
 	case JsonObject:
 		_, ok = value.(map[string]interface{})
-		break
 	case JsonArray:
 		_, ok = value.([]interface{})
-		break
 	}
 	return ok
 }
 
 func checkNumeric(value interface{}, isInt bool) bool {
-	var ok = false
+	ok := false
 	if fVal, fOk := value.(float64); fOk {
 		ok = !isInt || (math.Trunc(fVal) == fVal)
 	} else if nVal, nOk := value.(json.Number); nOk {

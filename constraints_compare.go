@@ -323,15 +323,8 @@ type DatetimeGreaterThan struct {
 
 // Check implements Constraint.Check
 func (c *DatetimeGreaterThan) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
-	if str, ok := v.(string); ok {
-		if dt, ok := stringToDatetime(str, c.ExcTime); ok {
-			if cdt, ok := stringToDatetime(c.Value, c.ExcTime); ok && dt.After(*cdt) {
-				return true, ""
-			}
-		}
-	} else if dt, ok := v.(time.Time); ok {
-		dt = truncateDate(dt, c.ExcTime)
-		if cdt, ok := stringToDatetime(c.Value, c.ExcTime); ok && dt.After(*cdt) {
+	if cdt, ok := stringToDatetime(c.Value, c.ExcTime); ok {
+		if dt, ok := isTime(v, c.ExcTime); ok && dt.After(*cdt) {
 			return true, ""
 		}
 	}
@@ -365,15 +358,8 @@ type DatetimeGreaterThanOrEqual struct {
 
 // Check implements Constraint.Check
 func (c *DatetimeGreaterThanOrEqual) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
-	if str, ok := v.(string); ok {
-		if dt, ok := stringToDatetime(str, c.ExcTime); ok {
-			if cdt, ok := stringToDatetime(c.Value, c.ExcTime); ok && (dt.After(*cdt) || dt.Equal(*cdt)) {
-				return true, ""
-			}
-		}
-	} else if dt, ok := v.(time.Time); ok {
-		dt = truncateDate(dt, c.ExcTime)
-		if cdt, ok := stringToDatetime(c.Value, c.ExcTime); ok && (dt.After(*cdt) || dt.Equal(*cdt)) {
+	if cdt, ok := stringToDatetime(c.Value, c.ExcTime); ok {
+		if dt, ok := isTime(v, c.ExcTime); ok && (dt.After(*cdt) || dt.Equal(*cdt)) {
 			return true, ""
 		}
 	}
@@ -407,15 +393,8 @@ type DatetimeLessThan struct {
 
 // Check implements Constraint.Check
 func (c *DatetimeLessThan) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
-	if str, ok := v.(string); ok {
-		if dt, ok := stringToDatetime(str, c.ExcTime); ok {
-			if cdt, ok := stringToDatetime(c.Value, c.ExcTime); ok && dt.Before(*cdt) {
-				return true, ""
-			}
-		}
-	} else if dt, ok := v.(time.Time); ok {
-		dt = truncateDate(dt, c.ExcTime)
-		if cdt, ok := stringToDatetime(c.Value, c.ExcTime); ok && dt.Before(*cdt) {
+	if cdt, ok := stringToDatetime(c.Value, c.ExcTime); ok {
+		if dt, ok := isTime(v, c.ExcTime); ok && dt.Before(*cdt) {
 			return true, ""
 		}
 	}
@@ -449,15 +428,8 @@ type DatetimeLessThanOrEqual struct {
 
 // Check implements Constraint.Check
 func (c *DatetimeLessThanOrEqual) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
-	if str, ok := v.(string); ok {
-		if dt, ok := stringToDatetime(str, c.ExcTime); ok {
-			if cdt, ok := stringToDatetime(c.Value, c.ExcTime); ok && (dt.Before(*cdt) || dt.Equal(*cdt)) {
-				return true, ""
-			}
-		}
-	} else if dt, ok := v.(time.Time); ok {
-		dt = truncateDate(dt, c.ExcTime)
-		if cdt, ok := stringToDatetime(c.Value, c.ExcTime); ok && (dt.Before(*cdt) || dt.Equal(*cdt)) {
+	if cdt, ok := stringToDatetime(c.Value, c.ExcTime); ok {
+		if dt, ok := isTime(v, c.ExcTime); ok && (dt.Before(*cdt) || dt.Equal(*cdt)) {
 			return true, ""
 		}
 	}
@@ -492,15 +464,8 @@ type DatetimeGreaterThanOther struct {
 // Check implements Constraint.Check
 func (c *DatetimeGreaterThanOther) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
 	if other, ok := getOtherPropertyDatetime(c.PropertyName, vcx, c.ExcTime, false); ok {
-		if str, ok := v.(string); ok {
-			if dt, ok := stringToDatetime(str, c.ExcTime); ok && dt.After(*other) {
-				return true, ""
-			}
-		} else if dt, ok := v.(time.Time); ok {
-			dt = truncateDate(dt, c.ExcTime)
-			if dt.After(*other) {
-				return true, ""
-			}
+		if dt, ok := isTime(v, c.ExcTime); ok && dt.After(*other) {
+			return true, ""
 		}
 	}
 	vcx.CeaseFurtherIf(c.Stop)
@@ -534,15 +499,8 @@ type DatetimeGreaterThanOrEqualOther struct {
 // Check implements Constraint.Check
 func (c *DatetimeGreaterThanOrEqualOther) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
 	if other, ok := getOtherPropertyDatetime(c.PropertyName, vcx, c.ExcTime, false); ok {
-		if str, ok := v.(string); ok {
-			if dt, ok := stringToDatetime(str, c.ExcTime); ok && (dt.After(*other) || dt.Equal(*other)) {
-				return true, ""
-			}
-		} else if dt, ok := v.(time.Time); ok {
-			dt = truncateDate(dt, c.ExcTime)
-			if dt.After(*other) || dt.Equal(*other) {
-				return true, ""
-			}
+		if dt, ok := isTime(v, c.ExcTime); ok && (dt.After(*other) || dt.Equal(*other)) {
+			return true, ""
 		}
 	}
 	vcx.CeaseFurtherIf(c.Stop)
@@ -576,15 +534,8 @@ type DatetimeLessThanOther struct {
 // Check implements Constraint.Check
 func (c *DatetimeLessThanOther) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
 	if other, ok := getOtherPropertyDatetime(c.PropertyName, vcx, c.ExcTime, false); ok {
-		if str, ok := v.(string); ok {
-			if dt, ok := stringToDatetime(str, c.ExcTime); ok && dt.Before(*other) {
-				return true, ""
-			}
-		} else if dt, ok := v.(time.Time); ok {
-			dt = truncateDate(dt, c.ExcTime)
-			if dt.Before(*other) {
-				return true, ""
-			}
+		if dt, ok := isTime(v, c.ExcTime); ok && dt.Before(*other) {
+			return true, ""
 		}
 	}
 	vcx.CeaseFurtherIf(c.Stop)
@@ -618,15 +569,8 @@ type DatetimeLessThanOrEqualOther struct {
 // Check implements Constraint.Check
 func (c *DatetimeLessThanOrEqualOther) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
 	if other, ok := getOtherPropertyDatetime(c.PropertyName, vcx, c.ExcTime, false); ok {
-		if str, ok := v.(string); ok {
-			if dt, ok := stringToDatetime(str, c.ExcTime); ok && (dt.Before(*other) || dt.Equal(*other)) {
-				return true, ""
-			}
-		} else if dt, ok := v.(time.Time); ok {
-			dt = truncateDate(dt, c.ExcTime)
-			if dt.Before(*other) || dt.Equal(*other) {
-				return true, ""
-			}
+		if dt, ok := isTime(v, c.ExcTime); ok && (dt.Before(*other) || dt.Equal(*other)) {
+			return true, ""
 		}
 	}
 	vcx.CeaseFurtherIf(c.Stop)
@@ -682,17 +626,8 @@ func (c *DatetimeTolerance) Check(v interface{}, vcx *ValidatorContext) (bool, s
 		return true, ""
 	}
 	useExcTime := c.ExcTime && c.Duration != 0
-	if str, ok := v.(string); ok {
-		if dt, ok := stringToDatetime(str, useExcTime); ok {
-			if cdt, ok := stringToDatetime(c.Value, useExcTime); ok &&
-				checkDatetimeTolerance(dt, cdt, c.Duration, c.Unit) {
-				return true, ""
-			}
-		}
-	} else if dt, ok := v.(time.Time); ok {
-		dt = truncateDate(dt, useExcTime)
-		if cdt, ok := stringToDatetime(c.Value, useExcTime); ok &&
-			checkDatetimeTolerance(&dt, cdt, c.Duration, c.Unit) {
+	if dt, ok := isTime(v, useExcTime); ok {
+		if cdt, ok := stringToDatetime(c.Value, useExcTime); ok && checkDatetimeTolerance(&dt, cdt, c.Duration, c.Unit) {
 			return true, ""
 		}
 	}
@@ -780,16 +715,8 @@ func (c *DatetimeToleranceToNow) Check(v interface{}, vcx *ValidatorContext) (bo
 		return true, ""
 	}
 	useExcTime := c.ExcTime && c.Duration != 0
-	if str, ok := v.(string); ok {
-		if dt, ok := stringToDatetime(str, useExcTime); ok {
-			now := truncateDate(time.Now(), useExcTime)
-			if checkDatetimeTolerance(dt, &now, c.Duration, c.Unit) {
-				return true, ""
-			}
-		}
-	} else if dt, ok := v.(time.Time); ok {
-		dt = truncateDate(dt, useExcTime)
-		now := truncateDate(time.Now(), useExcTime)
+	if dt, ok := isTime(v, useExcTime); ok {
+		now := truncateTime(time.Now(), useExcTime)
 		if checkDatetimeTolerance(&dt, &now, c.Duration, c.Unit) {
 			return true, ""
 		}
@@ -878,17 +805,8 @@ func (c *DatetimeToleranceToOther) Check(v interface{}, vcx *ValidatorContext) (
 	useExcTime := c.ExcTime && c.Duration != 0
 	if other, ok := getOtherPropertyDatetime(c.PropertyName, vcx, useExcTime, c.IgnoreNull); ok {
 		if other != nil {
-			if str, ok := v.(string); ok {
-				if dt, ok := stringToDatetime(str, useExcTime); ok {
-					if checkDatetimeTolerance(dt, other, c.Duration, c.Unit) {
-						return true, ""
-					}
-				}
-			} else if dt, ok := v.(time.Time); ok {
-				dt = truncateDate(dt, useExcTime)
-				if checkDatetimeTolerance(&dt, other, c.Duration, c.Unit) {
-					return true, ""
-				}
+			if dt, ok := isTime(v, useExcTime); ok && checkDatetimeTolerance(&dt, other, c.Duration, c.Unit) {
+				return true, ""
 			}
 		} else if c.IgnoreNull {
 			return true, ""

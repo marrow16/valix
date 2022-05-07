@@ -158,7 +158,7 @@ func stringToDatetime(str string, truncTime bool) (*time.Time, bool) {
 	return &result, err == nil
 }
 
-func truncateDate(t time.Time, truncTime bool) time.Time {
+func truncateTime(t time.Time, truncTime bool) time.Time {
 	if truncTime {
 		return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC)
 	}
@@ -223,14 +223,33 @@ func getOtherPropertyDatetime(propertyName string, vcx *ValidatorContext, truncT
 		if other == nil {
 			return nil, allowNull
 		}
-		if str, ok := other.(string); ok {
-			return stringToDatetime(str, truncTime)
-		} else if dt, ok := other.(time.Time); ok {
-			dt = truncateDate(dt, truncTime)
+		if dt, ok := isTime(other, truncTime); ok {
 			return &dt, true
 		}
 	}
 	return nil, false
+}
+
+func isTime(v interface{}, truncTime bool) (time.Time, bool) {
+	switch dv := v.(type) {
+	case *time.Time:
+		return truncateTime(*dv, truncTime), true
+	case time.Time:
+		return truncateTime(dv, truncTime), true
+	case *Time:
+		return truncateTime(dv.Time, truncTime), true
+	case Time:
+		return truncateTime(dv.Time, truncTime), true
+	case string:
+		if dt, ok := stringToDatetime(dv, truncTime); ok {
+			return *dt, true
+		}
+	case *string:
+		if dt, ok := stringToDatetime(*dv, truncTime); ok {
+			return *dt, true
+		}
+	}
+	return time.Time{}, false
 }
 
 func compareNumerics(v1, v2 interface{}) (int, bool) {

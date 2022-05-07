@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"github.com/stretchr/testify/require"
 	"math"
+	"strings"
 	"testing"
+	"time"
 )
 
 func TestCoerceToFloat(t *testing.T) {
@@ -320,4 +322,70 @@ func TestIfTernary(t *testing.T) {
 	require.Equal(t, "no", ternary(false).string("yes", "no"))
 	require.Equal(t, 1, ternary(true).int(1, 2))
 	require.Equal(t, 2, ternary(false).int(1, 2))
+}
+
+func TestTime_UnmarshalJSON(t *testing.T) {
+	type withTime struct {
+		Foo Time
+	}
+	testCases := map[string]bool{
+		"null":                                     true,
+		"":                                         false,
+		"\"not a date\"":                           false,
+		"\"2022-05-04T10:11:12\"":                  true,
+		"\"2022-05-04T30:11:12\"":                  false,
+		"\"2022-05-04T10:60:12\"":                  false,
+		"\"2022-05-04T10:11:60\"":                  false,
+		"\"2022-05-04T10:11:12Z\"":                 true,
+		"\"2022-05-04T10:11:12+12:00\"":            true,
+		"\"2022-05-04T10:11:12.13456+12:00\"":      true,
+		"\"2022-05-04T10:11:12.134567890+12:00\"":  true,
+		"\"2022-05-04T10:11:12.1345678901+12:00\"": false,
+		"\"2022-05-04\"":                           true,
+		"\"2022-05-04T\"":                          false,
+		"\"2022-05-04T1\"":                         false,
+		"\"2022-05-04T10\"":                        false,
+		"\"2022-13-04\"":                           false,
+		"\"2022-05-33\"":                           false,
+	}
+	for str, expectOk := range testCases {
+		t.Run(fmt.Sprintf("Time.UnmarshalJSON:\"%s\"", str), func(t *testing.T) {
+			reader := strings.NewReader("{\"Foo\": " + str + "}")
+			d := json.NewDecoder(reader)
+			wt := &withTime{}
+			err := d.Decode(wt)
+			if expectOk {
+				require.Nil(t, err)
+				require.Equal(t, str != "null", wt.Foo.IsSet())
+			} else {
+				require.NotNil(t, err)
+			}
+		})
+	}
+}
+
+func TestTime_MarshalJSON(t *testing.T) {
+	type withTime struct {
+		Foo Time `json:"foo"`
+	}
+	wt := &withTime{}
+	data, err := json.Marshal(wt)
+	require.Nil(t, err)
+	require.NotNil(t, data)
+	require.Equal(t, "{\"foo\":null}", string(data[:]))
+
+	tt := time.Date(2022, 5, 4, 10, 11, 12, 123456789, time.UTC)
+	wt.Foo = Time{tt, ""}
+	data, err = json.Marshal(wt)
+	require.Nil(t, err)
+	require.NotNil(t, data)
+	require.Equal(t, "{\"foo\":\"2022-05-04T10:11:12.123456789Z\"}", string(data[:]))
+
+	loc := time.FixedZone("Foo", -3600)
+	tt = time.Date(2022, 5, 4, 10, 11, 12, 123000000, loc)
+	wt.Foo = Time{tt, ""}
+	data, err = json.Marshal(wt)
+	require.Nil(t, err)
+	require.NotNil(t, data)
+	require.Equal(t, "{\"foo\":\"2022-05-04T10:11:12.123-01:00\"}", string(data[:]))
 }

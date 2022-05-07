@@ -3809,7 +3809,7 @@ Where the tokens correspond to various property validation options - as listed h
 }</pre>
           <em>Means the property <code>foo</code> is required when both <code>bar</code> and <code>baz</code> properties are present</em>
         </details>
-        <br><em>(see also <a href="#required_unwanted_properties">Required/Unwanted Properties</a> for further notes and examples on expressions)</em>
+        <br><em>(see also <a href="#requiredunwanted_properties">Required/Unwanted Properties</a> for further notes and examples on expressions)</em>
       </td>
     </tr>
     <tr>
@@ -3830,7 +3830,7 @@ Where the tokens correspond to various property validation options - as listed h
 }</pre>
           <em>Means the property <code>foo</code> is unwanted when either the <code>bar</code> or <code>baz</code> properties are present</em>
         </details>
-        <br><em>(see also <a href="#required_unwanted_properties">Required/Unwanted Properties</a> for further notes and examples on expressions)</em>
+        <br><em>(see also <a href="#requiredunwanted_properties">Required/Unwanted Properties</a> for further notes and examples on expressions)</em>
       </td>
     </tr>
     <tr>
