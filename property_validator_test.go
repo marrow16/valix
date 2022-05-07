@@ -414,3 +414,133 @@ func TestJsonTypeFromString(t *testing.T) {
 	_, ok := JsonTypeFromString("xxx")
 	require.False(t, ok)
 }
+
+func TestPropertyValidator_SetType(t *testing.T) {
+	pv := &PropertyValidator{}
+	require.Equal(t, JsonAny, pv.Type)
+
+	pv.SetType(JsonString)
+	require.Equal(t, JsonString, pv.Type)
+}
+
+func TestPropertyValidator_SetNullable(t *testing.T) {
+	pv := &PropertyValidator{NotNull: true}
+	require.True(t, pv.NotNull)
+
+	pv.SetNullable()
+	require.False(t, pv.NotNull)
+}
+
+func TestPropertyValidator_SetNotNullable(t *testing.T) {
+	pv := &PropertyValidator{}
+	require.False(t, pv.NotNull)
+
+	pv.SetNotNullable()
+	require.True(t, pv.NotNull)
+}
+
+func TestPropertyValidator_SetMandatory(t *testing.T) {
+	pv := &PropertyValidator{}
+	require.False(t, pv.Mandatory)
+
+	pv.SetMandatory()
+	require.True(t, pv.Mandatory)
+}
+
+func TestPropertyValidator_SetRequired(t *testing.T) {
+	pv := &PropertyValidator{}
+	require.False(t, pv.Mandatory)
+
+	pv.SetRequired()
+	require.True(t, pv.Mandatory)
+}
+
+func TestPropertyValidator_SetOptional(t *testing.T) {
+	pv := &PropertyValidator{Mandatory: true}
+	require.True(t, pv.Mandatory)
+
+	pv.SetOptional()
+	require.False(t, pv.Mandatory)
+}
+
+func TestPropertyValidator_AddMandatoryWhens(t *testing.T) {
+	pv := &PropertyValidator{}
+	require.Equal(t, 0, len(pv.MandatoryWhen))
+
+	pv.AddMandatoryWhens("foo", "bar")
+	require.Equal(t, 2, len(pv.MandatoryWhen))
+}
+
+func TestPropertyValidator_AddConstraints(t *testing.T) {
+	pv := &PropertyValidator{}
+	require.Equal(t, 0, len(pv.Constraints))
+
+	pv.AddConstraints(&StringNotEmpty{}, &StringNotBlank{})
+	require.Equal(t, 2, len(pv.Constraints))
+}
+
+func TestPropertyValidator_SetObjectValidator(t *testing.T) {
+	pv := &PropertyValidator{}
+	require.Nil(t, pv.ObjectValidator)
+
+	pv.SetObjectValidator(&Validator{})
+	require.NotNil(t, pv.ObjectValidator)
+}
+
+func TestPropertyValidator_SetOrder(t *testing.T) {
+	pv := &PropertyValidator{}
+	require.Equal(t, 0, pv.Order)
+
+	pv.SetOrder(1)
+	require.Equal(t, 1, pv.Order)
+}
+
+func TestPropertyValidator_AddWhenConditions(t *testing.T) {
+	pv := &PropertyValidator{}
+	require.Equal(t, 0, len(pv.WhenConditions))
+
+	pv.AddWhenConditions("foo", "bar")
+	require.Equal(t, 2, len(pv.WhenConditions))
+}
+
+func TestPropertyValidator_AddUnwantedConditions(t *testing.T) {
+	pv := &PropertyValidator{}
+	require.Equal(t, 0, len(pv.UnwantedConditions))
+
+	pv.AddUnwantedConditions("foo", "bar")
+	require.Equal(t, 2, len(pv.UnwantedConditions))
+}
+
+func TestPropertyValidator_SetRequiredWith(t *testing.T) {
+	pv := &PropertyValidator{}
+	require.Nil(t, pv.RequiredWith)
+
+	pv.SetRequiredWith(MustParseExpression("foo && bar"))
+	require.NotNil(t, pv.RequiredWith)
+	require.Equal(t, 2, len(pv.RequiredWith))
+}
+
+func TestPropertyValidator_SetRequiredWithMessage(t *testing.T) {
+	pv := &PropertyValidator{}
+	require.Equal(t, "", pv.RequiredWithMessage)
+
+	pv.SetRequiredWithMessage("fooey")
+	require.Equal(t, "fooey", pv.RequiredWithMessage)
+}
+
+func TestPropertyValidator_SetUnwantedWith(t *testing.T) {
+	pv := &PropertyValidator{}
+	require.Nil(t, pv.UnwantedWith)
+
+	pv.SetUnwantedWith(MustParseExpression("foo && bar"))
+	require.NotNil(t, pv.UnwantedWith)
+	require.Equal(t, 2, len(pv.UnwantedWith))
+}
+
+func TestPropertyValidator_SetUnwantedWithMessage(t *testing.T) {
+	pv := &PropertyValidator{}
+	require.Equal(t, "", pv.UnwantedWithMessage)
+
+	pv.SetUnwantedWithMessage("fooey")
+	require.Equal(t, "fooey", pv.UnwantedWithMessage)
+}

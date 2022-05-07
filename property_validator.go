@@ -289,3 +289,101 @@ func (pv *PropertyValidator) checkConstraints(vcx *ValidatorContext) {
 		}
 	}
 }
+
+// public alteration methods...
+
+// SetType sets the expected type for the property validator
+func (pv *PropertyValidator) SetType(t JsonType) *PropertyValidator {
+	pv.Type = t
+	return pv
+}
+
+// SetNullable sets the property validator to allow nulls
+func (pv *PropertyValidator) SetNullable() *PropertyValidator {
+	pv.NotNull = false
+	return pv
+}
+
+// SetNotNullable sets the property validator to disallow nulls
+func (pv *PropertyValidator) SetNotNullable() *PropertyValidator {
+	pv.NotNull = true
+	return pv
+}
+
+// SetMandatory sets the property is mandatory (required) for the property validator
+func (pv *PropertyValidator) SetMandatory() *PropertyValidator {
+	pv.Mandatory = true
+	return pv
+}
+
+// SetOptional sets the property is optional for the property validator
+func (pv *PropertyValidator) SetOptional() *PropertyValidator {
+	pv.Mandatory = false
+	return pv
+}
+
+// SetRequired same as SetMandatory
+func (pv *PropertyValidator) SetRequired() *PropertyValidator {
+	pv.Mandatory = true
+	return pv
+}
+
+// AddMandatoryWhens adds mandatory when condition token(s) to the property validator
+func (pv *PropertyValidator) AddMandatoryWhens(c ...string) *PropertyValidator {
+	pv.MandatoryWhen = append(pv.MandatoryWhen, c...)
+	return pv
+}
+
+// AddConstraints adds constraint(s) to the property validator
+func (pv *PropertyValidator) AddConstraints(c ...Constraint) *PropertyValidator {
+	pv.Constraints = append(pv.Constraints, c...)
+	return pv
+}
+
+// SetObjectValidator sets the object validator for the property validator
+func (pv *PropertyValidator) SetObjectValidator(v *Validator) *PropertyValidator {
+	pv.ObjectValidator = v
+	return pv
+}
+
+// SetOrder sets the property check order for the property validator
+func (pv *PropertyValidator) SetOrder(order int) *PropertyValidator {
+	pv.Order = order
+	return pv
+}
+
+// AddWhenConditions adds when condition token(s) to the property validator
+func (pv *PropertyValidator) AddWhenConditions(c ...string) *PropertyValidator {
+	pv.WhenConditions = append(pv.WhenConditions, c...)
+	return pv
+}
+
+// AddUnwantedConditions adds when condition token(s) to the property validator
+func (pv *PropertyValidator) AddUnwantedConditions(c ...string) *PropertyValidator {
+	pv.UnwantedConditions = append(pv.UnwantedConditions, c...)
+	return pv
+}
+
+// SetRequiredWith sets the required with expression for the property validator
+func (pv *PropertyValidator) SetRequiredWith(expr OthersExpr) *PropertyValidator {
+	pv.RequiredWith = expr
+	return pv
+}
+
+// SetRequiredWithMessage sets the required with message for the property validator
+func (pv *PropertyValidator) SetRequiredWithMessage(msg string) *PropertyValidator {
+	pv.RequiredWithMessage = msg
+	return pv
+}
+
+// SetUnwantedWith sets the unwanted with expression for the property validator
+func (pv *PropertyValidator) SetUnwantedWith(expr OthersExpr) *PropertyValidator {
+	pv.UnwantedWith = expr
+	return pv
+}
+
+// SetUnwantedWithMessage sets the unwanted with message for the property validator
+func (pv *PropertyValidator) SetUnwantedWithMessage(msg string) *PropertyValidator {
+	pv.UnwantedWithMessage = msg
+	return pv
+}
