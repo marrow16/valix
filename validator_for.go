@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"time"
 )
 
 const (
@@ -225,8 +226,16 @@ func getFieldName(fld reflect.StructField) string {
 	return result
 }
 
+var timeType = reflect.TypeOf(time.Time{})
+var valixTimeType = reflect.TypeOf(Time{})
+
 func detectFieldType(fld reflect.StructField) JsonType {
-	switch fld.Type.Kind() {
+	k := fld.Type.Kind()
+	isPtr := k == reflect.Ptr
+	if isPtr {
+		k = fld.Type.Elem().Kind()
+	}
+	switch k {
 	case reflect.String:
 		return JsonString
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
@@ -238,6 +247,10 @@ func detectFieldType(fld reflect.StructField) JsonType {
 	case reflect.Bool:
 		return JsonBoolean
 	case reflect.Struct:
+		if (!isPtr && fld.Type.AssignableTo(timeType)) || (isPtr && fld.Type.Elem().AssignableTo(timeType)) ||
+			(!isPtr && fld.Type.AssignableTo(valixTimeType)) || (isPtr && fld.Type.Elem().AssignableTo(valixTimeType)) {
+			return JsonDatetime
+		}
 		return JsonObject
 	case reflect.Slice:
 		return JsonArray

@@ -1191,16 +1191,13 @@ type DatetimeFuture struct {
 
 // Check implements Constraint.Check
 func (c *DatetimeFuture) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
-	if str, ok := v.(string); ok {
-		if dt, ok2 := stringToDatetime(str, c.ExcTime); !ok2 || !dt.After(truncateDate(time.Now(), c.ExcTime)) {
-			vcx.CeaseFurtherIf(c.Stop)
-			return false, c.GetMessage(vcx)
+	if dt, ok := isTime(v, c.ExcTime); ok {
+		if dt.After(truncateTime(time.Now(), c.ExcTime)) {
+			return true, ""
 		}
-	} else if dt, ok2 := v.(time.Time); ok2 && !truncateDate(dt, c.ExcTime).After(truncateDate(time.Now(), c.ExcTime)) {
-		vcx.CeaseFurtherIf(c.Stop)
-		return false, c.GetMessage(vcx)
 	}
-	return true, ""
+	vcx.CeaseFurtherIf(c.Stop)
+	return false, c.GetMessage(vcx)
 }
 
 // GetMessage implements the Constraint.GetMessage
@@ -1224,16 +1221,13 @@ type DatetimeFutureOrPresent struct {
 
 // Check implements Constraint.Check
 func (c *DatetimeFutureOrPresent) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
-	if str, ok := v.(string); ok {
-		if dt, ok2 := stringToDatetime(str, c.ExcTime); !ok2 || dt.Before(truncateDate(time.Now(), c.ExcTime)) {
-			vcx.CeaseFurtherIf(c.Stop)
-			return false, c.GetMessage(vcx)
+	if dt, ok := isTime(v, c.ExcTime); ok {
+		if dt.After(truncateTime(time.Now(), c.ExcTime)) || dt.Equal(truncateTime(time.Now(), c.ExcTime)) {
+			return true, ""
 		}
-	} else if dt, ok2 := v.(time.Time); ok2 && truncateDate(dt, c.ExcTime).Before(truncateDate(time.Now(), c.ExcTime)) {
-		vcx.CeaseFurtherIf(c.Stop)
-		return false, c.GetMessage(vcx)
 	}
-	return true, ""
+	vcx.CeaseFurtherIf(c.Stop)
+	return false, c.GetMessage(vcx)
 }
 
 // GetMessage implements the Constraint.GetMessage
@@ -1257,16 +1251,13 @@ type DatetimePast struct {
 
 // Check implements Constraint.Check
 func (c *DatetimePast) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
-	if str, ok := v.(string); ok {
-		if dt, ok2 := stringToDatetime(str, c.ExcTime); !ok2 || !dt.Before(truncateDate(time.Now(), c.ExcTime)) {
-			vcx.CeaseFurtherIf(c.Stop)
-			return false, c.GetMessage(vcx)
+	if dt, ok := isTime(v, c.ExcTime); ok {
+		if dt.Before(truncateTime(time.Now(), c.ExcTime)) {
+			return true, ""
 		}
-	} else if dt, ok2 := v.(time.Time); ok2 && !truncateDate(dt, c.ExcTime).Before(truncateDate(time.Now(), c.ExcTime)) {
-		vcx.CeaseFurtherIf(c.Stop)
-		return false, c.GetMessage(vcx)
 	}
-	return true, ""
+	vcx.CeaseFurtherIf(c.Stop)
+	return false, c.GetMessage(vcx)
 }
 
 // GetMessage implements the Constraint.GetMessage
@@ -1290,16 +1281,14 @@ type DatetimePastOrPresent struct {
 
 // Check implements Constraint.Check
 func (c *DatetimePastOrPresent) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
-	if str, ok := v.(string); ok {
-		if dt, ok2 := stringToDatetime(str, c.ExcTime); !ok2 || !dt.Before(truncateDate(time.Now(), c.ExcTime)) {
-			vcx.CeaseFurtherIf(c.Stop)
-			return false, c.GetMessage(vcx)
+	if dt, ok := isTime(v, c.ExcTime); ok {
+		now := truncateTime(time.Now(), c.ExcTime)
+		if dt.Before(now) || dt.Equal(now) {
+			return true, ""
 		}
-	} else if dt, ok2 := v.(time.Time); ok2 && truncateDate(dt, c.ExcTime).After(truncateDate(time.Now(), c.ExcTime)) {
-		vcx.CeaseFurtherIf(c.Stop)
-		return false, c.GetMessage(vcx)
 	}
-	return true, ""
+	vcx.CeaseFurtherIf(c.Stop)
+	return false, c.GetMessage(vcx)
 }
 
 // GetMessage implements the Constraint.GetMessage

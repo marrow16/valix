@@ -2,9 +2,48 @@ package valix
 
 import (
 	"encoding/json"
+	"fmt"
 	"math"
 	"reflect"
+	"strconv"
+	"strings"
+	"time"
 )
+
+// Time is an optional replacement of time.Time
+//
+// For use with struct fields where unmarshalling needs to be less strict than just RFC3339
+type Time struct {
+	time.Time
+	Original string
+}
+
+var nilTime = (time.Time{}).UnixNano()
+
+func (t *Time) UnmarshalJSON(b []byte) error {
+	t.Original = strings.Trim(string(b), "\"")
+	if t.Original == "null" {
+		t.Time = time.Time{}
+		return nil
+	}
+	at, ok := stringToDatetime(t.Original, false)
+	if !ok {
+		return fmt.Errorf("not a valid datetime - '%s'", t.Original)
+	}
+	t.Time = *at
+	return nil
+}
+
+func (t *Time) MarshalJSON() ([]byte, error) {
+	if t.Time.UnixNano() == nilTime {
+		return []byte("null"), nil
+	}
+	return []byte(strconv.Quote(t.Time.Format(time.RFC3339Nano))), nil
+}
+
+func (t *Time) IsSet() bool {
+	return t.UnixNano() != nilTime
+}
 
 func coerceToFloat(value interface{}) (f float64, ok bool, isNumber bool) {
 	if value == nil {

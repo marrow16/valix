@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 )
@@ -48,6 +49,64 @@ func TestTypeCheckString(t *testing.T) {
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
 	require.Equal(t, fmt.Sprintf(fmtMsgValueExpectedType, JsonString), violations[0].Message)
+}
+
+func TestTypeCheckDatetime(t *testing.T) {
+	validator := &Validator{
+		Properties: Properties{
+			"foo": {
+				Type: JsonDatetime,
+			},
+		},
+	}
+	obj := jsonObject(`{
+		"foo": "2022-05-04T10:11:12"
+	}`)
+	ok, violations := validator.Validate(obj)
+	require.True(t, ok)
+	require.Equal(t, 0, len(violations))
+	obj["foo"] = time.Now()
+	ok, violations = validator.Validate(obj)
+	require.True(t, ok)
+	require.Equal(t, 0, len(violations))
+	obj["foo"] = &time.Time{}
+	ok, violations = validator.Validate(obj)
+	require.True(t, ok)
+	require.Equal(t, 0, len(violations))
+	obj["foo"] = Time{}
+	ok, violations = validator.Validate(obj)
+	require.True(t, ok)
+	require.Equal(t, 0, len(violations))
+	obj["foo"] = &Time{}
+	ok, violations = validator.Validate(obj)
+	require.True(t, ok)
+	require.Equal(t, 0, len(violations))
+
+	obj["foo"] = true
+	ok, violations = validator.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, fmt.Sprintf(fmtMsgValueExpectedType, JsonDatetime), violations[0].Message)
+	obj["foo"] = 1
+	ok, violations = validator.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, fmt.Sprintf(fmtMsgValueExpectedType, JsonDatetime), violations[0].Message)
+	obj["foo"] = 1.1
+	ok, violations = validator.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, fmt.Sprintf(fmtMsgValueExpectedType, JsonDatetime), violations[0].Message)
+	obj["foo"] = []interface{}{}
+	ok, violations = validator.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, fmt.Sprintf(fmtMsgValueExpectedType, JsonDatetime), violations[0].Message)
+	obj["foo"] = map[string]interface{}{}
+	ok, violations = validator.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, fmt.Sprintf(fmtMsgValueExpectedType, JsonDatetime), violations[0].Message)
 }
 
 func TestTypeCheckNumber(t *testing.T) {
@@ -314,13 +373,14 @@ func TestTypeCheckAny(t *testing.T) {
 
 func TestJsonTypeToString(t *testing.T) {
 	testValues := map[JsonType]string{
-		JsonString:  jsonTypeTokenString,
-		JsonNumber:  jsonTypeTokenNumber,
-		JsonInteger: jsonTypeTokenInteger,
-		JsonBoolean: jsonTypeTokenBoolean,
-		JsonObject:  jsonTypeTokenObject,
-		JsonArray:   jsonTypeTokenArray,
-		JsonAny:     jsonTypeTokenAny,
+		JsonString:   jsonTypeTokenString,
+		JsonDatetime: jsonTypeTokenDatetime,
+		JsonNumber:   jsonTypeTokenNumber,
+		JsonInteger:  jsonTypeTokenInteger,
+		JsonBoolean:  jsonTypeTokenBoolean,
+		JsonObject:   jsonTypeTokenObject,
+		JsonArray:    jsonTypeTokenArray,
+		JsonAny:      jsonTypeTokenAny,
 	}
 	for k, v := range testValues {
 		t.Run(fmt.Sprintf("JsonType_Token_%s", v), func(t *testing.T) {
@@ -335,13 +395,14 @@ func TestJsonTypeToString(t *testing.T) {
 
 func TestJsonTypeFromString(t *testing.T) {
 	testValues := map[string]JsonType{
-		jsonTypeTokenString:  JsonString,
-		jsonTypeTokenNumber:  JsonNumber,
-		jsonTypeTokenInteger: JsonInteger,
-		jsonTypeTokenBoolean: JsonBoolean,
-		jsonTypeTokenObject:  JsonObject,
-		jsonTypeTokenArray:   JsonArray,
-		jsonTypeTokenAny:     JsonAny,
+		jsonTypeTokenString:   JsonString,
+		jsonTypeTokenDatetime: JsonDatetime,
+		jsonTypeTokenNumber:   JsonNumber,
+		jsonTypeTokenInteger:  JsonInteger,
+		jsonTypeTokenBoolean:  JsonBoolean,
+		jsonTypeTokenObject:   JsonObject,
+		jsonTypeTokenArray:    JsonArray,
+		jsonTypeTokenAny:      JsonAny,
 	}
 	for k, v := range testValues {
 		t.Run(fmt.Sprintf("JsonType_Token_%s", k), func(t *testing.T) {

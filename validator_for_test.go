@@ -2,9 +2,9 @@ package valix
 
 import (
 	"fmt"
-	"testing"
-
 	"github.com/stretchr/testify/require"
+	"testing"
+	"time"
 )
 
 func TestShouldPanicWithNonStruct(t *testing.T) {
@@ -191,6 +191,27 @@ func TestValidatorForDetectsTypeObject(t *testing.T) {
 	require.NotNil(t, pv)
 	require.Equal(t, 0, len(pv.Constraints))
 	require.Equal(t, JsonObject, pv.Type)
+}
+
+func TestValidatorForDetectsTypeDatetime(t *testing.T) {
+	myStruct := struct {
+		Foo time.Time  `json:"foo"`
+		Bar *time.Time `json:"bar"`
+	}{}
+	v, err := ValidatorFor(myStruct, nil)
+	require.Nil(t, err)
+	require.NotNil(t, v)
+	require.Equal(t, 2, len(v.Properties))
+	pv, ok := v.Properties["foo"]
+	require.True(t, ok)
+	require.NotNil(t, pv)
+	require.Equal(t, 0, len(pv.Constraints))
+	require.Equal(t, JsonDatetime, pv.Type)
+	pv, ok = v.Properties["bar"]
+	require.True(t, ok)
+	require.NotNil(t, pv)
+	require.Equal(t, 0, len(pv.Constraints))
+	require.Equal(t, JsonDatetime, pv.Type)
 }
 
 func TestValidatorForDetectsTypeMap(t *testing.T) {

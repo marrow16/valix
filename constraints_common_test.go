@@ -2048,18 +2048,19 @@ func TestDatetimePastOrPresent(t *testing.T) {
 func TestDatetimePastOrPresentExcTime(t *testing.T) {
 	constraint := &DatetimePastOrPresent{ExcTime: true}
 	validator := buildFooValidator(JsonAny, constraint, false)
-	pastTime := time.Now().Add(0 - (2 * time.Second))
+	testTime := time.Now().Add(2 * time.Second)
 	obj := map[string]interface{}{
-		"foo": pastTime.Format("2006-01-02T15:04:05.000000000-07:00"),
+		"foo": testTime.Format("2006-01-02T15:04:05.000000000-07:00"),
 	}
 	ok, violations := validator.Validate(obj)
+	require.True(t, ok)
+	require.Equal(t, 0, len(violations))
+
+	constraint.ExcTime = false
+	ok, violations = validator.Validate(obj)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
 	require.Equal(t, msgDatetimePastOrPresent, violations[0].Message)
-
-	constraint.ExcTime = false
-	ok, _ = validator.Validate(obj)
-	require.True(t, ok)
 }
 
 func TestStringValidCardNumberConstraint(t *testing.T) {
