@@ -354,12 +354,19 @@ func TestValidatorForWithNestedStruct(t *testing.T) {
 }
 
 func TestValidatorForWithNestedStructTagError(t *testing.T) {
-	myStruct := struct {
+	_, err := ValidatorFor(struct {
 		Sub1 struct {
 			Sub2 struct{} `v8n:"BAD_TOKEN"`
 		}
-	}{}
-	_, err := ValidatorFor(myStruct, nil)
+	}{}, nil)
+	require.NotNil(t, err)
+	require.Equal(t, fmt.Sprintf(msgWrapped, "Sub2", "Sub2", fmt.Sprintf(msgUnknownTokenInTag, "BAD_TOKEN")), err.Error())
+
+	_, err = ValidatorFor(struct {
+		Sub1 *struct {
+			Sub2 struct{} `v8n:"BAD_TOKEN"`
+		}
+	}{}, nil)
 	require.NotNil(t, err)
 	require.Equal(t, fmt.Sprintf(msgWrapped, "Sub2", "Sub2", fmt.Sprintf(msgUnknownTokenInTag, "BAD_TOKEN")), err.Error())
 }
@@ -425,6 +432,14 @@ type deepTestStruct struct {
 func TestValidatorForFailsWithBadTagInSliceStruct(t *testing.T) {
 	_, err := ValidatorFor(struct {
 		Slice []struct {
+			Foo string `v8n:"bad_token"`
+		} `json:"slice"`
+	}{}, nil)
+	require.NotNil(t, err)
+	require.Equal(t, fmt.Sprintf(msgWrapped, "Foo", "Foo", fmt.Sprintf(msgUnknownTokenInTag, "bad_token")), err.Error())
+
+	_, err = ValidatorFor(struct {
+		Slice []*struct {
 			Foo string `v8n:"bad_token"`
 		} `json:"slice"`
 	}{}, nil)
@@ -500,6 +515,36 @@ func TestValidatorForDeepStruct(t *testing.T) {
 	require.Equal(t, JsonString, arrSubV.Properties["arrSubArr"].ObjectValidator.Properties["arrSubArrFoo"].Type)
 	require.Equal(t, JsonArray, arrSubV.Properties["arrSubSlice"].Type)
 	require.Nil(t, arrSubV.Properties["arrSubSlice"].ObjectValidator)
+}
+
+func TestValidatorForStructPtrField(t *testing.T) {
+	v, err := ValidatorFor(struct {
+		SubField *struct {
+			Foo string
+		}
+	}{}, nil)
+	require.Nil(t, err)
+	require.NotNil(t, v)
+
+	require.Equal(t, 1, len(v.Properties))
+	pv := v.Properties["SubField"]
+	require.NotNil(t, pv.ObjectValidator)
+	require.Equal(t, 1, len(pv.ObjectValidator.Properties))
+}
+
+func TestValidatorForSlicePtrStructField(t *testing.T) {
+	v, err := ValidatorFor(struct {
+		SubSlice []*struct {
+			Foo string
+		}
+	}{}, nil)
+	require.Nil(t, err)
+	require.NotNil(t, v)
+
+	require.Equal(t, 1, len(v.Properties))
+	pv := v.Properties["SubSlice"]
+	require.NotNil(t, pv.ObjectValidator)
+	require.Equal(t, 1, len(pv.ObjectValidator.Properties))
 }
 
 type itemInSlice struct {

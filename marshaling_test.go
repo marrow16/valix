@@ -17,6 +17,7 @@ func TestValidator_MarshalJSON(t *testing.T) {
 		DisallowObject:          true,
 		StopOnFirst:             true,
 		OrderedPropertyChecks:   true,
+		AllowNullItems:          true,
 		WhenConditions:          []string{"test"},
 		Constraints: Constraints{
 			&Length{Minimum: 1, Maximum: 2, Message: "message 1"},
@@ -118,20 +119,21 @@ func TestValidator_MarshalJSON(t *testing.T) {
 	err = json.Unmarshal(b, &obj)
 	require.Nil(t, err)
 	require.NotNil(t, obj)
-	pretty, _ := json.MarshalIndent(obj, "", "\t")
-	println(string(pretty[:]))
+	//pretty, _ := json.MarshalIndent(obj, "", "\t")
+	//println(string(pretty[:]))
 
 	valid, violations := ValidatorValidator.Validate(obj)
 	require.Equal(t, 0, len(violations))
 	require.True(t, valid)
 
 	// and check the JSON matches the validator...
-	require.Equal(t, 12, len(obj))
+	require.Equal(t, 13, len(obj))
 	require.True(t, obj[ptyNameIgnoreUnknownProperties].(bool))
 	require.True(t, obj[ptyNameAllowArray].(bool))
 	require.True(t, obj[ptyNameDisallowObject].(bool))
 	require.True(t, obj[ptyNameStopOnFirst].(bool))
 	require.True(t, obj[ptyNameOrderedPropertyChecks].(bool))
+	require.True(t, obj[ptyNameAllowNullItems].(bool))
 	require.Equal(t, 1, len(obj[ptyNameWhenConditions].([]interface{})))
 	require.Equal(t, "test", obj[ptyNameWhenConditions].([]interface{})[0])
 

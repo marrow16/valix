@@ -148,23 +148,50 @@ func propertyValidatorFromField(fld reflect.StructField) (*PropertyValidator, st
 		return nil, name, err
 	}
 
-	if fld.Type.Kind() == reflect.Struct && result.Type == JsonObject {
-		ptys, err := buildPropertyValidators(fld.Type)
-		if err != nil {
-			return nil, name, err
+	fKind := fld.Type.Kind()
+	objValidatorUsed := false
+	if result.Type == JsonObject {
+		if fKind == reflect.Struct {
+			ptys, err := buildPropertyValidators(fld.Type)
+			if err != nil {
+				return nil, name, err
+			}
+			result.ObjectValidator.DisallowObject = false
+			result.ObjectValidator.AllowArray = false
+			result.ObjectValidator.Properties = ptys
+			objValidatorUsed = true
+		} else if fKind == reflect.Ptr && fld.Type.Elem().Kind() == reflect.Struct {
+			ptys, err := buildPropertyValidators(fld.Type.Elem())
+			if err != nil {
+				return nil, name, err
+			}
+			result.ObjectValidator.DisallowObject = false
+			result.ObjectValidator.AllowArray = false
+			result.ObjectValidator.Properties = ptys
+			objValidatorUsed = true
 		}
-		result.ObjectValidator.DisallowObject = false
-		result.ObjectValidator.AllowArray = false
-		result.ObjectValidator.Properties = ptys
-	} else if fld.Type.Kind() == reflect.Slice && result.Type == JsonArray && fld.Type.Elem().Kind() == reflect.Struct {
-		ptys, err := buildPropertyValidators(fld.Type.Elem())
-		if err != nil {
-			return nil, name, err
+	} else if result.Type == JsonArray && fKind == reflect.Slice {
+		if fld.Type.Elem().Kind() == reflect.Struct {
+			ptys, err := buildPropertyValidators(fld.Type.Elem())
+			if err != nil {
+				return nil, name, err
+			}
+			result.ObjectValidator.DisallowObject = true
+			result.ObjectValidator.AllowArray = true
+			result.ObjectValidator.Properties = ptys
+			objValidatorUsed = true
+		} else if fld.Type.Elem().Kind() == reflect.Ptr && fld.Type.Elem().Elem().Kind() == reflect.Struct {
+			ptys, err := buildPropertyValidators(fld.Type.Elem().Elem())
+			if err != nil {
+				return nil, name, err
+			}
+			result.ObjectValidator.DisallowObject = true
+			result.ObjectValidator.AllowArray = true
+			result.ObjectValidator.Properties = ptys
+			objValidatorUsed = true
 		}
-		result.ObjectValidator.DisallowObject = true
-		result.ObjectValidator.AllowArray = true
-		result.ObjectValidator.Properties = ptys
-	} else {
+	}
+	if !objValidatorUsed {
 		result.ObjectValidator = nil
 	}
 	return result, name, nil

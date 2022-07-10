@@ -161,6 +161,7 @@ var internalMessages = map[string]string{
 	msgRequestBodyExpectedJsonArray:   msgRequestBodyExpectedJsonArray,
 	msgRequestBodyExpectedJsonObject:  msgRequestBodyExpectedJsonObject,
 	msgArrayElementMustBeObject:       msgArrayElementMustBeObject,
+	msgArrayElementMustNotBeNull:      msgArrayElementMustNotBeNull,
 	msgMissingProperty:                msgMissingProperty,
 	msgUnwantedProperty:               msgUnwantedProperty,
 	msgUnknownProperty:                msgUnknownProperty,

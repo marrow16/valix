@@ -29,6 +29,7 @@ func (v *Validator) toJSON() (map[string]interface{}, error) {
 		ptyNameAllowArray:              v.AllowArray,
 		ptyNameDisallowObject:          v.DisallowObject,
 		ptyNameAllowNullJson:           v.AllowNullJson,
+		ptyNameAllowNullItems:          v.AllowNullItems,
 		ptyNameStopOnFirst:             v.StopOnFirst,
 		ptyNameUseNumber:               v.UseNumber,
 		ptyNameOrderedPropertyChecks:   v.OrderedPropertyChecks,
