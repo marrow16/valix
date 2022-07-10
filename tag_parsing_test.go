@@ -635,6 +635,20 @@ func TestPropertyValidator_AddObjectTagItem_Constraint(t *testing.T) {
 	require.Equal(t, fmt.Sprintf(msgPropertyNotObject, tagTokenObjConstraint), err.Error())
 }
 
+func TestPropertyValidator_AddArrayTagItem_AllowNullItems(t *testing.T) {
+	pv := &PropertyValidator{ObjectValidator: &Validator{}}
+	require.False(t, pv.ObjectValidator.AllowNullItems)
+
+	err := pv.addTagItem("", "", tagTokenArrAllowNullItems)
+	require.Nil(t, err)
+	require.True(t, pv.ObjectValidator.AllowNullItems)
+
+	pv = &PropertyValidator{}
+	err = pv.addTagItem("", "", tagTokenArrAllowNullItems)
+	require.NotNil(t, err)
+	require.Equal(t, fmt.Sprintf(msgPropertyNotObject, tagTokenArrAllowNullItems), err.Error())
+}
+
 func TestParseConstraintSet(t *testing.T) {
 	pv := &PropertyValidator{ObjectValidator: &Validator{
 		Constraints: Constraints{},

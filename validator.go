@@ -26,6 +26,8 @@ type Validator struct {
 	// AllowArray denotes, when true (default is false), that this validator will allow a JSON array - where each
 	// item in the array can be validated as an object
 	AllowArray bool
+	// AllowNullItems [for arrays only] denotes whether null array items are allowed
+	AllowNullItems bool
 	// DisallowObject denotes, when set to true, that this validator will disallow JSON objects - i.e. that it
 	// expects JSON arrays (in which case the AllowArray should also be set to true)
 	DisallowObject bool
@@ -111,6 +113,8 @@ const (
 	CodePropertyRequiredWhen          = 42219
 	msgPropertyUnwantedWhen           = "Property must not be present under certain criteria"
 	CodePropertyUnwantedWhen          = 42220
+	msgArrayElementMustNotBeNull      = "JSON array element must not be null"
+	CodeArrayElementMustNotBeNull     = 42221
 	CodeValidatorConstraintFail       = 42298
 )
 
@@ -187,33 +191,6 @@ func (v *Validator) decodeRequestBody(r io.Reader, vcx *ValidatorContext) (bool,
 	}
 	return true, obj
 }
-
-/*
-func (v *Validator) requestBodyValidate(vcx *ValidatorContext, obj interface{}) {
-	if obj != nil {
-		// determine whether body is a map (object) or a slice (array)...
-		if arr, isArr := obj.([]interface{}); isArr {
-			if v.AllowArray {
-				v.validateArrayOf(arr, vcx)
-			} else {
-				vcx.AddViolation(newEmptyViolation(vcx, msgRequestBodyNotJsonArray, CodeRequestBodyNotJsonArray))
-			}
-		} else if m, isMap := obj.(map[string]interface{}); isMap {
-			if v.DisallowObject && v.AllowArray {
-				vcx.AddViolation(newEmptyViolation(vcx, msgRequestBodyExpectedJsonArray, CodeRequestBodyExpectedJsonArray))
-			} else if v.DisallowObject {
-				vcx.AddViolation(newEmptyViolation(vcx, msgRequestBodyNotJsonObject, CodeRequestBodyNotJsonObject))
-			} else {
-				v.validate(m, vcx)
-			}
-		} else {
-			vcx.AddViolation(newBadRequestViolation(vcx, msgRequestBodyExpectedJsonObject, CodeRequestBodyExpectedJsonObject, nil))
-		}
-	} else if !v.AllowNullJson {
-		vcx.AddViolation(newBadRequestViolation(vcx, msgRequestBodyNotJsonNull, CodeRequestBodyNotJsonNull, nil))
-	}
-}
-*/
 
 // Validate performs validation on the supplied JSON object
 //
@@ -589,7 +566,11 @@ func getMatchingVariant(vcx *ValidatorContext, variants ConditionalVariants) (ha
 func (v *Validator) validateArrayOf(arr []interface{}, vcx *ValidatorContext) {
 	for i, elem := range arr {
 		vcx.pushPathIndex(i, elem, v)
-		if obj, itemOk := elem.(map[string]interface{}); itemOk {
+		if elem == nil {
+			if !v.AllowNullItems {
+				vcx.addUnTranslatedViolationForCurrent(msgArrayElementMustNotBeNull, CodeArrayElementMustNotBeNull, i)
+			}
+		} else if obj, itemOk := elem.(map[string]interface{}); itemOk {
 			v.validate(obj, vcx)
 		} else {
 			vcx.addUnTranslatedViolationForCurrent(msgArrayElementMustBeObject, CodeArrayElementMustBeObject, i)

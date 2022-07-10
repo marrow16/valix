@@ -36,6 +36,9 @@ const (
 	tagTokenObjConstraint              = tagTokenObjPrefix + tagTokenConstraint
 	tagTokenObjOrdered                 = tagTokenObjPrefix + "ordered"
 	tagTokenObjWhen                    = tagTokenObjPrefix + tagTokenWhen
+	// array level tag items...
+	tagTokenArrPrefix         = "arr."
+	tagTokenArrAllowNullItems = tagTokenArrPrefix + "allowNulls"
 )
 
 const (
@@ -141,57 +144,47 @@ func (pv *PropertyValidator) addTagItem(fieldName string, propertyName string, t
 	case tagTokenNotNull:
 		colonErr = hasColon
 		pv.NotNull = true
-		break
 	case tagTokenNullable:
 		colonErr = hasColon
 		pv.NotNull = false
-		break
 	case tagTokenMandatory, tagTokenRequired:
 		if hasColon {
 			result = pv.setTagMandatoryWhen(tagValue)
 		}
 		pv.Mandatory = true
-		break
 	case tagTokenOptional:
 		colonErr = hasColon
 		pv.Mandatory = false
-		break
 	case tagTokenType:
 		noColonErr = !hasColon
 		if !noColonErr {
 			result = pv.setTagType(tagValue)
 		}
-		break
 	case tagTokenOrder:
 		noColonErr = !hasColon
 		if !noColonErr {
 			result = pv.setTagOrder(tagValue)
 		}
-		break
 	case tagTokenConstraint:
 		noColonErr = !hasColon
 		if !noColonErr {
 			result = pv.addConstraint(tagValue)
 		}
-		break
 	case tagTokenObjConstraint:
 		noColonErr = !hasColon
 		if !noColonErr {
 			result = pv.setTagObjConstraint(tagValue)
 		}
-		break
 	case tagTokenWhen:
 		noColonErr = !hasColon
 		if !noColonErr {
 			result = pv.setTagWhen(tagValue)
 		}
-		break
 	case tagTokenUnwanted:
 		noColonErr = !hasColon
 		if !noColonErr {
 			result = pv.setTagUnwanted(tagValue)
 		}
-		break
 	case tagTokenRequiredWith, tagTokenRequiredWithAlt:
 		noColonErr = !hasColon
 		if !noColonErr {
@@ -229,13 +222,11 @@ func (pv *PropertyValidator) addTagItem(fieldName string, propertyName string, t
 				pv.ObjectValidator.IgnoreUnknownProperties = true
 			}
 		}
-		break
 	case tagTokenObjUnknownProperties:
 		noColonErr = !hasColon
 		if !noColonErr {
 			result = pv.setTagObjUnknownProperties(tagValue)
 		}
-		break
 	case tagTokenObjOrdered:
 		colonErr = hasColon
 		if !colonErr {
@@ -245,13 +236,20 @@ func (pv *PropertyValidator) addTagItem(fieldName string, propertyName string, t
 				pv.ObjectValidator.OrderedPropertyChecks = true
 			}
 		}
-		break
 	case tagTokenObjWhen:
 		noColonErr = !hasColon
 		if !noColonErr {
 			result = pv.setTagObjWhen(tagValue)
 		}
-		break
+	case tagTokenArrAllowNullItems:
+		colonErr = hasColon
+		if !colonErr {
+			if pv.ObjectValidator == nil {
+				result = fmt.Errorf(msgPropertyNotObject, tagToken)
+			} else {
+				pv.ObjectValidator.AllowNullItems = true
+			}
+		}
 	default:
 		if strings.HasPrefix(tagItem, "&") {
 			// if tagName starts with '&' we can assume it's a constraint

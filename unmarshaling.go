@@ -18,6 +18,7 @@ const (
 	ptyNameAllowArray              = "allowArray"
 	ptyNameDisallowObject          = "disallowObject"
 	ptyNameAllowNullJson           = "allowNullJson"
+	ptyNameAllowNullItems          = "allowNullItems"
 	ptyNameStopOnFirst             = "stopOnFirst"
 	ptyNameUseNumber               = "useNumber"
 	ptyNameOrderedPropertyChecks   = "orderedPropertyChecks"
@@ -297,6 +298,11 @@ func init() {
 				NotNull:   true,
 			},
 			ptyNameAllowNullJson: {
+				Type:      JsonBoolean,
+				Mandatory: false,
+				NotNull:   true,
+			},
+			ptyNameAllowNullItems: {
 				Type:      JsonBoolean,
 				Mandatory: false,
 				NotNull:   true,

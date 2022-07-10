@@ -4085,6 +4085,22 @@ the above will check the properties in order specified by their <code>order:</co
         </details>
       </td>
     </tr>
+    <tr>
+      <td>
+        <code>arr.allowNulls</code><br>
+      </td>
+      <td>
+        For array (slice) fields, specifies that array elements can be null
+        <details>
+          <summary>Example</summary>
+          <pre>type Example struct {
+  SubSlice []*struct {
+    Foo string
+  } `json:"subSlice" v8n:"arr.allowNulls"`
+}</pre>
+        </details>
+      </td>
+    </tr>
   </tbody>
 </table>
 

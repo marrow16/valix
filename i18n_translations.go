@@ -428,6 +428,13 @@ var defaultInternalTranslator = &internalTranslator{
 			"it": "L'elemento dell'array JSON deve essere un oggetto",
 			"de": "JSON-Array-Element muss ein Objekt sein",
 		},
+		msgArrayElementMustNotBeNull: {
+			"en": msgArrayElementMustNotBeNull,
+			"fr": "L'élément de tableau JSON ne doit pas être nul",
+			"es": "El elemento de matriz JSON no debe ser nulo",
+			"it": "L'elemento dell'array JSON non deve essere nullo",
+			"de": "JSON-Array-Element darf nicht null sein",
+		},
 		msgArrayUnique: {
 			"en": msgArrayUnique,
 			"fr": "Les éléments du tableau doivent être uniques",

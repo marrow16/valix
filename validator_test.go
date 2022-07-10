@@ -148,6 +148,44 @@ func TestValidationOfArrayFailsWithNonObjectElement(t *testing.T) {
 	require.Equal(t, "[1]", violations[0].Property)
 }
 
+func TestValidationOfArrayFailsWithNullElement(t *testing.T) {
+	subV := &Validator{
+		DisallowObject: true,
+		AllowArray:     true,
+		AllowNullItems: false,
+		Properties: Properties{
+			"Foo": {
+				Type: JsonString,
+			},
+		},
+	}
+	v := &Validator{
+		Properties: Properties{
+			"Slice": {
+				Type:            JsonArray,
+				ObjectValidator: subV,
+			},
+		},
+	}
+	o := jsonObject(`{
+		"Slice": [
+			{
+				"Foo": "bar"
+			},
+			null
+		]
+	}`)
+
+	ok, violations := v.Validate(o)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, msgArrayElementMustNotBeNull, violations[0].Message)
+
+	subV.AllowNullItems = true
+	ok, _ = v.Validate(o)
+	require.True(t, ok)
+}
+
 func TestValidatorWithObjectConstraint(t *testing.T) {
 	v := Validator{
 		IgnoreUnknownProperties: true,
