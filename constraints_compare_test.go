@@ -1314,7 +1314,7 @@ func TestDatetimeToleranceToNow(t *testing.T) {
 		Duration: -5,
 		Unit:     "year",
 	}, false)
-	today := time.Now()
+	today := time.Now().Add(24 * time.Hour)
 	fiveYearsAgo, _ := shiftDatetimeByYears(&today, -5)
 	obj := map[string]interface{}{
 		"foo": fiveYearsAgo.Format("2006-01-02T15:04:05.999999999"),
