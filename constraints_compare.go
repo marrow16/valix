@@ -606,6 +606,8 @@ type DatetimeTolerance struct {
 	//
 	// Note: if this is empty, then "day" is assumed.  If the token is invalid - this constraint fails!
 	Unit string
+	// when set to true, specifies that the tolerance is a minimum check (rather than the default maximum check)
+	MinCheck bool
 	// when set to true, excludes the time when comparing
 	//
 	// Note: This also excludes the effect of any timezone offsets specified in either of the compared values
@@ -627,7 +629,7 @@ func (c *DatetimeTolerance) Check(v interface{}, vcx *ValidatorContext) (bool, s
 	}
 	useExcTime := c.ExcTime && c.Duration != 0
 	if dt, ok := isTime(v, useExcTime); ok {
-		if cdt, ok := stringToDatetime(c.Value, useExcTime); ok && checkDatetimeTolerance(&dt, cdt, c.Duration, c.Unit) {
+		if cdt, ok := stringToDatetime(c.Value, useExcTime); ok && checkDatetimeTolerance(&dt, cdt, c.Duration, c.Unit, c.MinCheck) {
 			return true, ""
 		}
 	}
@@ -644,18 +646,26 @@ func (c *DatetimeTolerance) GetMessage(tcx I18nContext) string {
 	useUnit := defaultToleranceUnit(c.Unit)
 	if c.Duration == 0 {
 		return useTcx.TranslateFormat(fmtMsgDtToleranceFixedSame, useTcx.TranslateToken(useUnit), c.Value)
-	} else if c.Duration == -1 {
-		return useTcx.TranslateFormat(fmtMsgDtToleranceFixedNotMoreThanBeforeSingular, useTcx.TranslateToken(useUnit), c.Value)
-	} else if c.Duration == 1 {
-		return useTcx.TranslateFormat(fmtMsgDtToleranceFixedNotMoreThanAfterSingular, useTcx.TranslateToken(useUnit), c.Value)
 	}
-	useFmt := fmtMsgDtToleranceFixedNotMoreThanAfterPlural
 	useAmount := c.Duration
-	if c.Duration < 0 {
+	if useAmount < 0 {
 		useAmount = 0 - useAmount
-		useFmt = fmtMsgDtToleranceFixedNotMoreThanBeforePlural
 	}
-	return useTcx.TranslateFormat(useFmt, useAmount, useTcx.TranslateToken(useUnit+"..."), c.Value)
+	if useAmount > 1 {
+		useUnit = useUnit + "..."
+	}
+	if c.MinCheck {
+		useFmt := fmtMsgDtToleranceFixedMinAfter
+		if c.Duration < 0 {
+			useFmt = fmtMsgDtToleranceFixedMinBefore
+		}
+		return useTcx.TranslateFormat(useFmt, useAmount, useTcx.TranslateToken(useUnit), c.Value)
+	}
+	useFmt := fmtMsgDtToleranceFixedMaxAfter
+	if c.Duration < 0 {
+		useFmt = fmtMsgDtToleranceFixedMaxBefore
+	}
+	return useTcx.TranslateFormat(useFmt, useAmount, useTcx.TranslateToken(useUnit), c.Value)
 }
 
 func defaultToleranceUnit(unit string) string {
@@ -666,11 +676,11 @@ func defaultToleranceUnit(unit string) string {
 }
 
 const (
-	fmtMsgDtToleranceFixedSame                      = "Value must be same %[1]s as %[2]s"
-	fmtMsgDtToleranceFixedNotMoreThanAfterPlural    = "Value must not be more than %[1]d %[2]s after %[3]s"
-	fmtMsgDtToleranceFixedNotMoreThanAfterSingular  = "Value must not be more than a %[1]s after %[2]s"
-	fmtMsgDtToleranceFixedNotMoreThanBeforePlural   = "Value must not be more than %[1]d %[2]s before %[3]s"
-	fmtMsgDtToleranceFixedNotMoreThanBeforeSingular = "Value must not be more than a %[1]s before %[2]s"
+	fmtMsgDtToleranceFixedSame      = "Value must be same %[1]s as %[2]s"
+	fmtMsgDtToleranceFixedMaxAfter  = "Value must not be more than %[1]d %[2]s after %[3]s"
+	fmtMsgDtToleranceFixedMaxBefore = "Value must not be more than %[1]d %[2]s before %[3]s"
+	fmtMsgDtToleranceFixedMinAfter  = "Value must be at least %[1]d %[2]s after %[3]s"
+	fmtMsgDtToleranceFixedMinBefore = "Value must be at least %[1]d %[2]s before %[3]s"
 )
 
 // DatetimeToleranceToNow constraint to check that a date/time (as an ISO string) value meets a tolerance against the current time
@@ -695,6 +705,8 @@ type DatetimeToleranceToNow struct {
 	//
 	// Note: if this is empty, then "day" is assumed.  If the token is invalid - this constraint fails!
 	Unit string
+	// when set to true, specifies that the tolerance is a minimum check (rather than the default maximum check)
+	MinCheck bool
 	// when set to true, excludes the time when comparing
 	//
 	// Note: This also excludes the effect of any timezone offsets specified in either of the compared values
@@ -717,7 +729,7 @@ func (c *DatetimeToleranceToNow) Check(v interface{}, vcx *ValidatorContext) (bo
 	useExcTime := c.ExcTime && c.Duration != 0
 	if dt, ok := isTime(v, useExcTime); ok {
 		now := truncateTime(time.Now(), useExcTime)
-		if checkDatetimeTolerance(&dt, &now, c.Duration, c.Unit) {
+		if checkDatetimeTolerance(&now, &dt, c.Duration, c.Unit, c.MinCheck) {
 			return true, ""
 		}
 	}
@@ -734,26 +746,34 @@ func (c *DatetimeToleranceToNow) GetMessage(tcx I18nContext) string {
 	useUnit := defaultToleranceUnit(c.Unit)
 	if c.Duration == 0 {
 		return useTcx.TranslateFormat(fmtMsgDtToleranceNowSame, useTcx.TranslateToken(useUnit))
-	} else if c.Duration == -1 {
-		return useTcx.TranslateFormat(fmtMsgDtToleranceNowNotMoreThanBeforeSingular, useTcx.TranslateToken(useUnit))
-	} else if c.Duration == 1 {
-		return useTcx.TranslateFormat(fmtMsgDtToleranceNowNotMoreThanAfterSingular, useTcx.TranslateToken(useUnit))
 	}
-	useFmt := fmtMsgDtToleranceNowNotMoreThanAfterPlural
 	useAmount := c.Duration
-	if c.Duration < 0 {
+	if useAmount < 0 {
 		useAmount = 0 - useAmount
-		useFmt = fmtMsgDtToleranceNowNotMoreThanBeforePlural
 	}
-	return useTcx.TranslateFormat(useFmt, useAmount, useTcx.TranslateToken(useUnit+"..."))
+	if useAmount > 1 {
+		useUnit = useUnit + "..."
+	}
+	if c.MinCheck {
+		useFmt := fmtMsgDtToleranceNowMinAfter
+		if c.Duration < 0 {
+			useFmt = fmtMsgDtToleranceNowMinBefore
+		}
+		return useTcx.TranslateFormat(useFmt, useAmount, useTcx.TranslateToken(useUnit))
+	}
+	useFmt := fmtMsgDtToleranceNowMaxAfter
+	if c.Duration < 0 {
+		useFmt = fmtMsgDtToleranceNowMaxBefore
+	}
+	return useTcx.TranslateFormat(useFmt, useAmount, useTcx.TranslateToken(useUnit))
 }
 
 const (
-	fmtMsgDtToleranceNowSame                      = "Value must be same %[1]s as now"
-	fmtMsgDtToleranceNowNotMoreThanAfterPlural    = "Value must not be more than %[1]d %[2]s after now"
-	fmtMsgDtToleranceNowNotMoreThanAfterSingular  = "Value must not be more than a %[1]s after now"
-	fmtMsgDtToleranceNowNotMoreThanBeforePlural   = "Value must not be more than %[1]d %[2]s before now"
-	fmtMsgDtToleranceNowNotMoreThanBeforeSingular = "Value must not be more than a %[1]s before now"
+	fmtMsgDtToleranceNowSame      = "Value must be same %[1]s as now"
+	fmtMsgDtToleranceNowMaxAfter  = "Value must not be more than %[1]d %[2]s after now"
+	fmtMsgDtToleranceNowMaxBefore = "Value must not be more than %[1]d %[2]s before now"
+	fmtMsgDtToleranceNowMinAfter  = "Value must be at least %[1]d %[2]s after now"
+	fmtMsgDtToleranceNowMinBefore = "Value must be at least %[1]d %[2]s before now"
 )
 
 // DatetimeToleranceToOther constraint to check that a date/time (as an ISO string) value meets a tolerance against the
@@ -781,6 +801,8 @@ type DatetimeToleranceToOther struct {
 	//
 	// Note: if this is empty, then "day" is assumed.  If the token is invalid - this constraint fails!
 	Unit string
+	// when set to true, specifies that the tolerance is a minimum check (rather than the default maximum check)
+	MinCheck bool
 	// when set to true, excludes the time when comparing
 	//
 	// Note: This also excludes the effect of any timezone offsets specified in either of the compared values
@@ -805,7 +827,7 @@ func (c *DatetimeToleranceToOther) Check(v interface{}, vcx *ValidatorContext) (
 	useExcTime := c.ExcTime && c.Duration != 0
 	if other, ok := getOtherPropertyDatetime(c.PropertyName, vcx, useExcTime, c.IgnoreNull); ok {
 		if other != nil {
-			if dt, ok := isTime(v, useExcTime); ok && checkDatetimeTolerance(&dt, other, c.Duration, c.Unit) {
+			if dt, ok := isTime(v, useExcTime); ok && checkDatetimeTolerance(&dt, other, c.Duration, c.Unit, c.MinCheck) {
 				return true, ""
 			}
 		} else if c.IgnoreNull {
@@ -825,29 +847,37 @@ func (c *DatetimeToleranceToOther) GetMessage(tcx I18nContext) string {
 	useUnit := defaultToleranceUnit(c.Unit)
 	if c.Duration == 0 {
 		return useTcx.TranslateFormat(fmtMsgDtToleranceOtherSame, useTcx.TranslateToken(useUnit), c.PropertyName)
-	} else if c.Duration == -1 {
-		return useTcx.TranslateFormat(fmtMsgDtToleranceOtherNotMoreThanBeforeSingular, useTcx.TranslateToken(useUnit), c.PropertyName)
-	} else if c.Duration == 1 {
-		return useTcx.TranslateFormat(fmtMsgDtToleranceOtherNotMoreThanAfterSingular, useTcx.TranslateToken(useUnit), c.PropertyName)
 	}
-	useFmt := fmtMsgDtToleranceOtherNotMoreThanAfterPlural
 	useAmount := c.Duration
-	if c.Duration < 0 {
+	if useAmount < 0 {
 		useAmount = 0 - useAmount
-		useFmt = fmtMsgDtToleranceOtherNotMoreThanBeforePlural
 	}
-	return useTcx.TranslateFormat(useFmt, useAmount, useTcx.TranslateToken(useUnit+"..."), c.PropertyName)
+	if useAmount > 1 {
+		useUnit = useUnit + "..."
+	}
+	if c.MinCheck {
+		useFmt := fmtMsgDtToleranceOtherMinAfter
+		if c.Duration < 0 {
+			useFmt = fmtMsgDtToleranceOtherMinBefore
+		}
+		return useTcx.TranslateFormat(useFmt, useAmount, useTcx.TranslateToken(useUnit), c.PropertyName)
+	}
+	useFmt := fmtMsgDtToleranceOtherMaxAfter
+	if c.Duration < 0 {
+		useFmt = fmtMsgDtToleranceOtherMaxBefore
+	}
+	return useTcx.TranslateFormat(useFmt, useAmount, useTcx.TranslateToken(useUnit), c.PropertyName)
 }
 
 const (
-	fmtMsgDtToleranceOtherSame                      = "Value must be same %[1]s as value of property '%[2]s'"
-	fmtMsgDtToleranceOtherNotMoreThanAfterPlural    = "Value must not be more than %[1]d %[2]s after value of property '%[3]s'"
-	fmtMsgDtToleranceOtherNotMoreThanAfterSingular  = "Value must not be more than a %[1]s after value of property '%[2]s'"
-	fmtMsgDtToleranceOtherNotMoreThanBeforePlural   = "Value must not be more than %[1]d %[2]s before value of property '%[3]s'"
-	fmtMsgDtToleranceOtherNotMoreThanBeforeSingular = "Value must not be more than a %[1]s before value of property '%[2]s'"
+	fmtMsgDtToleranceOtherSame      = "Value must be same %[1]s as value of property '%[2]s'"
+	fmtMsgDtToleranceOtherMaxAfter  = "Value must not be more than %[1]d %[2]s after value of property '%[3]s'"
+	fmtMsgDtToleranceOtherMaxBefore = "Value must not be more than %[1]d %[2]s before value of property '%[3]s'"
+	fmtMsgDtToleranceOtherMinAfter  = "Value must be at least %[1]d %[2]s after value of property '%[3]s'"
+	fmtMsgDtToleranceOtherMinBefore = "Value must be at least %[1]d %[2]s before value of property '%[3]s'"
 )
 
-func checkDatetimeTolerance(value *time.Time, other *time.Time, amount int64, unit string) bool {
+func checkDatetimeTolerance(value *time.Time, other *time.Time, amount int64, unit string, minCheck bool) bool {
 	if amount == 0 {
 		return checkDatetimeSame(value, other, unit)
 	}
@@ -855,18 +885,27 @@ func checkDatetimeTolerance(value *time.Time, other *time.Time, amount int64, un
 	if !ok {
 		return false
 	}
-	if amount < 0 {
-		// check that value is not more x before other...
-		if !shifted.Equal(*other) && shifted.After(*other) {
-			return false
+	result := false
+	if minCheck {
+		if shifted.Equal(*other) {
+			// same - so min tolerance cannot be ok...
+			result = false
+		} else if amount < 0 {
+			result = shifted.After(*other)
+		} else {
+			result = shifted.Before(*other)
 		}
-		return true
+	} else {
+		if shifted.Equal(*other) {
+			// same - so max tolerance must be ok...
+			result = true
+		} else if amount < 0 {
+			result = !shifted.After(*other)
+		} else {
+			result = !shifted.Before(*other)
+		}
 	}
-	// check that value is not more than x after other
-	if !shifted.Equal(*other) && shifted.Before(*other) {
-		return false
-	}
-	return true
+	return result
 }
 
 func checkDatetimeSame(value *time.Time, other *time.Time, unit string) bool {
