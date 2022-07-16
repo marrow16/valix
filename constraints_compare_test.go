@@ -1315,8 +1315,7 @@ func TestDatetimeToleranceToNow(t *testing.T) {
 		Unit:     "year",
 	}, false)
 	today := time.Now()
-	//	fourYearsAgo := today.AddDate(-4, 0, 0)
-	fiveYearsAgo := today.AddDate(-5, 0, 0)
+	fiveYearsAgo, _ := shiftDatetimeByYears(&today, -5)
 	obj := map[string]interface{}{
 		"foo": fiveYearsAgo.Format("2006-01-02T15:04:05.999999999"),
 	}
@@ -1324,7 +1323,7 @@ func TestDatetimeToleranceToNow(t *testing.T) {
 	require.True(t, ok)
 	require.Equal(t, 0, len(violations))
 
-	sixYearsAgo := today.AddDate(-6, 0, 0)
+	sixYearsAgo, _ := shiftDatetimeByYears(&today, -6)
 	obj["foo"] = sixYearsAgo.Format("2006-01-02T15:04:05.999999999")
 	ok, violations = validator.Validate(obj)
 	require.False(t, ok)
