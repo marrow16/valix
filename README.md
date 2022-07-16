@@ -1079,6 +1079,14 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
                     </tr>
                     <tr>
                         <td>
+                            <code>MinCheck</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set to true, specifies that the tolerance is a minimum check (rather than the default maximum check)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
                             <code>ExcTime</code> <em>bool</em>
                         </td>
                         <td>
@@ -1153,6 +1161,14 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
                             The value can - <code>"millennium"</code>, <code>"century"</code>, <code>"decade"</code>, <code>"year"</code>, <code>"month"</code>, <code>"week"</code>, <code>"day"</code>,
 	                        <code>"hour"</code>, <code>"min"|"minute"</code>, <code>"sec"|"second"</code>, <code>"milli"|"millisecond"</code>, <code>"micro"|"microsecond"</code> or <code>"nano"|"nanosecond"</code><br>
                             <em>if this is empty, then "day" is assumed.  If the token is invalid - this constraint will fail any comparisons</em>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>MinCheck</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set to true, specifies that the tolerance is a minimum check (rather than the default maximum check)
                         </td>
                     </tr>
                     <tr>
@@ -1239,6 +1255,14 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
                             The value can - <code>"millennium"</code>, <code>"century"</code>, <code>"decade"</code>, <code>"year"</code>, <code>"month"</code>, <code>"week"</code>, <code>"day"</code>,
 	                        <code>"hour"</code>, <code>"min"|"minute"</code>, <code>"sec"|"second"</code>, <code>"milli"|"millisecond"</code>, <code>"micro"|"microsecond"</code> or <code>"nano"|"nanosecond"</code><br>
                             <em>if this is empty, then "day" is assumed.  If the token is invalid - this constraint will fail any comparisons</em>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>MinCheck</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set to true, specifies that the tolerance is a minimum check (rather than the default maximum check)
                         </td>
                     </tr>
                     <tr>
@@ -3262,7 +3286,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
     </tr>
     <tr>
         <td>
-            <code>StringValidISODate</code><br>&nbsp;&nbsp;<code>strisodt</code>&nbsp;<em>(i18n tag abbr.)</em>
+            <code>StringValidISODate</code><br>&nbsp;&nbsp;<code>strisod</code>&nbsp;<em>(i18n tag abbr.)</em>
         </td>
         <td>
             Check that a string value is a valid ISO8601 Date format (excluding time)
@@ -3291,7 +3315,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
     </tr>
     <tr>
         <td>
-            <code>StringValidISODatetime</code><br>&nbsp;&nbsp;<code>strisod</code>&nbsp;<em>(i18n tag abbr.)</em>
+            <code>StringValidISODatetime</code><br>&nbsp;&nbsp;<code>strisodt</code>&nbsp;<em>(i18n tag abbr.)</em>
         </td>
         <td>
             Check that a string value is a valid ISO8601 Date/time format

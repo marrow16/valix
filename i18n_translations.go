@@ -882,7 +882,7 @@ var defaultInternalTranslator = &internalTranslator{
 			"fr":    "La valeur doit être une chaîne de couleur cmyk() valide",
 			"es":    "El valor debe ser una cadena de color cmyk() válida",
 			"it":    "Il valore deve essere una stringa di colore cmyk() valida",
-			"de":    "Der Wert muss eine gültige cmyk()-Farbzeichenfolge sein",
+			"de":    "Wert muss eine gültige cmyk()-Farbzeichenfolge sein",
 		},
 		msgPresetCMYK300: {
 			"en":    msgPresetCMYK300,
@@ -890,7 +890,7 @@ var defaultInternalTranslator = &internalTranslator{
 			"fr":    "La valeur doit être une chaîne de couleur cmyk() valide (maximum 300 %)",
 			"es":    "El valor debe ser una cadena de color cmyk() válida (máximo 300 %)",
 			"it":    "Il valore deve essere una stringa di colore cmyk() valida (massimo 300%)",
-			"de":    "Der Wert muss eine gültige cmyk()-Farbzeichenfolge sein (maximal 300 %)",
+			"de":    "Wert muss eine gültige cmyk()-Farbzeichenfolge sein (maximal 300 %)",
 		},
 		msgPresetE164: {
 			"en": msgPresetE164,
@@ -1173,33 +1173,33 @@ var defaultInternalTranslator = &internalTranslator{
 			"it": "Il valore deve essere prima o uguale a '%[1]s'",
 			"de": "Wert muss vor oder gleich '%[1]s' sein",
 		},
-		fmtMsgDtToleranceFixedNotMoreThanAfterPlural: {
-			"en": fmtMsgDtToleranceFixedNotMoreThanAfterPlural,
+		fmtMsgDtToleranceFixedMaxAfter: {
+			"en": fmtMsgDtToleranceFixedMaxAfter,
 			"fr": "La valeur ne doit pas être supérieure à %[1]d %[2]s après %[3]s",
 			"es": "El valor no debe ser mayor que %[1]d %[2]s después de %[3]s",
 			"it": "Il valore non deve essere superiore a %[1]d %[2]s dopo %[3]s",
 			"de": "Wert darf nach %[3]s nicht größer als %[1]d %[2]s sein",
 		},
-		fmtMsgDtToleranceFixedNotMoreThanAfterSingular: {
-			"en": fmtMsgDtToleranceFixedNotMoreThanAfterSingular,
-			"fr": "La valeur ne doit pas être supérieure à %[1]s après %[2]s",
-			"es": "El valor no debe ser mayor que %[1]s después de %[2]s",
-			"it": "Il valore non deve essere superiore a %[1]s dopo %[2]s",
-			"de": "Wert darf nach %[2]s nicht größer als %[1]s sein",
-		},
-		fmtMsgDtToleranceFixedNotMoreThanBeforePlural: {
-			"en": fmtMsgDtToleranceFixedNotMoreThanBeforePlural,
+		fmtMsgDtToleranceFixedMaxBefore: {
+			"en": fmtMsgDtToleranceFixedMaxBefore,
 			"fr": "La valeur ne doit pas être supérieure à %[1]d %[2]s avant %[3]s",
 			"es": "El valor no debe ser mayor que %[1]d %[2]s antes de %[3]s",
 			"it": "Il valore non deve essere superiore a %[1]d %[2]s prima di %[3]s",
 			"de": "Wert darf nicht größer als %[1]d %[2]s vor %[3]s sein",
 		},
-		fmtMsgDtToleranceFixedNotMoreThanBeforeSingular: {
-			"en": fmtMsgDtToleranceFixedNotMoreThanBeforeSingular,
-			"fr": "La valeur ne doit pas être supérieure à %[1]s avant %[2]s",
-			"es": "El valor no debe ser mayor que %[1]s antes de %[2]s",
-			"it": "Il valore non deve essere superiore a %[1]s prima di %[2]s",
-			"de": "Wert darf nicht länger als %[1]s vor %[2]s sein",
+		fmtMsgDtToleranceFixedMinAfter: {
+			"en": fmtMsgDtToleranceFixedMinAfter,
+			"fr": "La valeur doit être au moins %[1]d %[2]s après %[3]s",
+			"es": "El valor debe ser al menos %[1]d %[2]s después de %[3]s",
+			"it": "Il valore deve essere almeno %[1]d %[2]s dopo %[3]s",
+			"de": "Wert muss mindestens %[1]d %[2]s nach %[3]s betragen",
+		},
+		fmtMsgDtToleranceFixedMinBefore: {
+			"en": fmtMsgDtToleranceFixedMinBefore,
+			"fr": "La valeur doit être au moins %[1]d %[2]s avant %[3]s",
+			"es": "El valor debe ser al menos %[1]d %[2]s antes de %[3]s",
+			"it": "Il valore deve essere almeno %[1]d %[2]s prima di %[3]s",
+			"de": "Wert muss mindestens %[1]d %[2]s vor %[3]s betragen",
 		},
 		fmtMsgDtToleranceFixedSame: {
 			"en": fmtMsgDtToleranceFixedSame,
@@ -1215,33 +1215,33 @@ var defaultInternalTranslator = &internalTranslator{
 			"it": "Il valore deve essere lo stesso %[1]s di adesso",
 			"de": "Wert muss gleich %[1]s sein wie jetzt",
 		},
-		fmtMsgDtToleranceNowNotMoreThanAfterPlural: {
-			"en": fmtMsgDtToleranceNowNotMoreThanAfterPlural,
+		fmtMsgDtToleranceNowMaxAfter: {
+			"en": fmtMsgDtToleranceNowMaxAfter,
 			"fr": "La valeur ne doit pas dépasser %[1]d %[2]s après maintenant",
 			"es": "El valor no debe ser mayor que %[1]d %[2]s después de ahora",
 			"it": "Il valore non deve essere superiore a %[1]d %[2]s dopo ora",
 			"de": "Wert darf nach jetzt nicht mehr als %[1]d %[2]s betragen",
 		},
-		fmtMsgDtToleranceNowNotMoreThanAfterSingular: {
-			"en": fmtMsgDtToleranceNowNotMoreThanAfterSingular,
-			"fr": "La valeur ne doit pas être supérieure à %[1]s après maintenant",
-			"es": "El valor no debe ser mayor a %[1]s después de ahora",
-			"it": "Il valore non deve essere superiore a %[1]s dopo ora",
-			"de": "Wert darf nicht mehr als %[1]s nach jetzt sein",
-		},
-		fmtMsgDtToleranceNowNotMoreThanBeforePlural: {
-			"en": fmtMsgDtToleranceNowNotMoreThanBeforePlural,
+		fmtMsgDtToleranceNowMaxBefore: {
+			"en": fmtMsgDtToleranceNowMaxBefore,
 			"fr": "La valeur ne doit pas dépasser %[1]d %[2]s avant maintenant",
 			"es": "El valor no debe ser superior a %[1]d %[2]s antes de ahora",
 			"it": "Il valore non deve essere superiore a %[1]d %[2]s prima di ora",
 			"de": "Wert darf bis jetzt nicht größer als %[1]d %[2]s sein",
 		},
-		fmtMsgDtToleranceNowNotMoreThanBeforeSingular: {
-			"en": fmtMsgDtToleranceNowNotMoreThanBeforeSingular,
-			"fr": "La valeur ne doit pas dépasser un %[1]s avant maintenant",
-			"es": "El valor no debe ser superior a %[1]s antes de ahora",
-			"it": "Il valore non deve essere superiore a %[1]s prima di ora",
-			"de": "Wert darf bis jetzt nicht größer als %[1]s sein",
+		fmtMsgDtToleranceNowMinAfter: {
+			"en": fmtMsgDtToleranceNowMinAfter,
+			"fr": "La valeur doit être au moins %[1]d %[2]s après maintenant",
+			"es": "El valor debe ser al menos %[1]d %[2]s después de ahora",
+			"it": "Il valore deve essere almeno %[1]d %[2]s dopo ora",
+			"de": "Wert muss nach jetzt mindestens %[1]d %[2]s betragen",
+		},
+		fmtMsgDtToleranceNowMinBefore: {
+			"en": fmtMsgDtToleranceNowMinBefore,
+			"fr": "La valeur doit être au moins %[1]d %[2]s avant maintenant",
+			"es": "El valor debe ser al menos %[1]d %[2]s antes de ahora",
+			"it": "Il valore deve essere almeno %[1]d %[2]s prima di ora",
+			"de": "Wert muss vorher mindestens %[1]d %[2]s betragen",
 		},
 		fmtMsgDtToleranceOtherSame: {
 			"en": fmtMsgDtToleranceOtherSame,
@@ -1250,33 +1250,33 @@ var defaultInternalTranslator = &internalTranslator{
 			"it": "Il valore deve essere lo stesso %[1]s del valore della proprietà '%[2]s'",
 			"de": "Wert muss gleich %[1]s sein wie Wert der Eigenschaft '%[2]s'",
 		},
-		fmtMsgDtToleranceOtherNotMoreThanAfterSingular: {
-			"en": fmtMsgDtToleranceOtherNotMoreThanAfterSingular,
-			"fr": "La valeur ne doit pas être supérieure à %[1]s après la valeur de la propriété '%[2]s'",
-			"es": "El valor no debe ser mayor que %[1]s después del valor de la propiedad '%[2]s'",
-			"it": "Il valore non deve essere superiore a %[1]s dopo il valore della proprietà '%[2]s'",
-			"de": "Der Wert darf nicht mehr als ein %[1]s nach dem Wert der Eigenschaft '%[2]s' liegen",
-		},
-		fmtMsgDtToleranceOtherNotMoreThanAfterPlural: {
-			"en": fmtMsgDtToleranceOtherNotMoreThanAfterPlural,
+		fmtMsgDtToleranceOtherMaxAfter: {
+			"en": fmtMsgDtToleranceOtherMaxAfter,
 			"fr": "La valeur ne doit pas être supérieure à %[1]d %[2]s après la valeur de la propriété '%[3]s'",
 			"es": "El valor no debe ser mayor que %[1]d %[2]s después del valor de la propiedad '%[3]s'",
 			"it": "Il valore non deve essere superiore a %[1]d %[2]s dopo il valore della proprietà '%[3]s'",
-			"de": "Der Wert darf nicht größer als %[1]d %[2]s nach dem Wert der Eigenschaft '%[3]s' sein",
+			"de": "Wert darf nicht größer als %[1]d %[2]s nach dem Wert der Eigenschaft '%[3]s' sein",
 		},
-		fmtMsgDtToleranceOtherNotMoreThanBeforePlural: {
-			"en": fmtMsgDtToleranceOtherNotMoreThanBeforePlural,
+		fmtMsgDtToleranceOtherMaxBefore: {
+			"en": fmtMsgDtToleranceOtherMaxBefore,
 			"fr": "La valeur ne doit pas être supérieure à %[1]d %[2]s avant la valeur de la propriété '%[3]s'",
 			"es": "El valor no debe ser mayor que %[1]d %[2]s antes del valor de la propiedad '%[3]s'",
 			"it": "Il valore non deve essere superiore a %[1]d %[2]s prima del valore della proprietà '%[3]s'",
-			"de": "Der Wert darf nicht größer als %[1]d %[2]s vor dem Wert der Eigenschaft '%[3]s' sein",
+			"de": "Wert darf nicht größer als %[1]d %[2]s vor dem Wert der Eigenschaft '%[3]s' sein",
 		},
-		fmtMsgDtToleranceOtherNotMoreThanBeforeSingular: {
-			"en": fmtMsgDtToleranceOtherNotMoreThanBeforeSingular,
-			"fr": "La valeur ne doit pas être supérieure à %[1]s avant la valeur de la propriété '%[2]s'",
-			"es": "El valor no debe ser mayor que %[1]s antes del valor de la propiedad '%[2]s'",
-			"it": "Il valore non deve essere superiore a %[1]s prima del valore della proprietà '%[2]s'",
-			"de": "Der Wert darf nicht mehr als ein %[1]s vor dem Wert der Eigenschaft '%[2]s' liegen",
+		fmtMsgDtToleranceOtherMinAfter: {
+			"en": fmtMsgDtToleranceOtherMinAfter,
+			"fr": "La valeur doit être au moins %[1]d %[2]s après la valeur de la propriété '%[3]s'",
+			"es": "El valor debe ser al menos %[1]d %[2]s después del valor de la propiedad '%[3]s'",
+			"it": "Il valore deve essere almeno %[1]d %[2]s dopo il valore della proprietà '%[3]s'",
+			"de": "Wert muss mindestens %[1]d %[2]s nach dem Wert der Eigenschaft '%[3]s' betragen",
+		},
+		fmtMsgDtToleranceOtherMinBefore: {
+			"en": fmtMsgDtToleranceOtherMinBefore,
+			"fr": "La valeur doit être au moins %[1]d %[2]s avant la valeur de la propriété '%[3]s'",
+			"es": "El valor debe ser al menos %[1]d %[2]s antes del valor de la propiedad '%[3]s'",
+			"it": "Il valore deve essere almeno %[1]d %[2]s prima del valore della proprietà '%[3]s'",
+			"de": "Wert muss mindestens %[1]d %[2]s vor dem Wert der Eigenschaft '%[3]s' liegen",
 		},
 		fmtMsgEqualsOther: {
 			"en": fmtMsgEqualsOther,

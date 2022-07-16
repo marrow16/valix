@@ -1261,7 +1261,6 @@ func TestDatetimeLessThanOrEqualOtherExcTime(t *testing.T) {
 }
 
 func TestDatetimeTolerance(t *testing.T) {
-	// NB. Assumes underlying datetime tolerance logic tested thoroughly elsewhere (which it is)
 	// no fields - so same day assumed...
 	validator := buildFooValidator(JsonAny, &DatetimeTolerance{Value: "2022-04-01T00:00:00"}, false)
 	obj := jsonObject(`{
@@ -1311,7 +1310,29 @@ func TestDatetimeTolerance(t *testing.T) {
 }
 
 func TestDatetimeToleranceToNow(t *testing.T) {
-	// NB. Assumes underlying datetime tolerance logic tested thoroughly elsewhere (which it is)
+	validator := buildFooValidator(JsonAny, &DatetimeToleranceToNow{
+		Duration: -5,
+		Unit:     "year",
+	}, false)
+	today := time.Now()
+	//	fourYearsAgo := today.AddDate(-4, 0, 0)
+	fiveYearsAgo := today.AddDate(-5, 0, 0)
+	obj := map[string]interface{}{
+		"foo": fiveYearsAgo.Format("2006-01-02T15:04:05.999999999"),
+	}
+	ok, violations := validator.Validate(obj)
+	require.True(t, ok)
+	require.Equal(t, 0, len(violations))
+
+	sixYearsAgo := today.AddDate(-6, 0, 0)
+	obj["foo"] = sixYearsAgo.Format("2006-01-02T15:04:05.999999999")
+	ok, violations = validator.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, "Value must not be more than 5 years before now", violations[0].Message)
+}
+
+func TestDatetimeToleranceToNowDefault(t *testing.T) {
 	// no fields set - so same day check...
 	validator := buildFooValidator(JsonAny, &DatetimeToleranceToNow{}, false)
 	obj := map[string]interface{}{
@@ -1360,8 +1381,33 @@ func TestDatetimeToleranceToNow(t *testing.T) {
 	require.True(t, ok)
 }
 
+func TestDatetimeToleranceToNowAsAgeCheck(t *testing.T) {
+	validator := buildFooValidator(JsonAny, &DatetimeToleranceToNow{
+		Duration: -18,
+		Unit:     "year",
+		MinCheck: true,
+	}, false)
+	now := time.Now().UTC()
+	seventeenYearsAgo, _ := shiftDatetimeBy(&now, -17, "year")
+	obj := map[string]interface{}{
+		"foo": seventeenYearsAgo.Format("2006-01-02"),
+	}
+	ok, violations := validator.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, "Value must be at least 18 years before now", violations[0].Message)
+
+	eighteenYearsAgo, _ := shiftDatetimeBy(&now, -18, "year")
+	obj["foo"] = eighteenYearsAgo.Format("2006-01-02")
+	ok, _ = validator.Validate(obj)
+	require.True(t, ok)
+	nineteenYearsAgo, _ := shiftDatetimeBy(&now, -19, "year")
+	obj["foo"] = nineteenYearsAgo.Format("2006-01-02")
+	ok, _ = validator.Validate(obj)
+	require.True(t, ok)
+}
+
 func TestDatetimeToleranceToOther(t *testing.T) {
-	// NB. Assumes underlying datetime tolerance logic tested thoroughly elsewhere (which it is)
 	// no fields - so same day...
 	constraint := &DatetimeToleranceToOther{PropertyName: "bar"}
 	validator := &Validator{
@@ -1530,18 +1576,41 @@ func TestCheckDatetimeTolerance(t *testing.T) {
 		t.Run(fmt.Sprintf("[%d]%s=%d[%s]_\"%s\"_\"%s\"", i+1, ltgtsame, tc.amount, tc.unit,
 			tc.date.Format("2006-01-02T15:04:05.999999999"), tc.other.Format("2006-01-02T15:04:05.999999999")),
 			func(t *testing.T) {
-				ok := checkDatetimeTolerance(&tc.date, &tc.other, tc.amount, tc.unit)
+				ok := checkDatetimeTolerance(&tc.date, &tc.other, tc.amount, tc.unit, false)
 				require.Equal(t, tc.expect, ok)
 			})
 	}
 }
 
+func TestCheckDatetimeToleranceMin(t *testing.T) {
+	// same...
+	value := time.Date(2022, 7, 15, 12, 13, 14, 15, time.UTC)
+	other := time.Date(2027, 7, 15, 12, 13, 14, 15, time.UTC)
+	result := checkDatetimeTolerance(&value, &other, 5, "year", true)
+	require.False(t, result)
+
+	now := time.Date(2022, 7, 15, 12, 13, 14, 15, time.UTC)
+	fourYearsAgo := time.Date(2018, 7, 15, 12, 13, 14, 15, time.UTC)
+	result = checkDatetimeTolerance(&now, &fourYearsAgo, -5, "year", true)
+	require.False(t, result)
+	sixYearsAgo := time.Date(2016, 7, 15, 12, 13, 14, 15, time.UTC)
+	result = checkDatetimeTolerance(&now, &sixYearsAgo, -5, "year", true)
+	require.True(t, result)
+
+	fourYearsTime := time.Date(2026, 7, 15, 12, 13, 14, 15, time.UTC)
+	result = checkDatetimeTolerance(&now, &fourYearsTime, 5, "year", true)
+	require.False(t, result)
+	sixYearsTime := time.Date(2028, 7, 15, 12, 13, 14, 15, time.UTC)
+	result = checkDatetimeTolerance(&now, &sixYearsTime, 5, "year", true)
+	require.True(t, result)
+}
+
 func TestCheckDatetimeToleranceFailWithBadUnit(t *testing.T) {
 	dt := time.Date(2022, 3, 31, 12, 13, 14, 15, time.UTC)
 
-	ok := checkDatetimeTolerance(&dt, &dt, -1, "unknown")
+	ok := checkDatetimeTolerance(&dt, &dt, -1, "unknown", false)
 	require.False(t, ok)
-	ok = checkDatetimeTolerance(&dt, &dt, 0, "") // same day assumed
+	ok = checkDatetimeTolerance(&dt, &dt, 0, "", false) // same day assumed
 	require.True(t, ok)
 }
 
@@ -1760,118 +1829,118 @@ func TestShiftDatetimeBy(t *testing.T) {
 func TestCheckDatetimeToleranceSames(t *testing.T) {
 	dt := time.Date(2022, 3, 31, 12, 13, 14, 15, time.UTC)
 	other := time.Date(2922, 1, 1, 12, 13, 14, 15, time.UTC)
-	ok := checkDatetimeTolerance(&dt, &other, 0, "millennium")
+	ok := checkDatetimeTolerance(&dt, &other, 0, "millennium", false)
 	require.True(t, ok)
 	other = time.Date(1922, 1, 1, 12, 13, 14, 15, time.UTC)
-	ok = checkDatetimeTolerance(&dt, &other, 0, "millennium")
+	ok = checkDatetimeTolerance(&dt, &other, 0, "millennium", false)
 	require.False(t, ok)
 
 	dt = time.Date(2022, 3, 31, 12, 13, 14, 15, time.UTC)
 	other = time.Date(2000, 1, 1, 12, 13, 14, 15, time.UTC)
-	ok = checkDatetimeTolerance(&dt, &other, 0, "century")
+	ok = checkDatetimeTolerance(&dt, &other, 0, "century", false)
 	require.True(t, ok)
 	other = time.Date(2122, 1, 1, 12, 13, 14, 15, time.UTC)
-	ok = checkDatetimeTolerance(&dt, &other, 0, "century")
+	ok = checkDatetimeTolerance(&dt, &other, 0, "century", false)
 	require.False(t, ok)
 
 	dt = time.Date(2020, 3, 31, 12, 13, 14, 15, time.UTC)
 	other = time.Date(2029, 1, 1, 12, 13, 14, 15, time.UTC)
-	ok = checkDatetimeTolerance(&dt, &other, 0, "decade")
+	ok = checkDatetimeTolerance(&dt, &other, 0, "decade", false)
 	require.True(t, ok)
 	other = time.Date(2031, 1, 1, 12, 13, 14, 15, time.UTC)
-	ok = checkDatetimeTolerance(&dt, &other, 0, "decade")
+	ok = checkDatetimeTolerance(&dt, &other, 0, "decade", false)
 	require.False(t, ok)
 
 	dt = time.Date(2022, 3, 31, 12, 13, 14, 15, time.UTC)
 	other = time.Date(2022, 1, 1, 12, 13, 14, 15, time.UTC)
-	ok = checkDatetimeTolerance(&dt, &other, 0, "year")
+	ok = checkDatetimeTolerance(&dt, &other, 0, "year", false)
 	require.True(t, ok)
 	other = time.Date(2023, 1, 1, 12, 13, 14, 15, time.UTC)
-	ok = checkDatetimeTolerance(&dt, &other, 0, "year")
+	ok = checkDatetimeTolerance(&dt, &other, 0, "year", false)
 	require.False(t, ok)
 
 	dt = time.Date(2022, 3, 31, 12, 13, 14, 15, time.UTC)
 	other = time.Date(2022, 3, 1, 12, 13, 14, 15, time.UTC)
-	ok = checkDatetimeTolerance(&dt, &other, 0, "month")
+	ok = checkDatetimeTolerance(&dt, &other, 0, "month", false)
 	require.True(t, ok)
 	other = time.Date(2022, 4, 1, 12, 13, 14, 15, time.UTC)
-	ok = checkDatetimeTolerance(&dt, &other, 0, "month")
+	ok = checkDatetimeTolerance(&dt, &other, 0, "month", false)
 	require.False(t, ok)
 
 	dt = time.Date(2022, 3, 31, 12, 13, 14, 15, time.UTC)
 	other = time.Date(2022, 3, 28, 12, 13, 14, 15, time.UTC)
-	ok = checkDatetimeTolerance(&dt, &other, 0, "week")
+	ok = checkDatetimeTolerance(&dt, &other, 0, "week", false)
 	require.True(t, ok)
 	other = time.Date(2022, 3, 27, 12, 13, 14, 15, time.UTC)
-	ok = checkDatetimeTolerance(&dt, &other, 0, "week")
+	ok = checkDatetimeTolerance(&dt, &other, 0, "week", false)
 	require.False(t, ok)
 	other = time.Date(2022, 4, 3, 12, 13, 14, 15, time.UTC)
-	ok = checkDatetimeTolerance(&dt, &other, 0, "week")
+	ok = checkDatetimeTolerance(&dt, &other, 0, "week", false)
 	require.True(t, ok)
 	other = time.Date(2022, 4, 4, 12, 13, 14, 15, time.UTC)
-	ok = checkDatetimeTolerance(&dt, &other, 0, "week")
+	ok = checkDatetimeTolerance(&dt, &other, 0, "week", false)
 	require.False(t, ok)
 
 	dt = time.Date(2022, 3, 31, 12, 13, 14, 15, time.UTC)
 	other = time.Date(2022, 3, 31, 12, 13, 14, 15, time.UTC)
-	ok = checkDatetimeTolerance(&dt, &other, 0, "day")
+	ok = checkDatetimeTolerance(&dt, &other, 0, "day", false)
 	require.True(t, ok)
 	other = time.Date(2022, 3, 30, 12, 13, 14, 15, time.UTC)
-	ok = checkDatetimeTolerance(&dt, &other, 0, "day")
+	ok = checkDatetimeTolerance(&dt, &other, 0, "day", false)
 	require.False(t, ok)
 	other = time.Date(2022, 4, 1, 12, 13, 14, 15, time.UTC)
-	ok = checkDatetimeTolerance(&dt, &other, 0, "day")
+	ok = checkDatetimeTolerance(&dt, &other, 0, "day", false)
 	require.False(t, ok)
 
 	dt = time.Date(2022, 3, 31, 12, 0, 14, 15, time.UTC)
 	other = time.Date(2022, 3, 31, 12, 30, 14, 15, time.UTC)
-	ok = checkDatetimeTolerance(&dt, &other, 0, "hour")
+	ok = checkDatetimeTolerance(&dt, &other, 0, "hour", false)
 	require.True(t, ok)
 	other = time.Date(2022, 3, 31, 13, 30, 14, 15, time.UTC)
-	ok = checkDatetimeTolerance(&dt, &other, 0, "hour")
+	ok = checkDatetimeTolerance(&dt, &other, 0, "hour", false)
 	require.False(t, ok)
 
 	dt = time.Date(2022, 3, 31, 12, 13, 0, 15, time.UTC)
 	other = time.Date(2022, 3, 31, 12, 13, 30, 15, time.UTC)
-	ok = checkDatetimeTolerance(&dt, &other, 0, "minute")
+	ok = checkDatetimeTolerance(&dt, &other, 0, "minute", false)
 	require.True(t, ok)
 	other = time.Date(2022, 3, 31, 12, 14, 15, 15, time.UTC)
-	ok = checkDatetimeTolerance(&dt, &other, 0, "minute")
+	ok = checkDatetimeTolerance(&dt, &other, 0, "minute", false)
 	require.False(t, ok)
 
 	dt = time.Date(2022, 3, 31, 12, 13, 14, 0, time.UTC)
 	other = time.Date(2022, 3, 31, 12, 13, 14, 1000, time.UTC)
-	ok = checkDatetimeTolerance(&dt, &other, 0, "second")
+	ok = checkDatetimeTolerance(&dt, &other, 0, "second", false)
 	require.True(t, ok)
 	other = time.Date(2022, 3, 31, 12, 13, 15, 1000, time.UTC)
-	ok = checkDatetimeTolerance(&dt, &other, 0, "second")
+	ok = checkDatetimeTolerance(&dt, &other, 0, "second", false)
 	require.False(t, ok)
 
 	dt = time.Date(2022, 3, 31, 12, 13, 14, 111000000, time.UTC)
 	other = time.Date(2022, 3, 31, 12, 13, 14, 111222333, time.UTC)
-	ok = checkDatetimeTolerance(&dt, &other, 0, "milli")
+	ok = checkDatetimeTolerance(&dt, &other, 0, "milli", false)
 	require.True(t, ok)
 	other = time.Date(2022, 3, 31, 12, 13, 14, 112000000, time.UTC)
-	ok = checkDatetimeTolerance(&dt, &other, 0, "milli")
+	ok = checkDatetimeTolerance(&dt, &other, 0, "milli", false)
 	require.False(t, ok)
 
 	dt = time.Date(2022, 3, 31, 12, 13, 14, 111222000, time.UTC)
 	other = time.Date(2022, 3, 31, 12, 13, 14, 111222333, time.UTC)
-	ok = checkDatetimeTolerance(&dt, &other, 0, "micro")
+	ok = checkDatetimeTolerance(&dt, &other, 0, "micro", false)
 	require.True(t, ok)
 	other = time.Date(2022, 3, 31, 12, 13, 14, 111223000, time.UTC)
-	ok = checkDatetimeTolerance(&dt, &other, 0, "micro")
+	ok = checkDatetimeTolerance(&dt, &other, 0, "micro", false)
 	require.False(t, ok)
 
 	dt = time.Date(2022, 3, 31, 12, 13, 14, 111222333, time.UTC)
 	other = time.Date(2022, 3, 31, 12, 13, 14, 111222333, time.UTC)
-	ok = checkDatetimeTolerance(&dt, &other, 0, "nano")
+	ok = checkDatetimeTolerance(&dt, &other, 0, "nano", false)
 	require.True(t, ok)
 	other = time.Date(2022, 3, 31, 12, 13, 14, 111222331, time.UTC)
-	ok = checkDatetimeTolerance(&dt, &other, 0, "nano")
+	ok = checkDatetimeTolerance(&dt, &other, 0, "nano", false)
 	require.False(t, ok)
 
-	ok = checkDatetimeTolerance(&dt, &dt, 0, "UNKNOWN")
+	ok = checkDatetimeTolerance(&dt, &dt, 0, "UNKNOWN", false)
 	require.False(t, ok)
 }
 
@@ -1884,7 +1953,7 @@ func TestDatetimeToleranceMessages(t *testing.T) {
 	constraint.Unit = "century"
 	constraint.Duration = 1
 	msg = constraint.GetMessage(nil)
-	require.Equal(t, "Value must not be more than a century after 2022-04-01T18:19:00", msg)
+	require.Equal(t, "Value must not be more than 1 century after 2022-04-01T18:19:00", msg)
 	constraint.Duration = 2
 	msg = constraint.GetMessage(nil)
 	require.Equal(t, "Value must not be more than 2 centuries after 2022-04-01T18:19:00", msg)
@@ -1892,10 +1961,28 @@ func TestDatetimeToleranceMessages(t *testing.T) {
 	constraint.Unit = "year"
 	constraint.Duration = -1
 	msg = constraint.GetMessage(nil)
-	require.Equal(t, "Value must not be more than a year before 2022-04-01T18:19:00", msg)
+	require.Equal(t, "Value must not be more than 1 year before 2022-04-01T18:19:00", msg)
 	constraint.Duration = -2
 	msg = constraint.GetMessage(nil)
 	require.Equal(t, "Value must not be more than 2 years before 2022-04-01T18:19:00", msg)
+
+	constraint.Unit = "century"
+	constraint.Duration = 1
+	constraint.MinCheck = true
+	msg = constraint.GetMessage(nil)
+	require.Equal(t, "Value must be at least 1 century after 2022-04-01T18:19:00", msg)
+	constraint.Duration = 2
+	msg = constraint.GetMessage(nil)
+	require.Equal(t, "Value must be at least 2 centuries after 2022-04-01T18:19:00", msg)
+
+	constraint.Unit = "year"
+	constraint.Duration = -1
+	constraint.MinCheck = true
+	msg = constraint.GetMessage(nil)
+	require.Equal(t, "Value must be at least 1 year before 2022-04-01T18:19:00", msg)
+	constraint.Duration = -2
+	msg = constraint.GetMessage(nil)
+	require.Equal(t, "Value must be at least 2 years before 2022-04-01T18:19:00", msg)
 
 	constraint.Message = "test"
 	msg = constraint.GetMessage(nil)
@@ -1911,7 +1998,7 @@ func TestDatetimeToleranceToNowMessages(t *testing.T) {
 	constraint.Unit = "century"
 	constraint.Duration = 1
 	msg = constraint.GetMessage(nil)
-	require.Equal(t, "Value must not be more than a century after now", msg)
+	require.Equal(t, "Value must not be more than 1 century after now", msg)
 	constraint.Duration = 2
 	msg = constraint.GetMessage(nil)
 	require.Equal(t, "Value must not be more than 2 centuries after now", msg)
@@ -1919,10 +2006,28 @@ func TestDatetimeToleranceToNowMessages(t *testing.T) {
 	constraint.Unit = "year"
 	constraint.Duration = -1
 	msg = constraint.GetMessage(nil)
-	require.Equal(t, "Value must not be more than a year before now", msg)
+	require.Equal(t, "Value must not be more than 1 year before now", msg)
 	constraint.Duration = -2
 	msg = constraint.GetMessage(nil)
 	require.Equal(t, "Value must not be more than 2 years before now", msg)
+
+	constraint.Unit = "century"
+	constraint.Duration = 1
+	constraint.MinCheck = true
+	msg = constraint.GetMessage(nil)
+	require.Equal(t, "Value must be at least 1 century after now", msg)
+	constraint.Duration = 2
+	msg = constraint.GetMessage(nil)
+	require.Equal(t, "Value must be at least 2 centuries after now", msg)
+
+	constraint.Unit = "year"
+	constraint.Duration = -1
+	constraint.MinCheck = true
+	msg = constraint.GetMessage(nil)
+	require.Equal(t, "Value must be at least 1 year before now", msg)
+	constraint.Duration = -2
+	msg = constraint.GetMessage(nil)
+	require.Equal(t, "Value must be at least 2 years before now", msg)
 
 	constraint.Message = "test"
 	msg = constraint.GetMessage(nil)
@@ -1938,7 +2043,7 @@ func TestDatetimeToleranceToOtherMessages(t *testing.T) {
 	constraint.Unit = "century"
 	constraint.Duration = 1
 	msg = constraint.GetMessage(nil)
-	require.Equal(t, "Value must not be more than a century after value of property 'bar'", msg)
+	require.Equal(t, "Value must not be more than 1 century after value of property 'bar'", msg)
 	constraint.Duration = 2
 	msg = constraint.GetMessage(nil)
 	require.Equal(t, "Value must not be more than 2 centuries after value of property 'bar'", msg)
@@ -1946,10 +2051,28 @@ func TestDatetimeToleranceToOtherMessages(t *testing.T) {
 	constraint.Unit = "year"
 	constraint.Duration = -1
 	msg = constraint.GetMessage(nil)
-	require.Equal(t, "Value must not be more than a year before value of property 'bar'", msg)
+	require.Equal(t, "Value must not be more than 1 year before value of property 'bar'", msg)
 	constraint.Duration = -2
 	msg = constraint.GetMessage(nil)
 	require.Equal(t, "Value must not be more than 2 years before value of property 'bar'", msg)
+
+	constraint.Unit = "century"
+	constraint.Duration = 1
+	constraint.MinCheck = true
+	msg = constraint.GetMessage(nil)
+	require.Equal(t, "Value must be at least 1 century after value of property 'bar'", msg)
+	constraint.Duration = 2
+	msg = constraint.GetMessage(nil)
+	require.Equal(t, "Value must be at least 2 centuries after value of property 'bar'", msg)
+
+	constraint.Unit = "year"
+	constraint.Duration = -1
+	constraint.MinCheck = true
+	msg = constraint.GetMessage(nil)
+	require.Equal(t, "Value must be at least 1 year before value of property 'bar'", msg)
+	constraint.Duration = -2
+	msg = constraint.GetMessage(nil)
+	require.Equal(t, "Value must be at least 2 years before value of property 'bar'", msg)
 
 	constraint.Message = "test"
 	msg = constraint.GetMessage(nil)
