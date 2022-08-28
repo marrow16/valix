@@ -7,11 +7,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const commonConstraintsCount = 64 // excludes abbreviations
+const commonConstraintsCount = 86 // excludes abbreviations (every constraint has an abbreviation)
+const commonSpecialAbbrsCount = 8 // special abbreviations
 
 func TestConstraintsRegistryInitialized(t *testing.T) {
 	constraintsRegistry.reset()
-	require.Equal(t, (commonConstraintsCount*2)+len(getBuiltInPresets()), len(constraintsRegistry.namedConstraints))
+	require.Equal(t, (commonConstraintsCount*2)+commonSpecialAbbrsCount+len(getBuiltInPresets()), len(constraintsRegistry.namedConstraints))
 }
 
 func TestRegisterConstraint(t *testing.T) {

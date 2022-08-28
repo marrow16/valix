@@ -139,3 +139,10 @@ func (b ternary) int(t, f int) int {
 	}
 	return f
 }
+
+func caseInsensitive(s string, insensitive bool) string {
+	if insensitive {
+		return strings.ToUpper(s)
+	}
+	return s
+}

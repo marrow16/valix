@@ -2094,6 +2094,396 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
     </tr>
     <tr>
         <td>
+            <code>NetIsCIDR</code><br>&nbsp;&nbsp;<code>isCIDR</code>&nbsp;<em>(i18n tag abbr.)</em>
+        </td>
+        <td>
+            Check that string value is a valid CIDR (v4 or v6) address
+            <details>
+                <summary>Fields</summary>
+                <table>
+                    <tr>
+                        <td>
+                            <code>V4Only</code> <em>bool</em>
+                        </td>
+                        <td>
+                            if set, allows only CIDR v4
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>V6Only</code> <em>bool</em>
+                        </td>
+                        <td>
+                            if set, allows only CIDR v6
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>DisallowLoopback</code> <em>bool</em>
+                        </td>
+                        <td>
+                            if set, disallows loopback addresses
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>DisallowPrivate</code> <em>bool</em>
+                        </td>
+                        <td>
+                            if set, disallows private addresses
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Message</code> <em>string</em>
+                        </td>
+                        <td>
+                            the violation message to be used if the constraint fails (if empty, the default violation message is used)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Stop</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set to true, prevents further validation checks on the property if this constraint fails
+                        </td>
+                    </tr>
+                </table>
+            </details>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <code>NetIsIP</code><br>&nbsp;&nbsp;<code>isIP</code>&nbsp;<em>(i18n tag abbr.)</em>
+        </td>
+        <td>
+            Check that string value is a valid IP (v4 or v6) address
+            <details>
+                <summary>Fields</summary>
+                <table>
+                    <tr>
+                        <td>
+                            <code>V4Only</code> <em>bool</em>
+                        </td>
+                        <td>
+                            if set, allows only IP v4
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>V6Only</code> <em>bool</em>
+                        </td>
+                        <td>
+                            if set, allows only IP v6
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Resolvable</code> <em>bool</em>
+                        </td>
+                        <td>
+                            if set, checks that the address is resolvable
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>DisallowLoopback</code> <em>bool</em>
+                        </td>
+                        <td>
+                            if set, disallows loopback addresses
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>DisallowPrivate</code> <em>bool</em>
+                        </td>
+                        <td>
+                            if set, disallows private addresses
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>AllowLocalhost</code> <em>bool</em>
+                        </td>
+                        <td>
+                            if set, allows value of "localhost" to be seen as valid
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Message</code> <em>string</em>
+                        </td>
+                        <td>
+                            the violation message to be used if the constraint fails (if empty, the default violation message is used)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Stop</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set to true, prevents further validation checks on the property if this constraint fails
+                        </td>
+                    </tr>
+                </table>
+            </details>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <code>NetIsMac</code><br>&nbsp;&nbsp;<code>isMAC</code>&nbsp;<em>(i18n tag abbr.)</em>
+        </td>
+        <td>
+            Check that string value is a valid MAC address
+            <details>
+                <summary>Fields</summary>
+                <table>
+                    <tr>
+                        <td>
+                            <code>Message</code> <em>string</em>
+                        </td>
+                        <td>
+                            the violation message to be used if the constraint fails (if empty, the default violation message is used)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Stop</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set to true, prevents further validation checks on the property if this constraint fails
+                        </td>
+                    </tr>
+                </table>
+            </details>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <code>NetIsTCP</code><br>&nbsp;&nbsp;<code>isTCP</code>&nbsp;<em>(i18n tag abbr.)</em>
+        </td>
+        <td>
+            Check that string value is a valid resolvable TCP (v4 or v6) address
+            <details>
+                <summary>Fields</summary>
+                <table>
+                    <tr>
+                        <td>
+                            <code>V4Only</code> <em>bool</em>
+                        </td>
+                        <td>
+                            if set, allows only TCP v4
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>V6Only</code> <em>bool</em>
+                        </td>
+                        <td>
+                            if set, allows only TCP v6
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>DisallowLoopback</code> <em>bool</em>
+                        </td>
+                        <td>
+                            if set, disallows loopback addresses
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>DisallowPrivate</code> <em>bool</em>
+                        </td>
+                        <td>
+                            if set, disallows private addresses
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Message</code> <em>string</em>
+                        </td>
+                        <td>
+                            the violation message to be used if the constraint fails (if empty, the default violation message is used)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Stop</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set to true, prevents further validation checks on the property if this constraint fails
+                        </td>
+                    </tr>
+                </table>
+            </details>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <code>NetIsTld</code><br>&nbsp;&nbsp;<code>isTld</code>&nbsp;<em>(i18n tag abbr.)</em>
+        </td>
+        <td>
+            Check that string value is a valid Tld (top level domain)
+            <details>
+                <summary>Fields</summary>
+                <table>
+                    <tr>
+                        <td>
+                            <code>AllowGeographicTlds</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set, allows geogrpahic tlds to be seen as valid
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>AllowGenericTlds</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set, allows generic tlds to be seen as valid
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>AllowBrandTlds</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set, allows brand tlds to be seen as valid
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>AddCountryCodeTlds</code> <em>[]string</em>
+                        </td>
+                        <td>
+                            additional country (or geographic) tlds to be seen as valid
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>ExcCountryCodeTlds</code> <em>[]string</em>
+                        </td>
+                        <td>
+                            excludes specific country (or geographic) tlds being seen as valid
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>AddGenericTlds</code> <em>[]string</em>
+                        </td>
+                        <td>
+                            additional generic tlds to be seen as valid
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>ExcGenericTlds</code> <em>[]string</em>
+                        </td>
+                        <td>
+                            excludes specific generic tlds being seen as valid
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>AddBrandTlds</code> <em>[]string</em>
+                        </td>
+                        <td>
+                            additional brand tlds to be seen as valid
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>ExcBrandTlds</code> <em>[]string</em>
+                        </td>
+                        <td>
+                            excludes specific brand tlds being seen as valid
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Message</code> <em>string</em>
+                        </td>
+                        <td>
+                            the violation message to be used if the constraint fails (if empty, the default violation message is used)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Stop</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set to true, prevents further validation checks on the property if this constraint fails
+                        </td>
+                    </tr>
+                </table>
+            </details>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <code>NetIsUDP</code><br>&nbsp;&nbsp;<code>isUDP</code>&nbsp;<em>(i18n tag abbr.)</em>
+        </td>
+        <td>
+            Check that string value is a valid resolvable UDP (v4 or v6) address
+            <details>
+                <summary>Fields</summary>
+                <table>
+                    <tr>
+                        <td>
+                            <code>V4Only</code> <em>bool</em>
+                        </td>
+                        <td>
+                            if set, allows only UDP v4
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>V6Only</code> <em>bool</em>
+                        </td>
+                        <td>
+                            if set, allows only UDP v6
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>DisallowLoopback</code> <em>bool</em>
+                        </td>
+                        <td>
+                            if set, disallows loopback addresses
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>DisallowPrivate</code> <em>bool</em>
+                        </td>
+                        <td>
+                            if set, disallows private addresses
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Message</code> <em>string</em>
+                        </td>
+                        <td>
+                            the violation message to be used if the constraint fails (if empty, the default violation message is used)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Stop</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set to true, prevents further validation checks on the property if this constraint fails
+                        </td>
+                    </tr>
+                </table>
+            </details>
+        </td>
+    </tr>
+    <tr>
+        <td>
             <code>NotEqualsOther</code><br>&nbsp;&nbsp;<code>neqo</code>&nbsp;<em>(i18n tag abbr.)</em>
         </td>
         <td>
@@ -2498,6 +2888,128 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
     </tr>
     <tr>
         <td>
+            <code>StringContains</code><br>&nbsp;&nbsp;<code>contains</code>&nbsp;<em>(i18n tag abbr.)</em>
+        </td>
+        <td>
+            Check that a string contains with a given value
+            <details>
+                <summary>Fields</summary>
+                <table>
+                    <tr>
+                        <td>
+                            <code>Value</code> <em>string</em>
+                        </td>
+                        <td>
+                            the value to check that the string contains
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Values</code> <em>[]string</em>
+                        </td>
+                        <td>
+                            multiple additional values that the string may contain
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>CaseInsensitive</code> <em>bool</em>
+                        </td>
+                        <td>
+                            whether the check is case-insensitive (by default, the check is case-sensitive)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Not</code> <em>bool</em>
+                        </td>
+                        <td>
+                            whether the check is NOT-ed (i.e. checks that the string does not contain)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Message</code> <em>string</em>
+                        </td>
+                        <td>
+                            the violation message to be used if the constraint fails (if empty, the default violation message is used)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Stop</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set to true, prevents further validation checks on the property if this constraint fails
+                        </td>
+                    </tr>
+                </table>
+            </details>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <code>StringEndsWith</code><br>&nbsp;&nbsp;<code>ends</code>&nbsp;<em>(i18n tag abbr.)</em>
+        </td>
+        <td>
+            Check that a string ends with a given suffix
+            <details>
+                <summary>Fields</summary>
+                <table>
+                    <tr>
+                        <td>
+                            <code>Value</code> <em>string</em>
+                        </td>
+                        <td>
+                            the value to check that the string ends with
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Values</code> <em>[]string</em>
+                        </td>
+                        <td>
+                            multiple additional values that the string may end with
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>CaseInsensitive</code> <em>bool</em>
+                        </td>
+                        <td>
+                            whether the check is case-insensitive (by default, the check is case-sensitive)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Not</code> <em>bool</em>
+                        </td>
+                        <td>
+                            whether the check is NOT-ed (i.e. checks that the string does not end with)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Message</code> <em>string</em>
+                        </td>
+                        <td>
+                            the violation message to be used if the constraint fails (if empty, the default violation message is used)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Stop</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set to true, prevents further validation checks on the property if this constraint fails
+                        </td>
+                    </tr>
+                </table>
+            </details>
+        </td>
+    </tr>
+    <tr>
+        <td>
             <code>StringLength</code><br>&nbsp;&nbsp;<code>strlen</code>&nbsp;<em>(i18n tag abbr.)</em>
         </td>
         <td>
@@ -2588,6 +3100,366 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
                         </td>
                         <td>
                             if set to true, uses the rune length (true Unicode length) to check length of string
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Message</code> <em>string</em>
+                        </td>
+                        <td>
+                            the violation message to be used if the constraint fails (if empty, the default violation message is used)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Stop</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set to true, prevents further validation checks on the property if this constraint fails
+                        </td>
+                    </tr>
+                </table>
+            </details>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <code>StringGreaterThan</code><br>&nbsp;&nbsp;<code>strgt</code>&nbsp;<em>(i18n tag abbr.)</em>
+        </td>
+        <td>
+            Check that a string value is greater than a specified value
+            <details>
+                <summary>Fields</summary>
+                <table>
+                    <tr>
+                        <td>
+                            <code>Value</code> <em>string</em>
+                        </td>
+                        <td>
+                            the value to compare against
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>CaseInsensitive</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set, the comparison is case-insensitive
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Message</code> <em>string</em>
+                        </td>
+                        <td>
+                            the violation message to be used if the constraint fails (if empty, the default violation message is used)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Stop</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set to true, prevents further validation checks on the property if this constraint fails
+                        </td>
+                    </tr>
+                </table>
+            </details>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <code>StringGreaterThanOrEqual</code><br>&nbsp;&nbsp;<code>strgte</code>&nbsp;<em>(i18n tag abbr.)</em>
+        </td>
+        <td>
+            Check that a string value is greater than or equal to a specified value
+            <details>
+                <summary>Fields</summary>
+                <table>
+                    <tr>
+                        <td>
+                            <code>Value</code> <em>string</em>
+                        </td>
+                        <td>
+                            the value to compare against
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>CaseInsensitive</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set, the comparison is case-insensitive
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Message</code> <em>string</em>
+                        </td>
+                        <td>
+                            the violation message to be used if the constraint fails (if empty, the default violation message is used)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Stop</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set to true, prevents further validation checks on the property if this constraint fails
+                        </td>
+                    </tr>
+                </table>
+            </details>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <code>StringGreaterThanOther</code><br>&nbsp;&nbsp;<code>strgto</code>&nbsp;<em>(i18n tag abbr.)</em>
+        </td>
+        <td>
+            Check that a string value is greater than another named property value
+            <details>
+                <summary>Fields</summary>
+                <table>
+                    <tr>
+                        <td>
+                            <code>PropertyName</code> <em>string</em>
+                        </td>
+                        <td>
+                            the property name of the other value to compare against
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>CaseInsensitive</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set, the comparison is case-insensitive
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Message</code> <em>string</em>
+                        </td>
+                        <td>
+                            the violation message to be used if the constraint fails (if empty, the default violation message is used)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Stop</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set to true, prevents further validation checks on the property if this constraint fails
+                        </td>
+                    </tr>
+                </table>
+            </details>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <code>StringGreaterThanOrEqualOther</code><br>&nbsp;&nbsp;<code>strgteo</code>&nbsp;<em>(i18n tag abbr.)</em>
+        </td>
+        <td>
+            Check that a string value is greater than or equal to another named property value
+            <details>
+                <summary>Fields</summary>
+                <table>
+                    <tr>
+                        <td>
+                            <code>PropertyName</code> <em>string</em>
+                        </td>
+                        <td>
+                            the property name of the other value to compare against
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>CaseInsensitive</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set, the comparison is case-insensitive
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Message</code> <em>string</em>
+                        </td>
+                        <td>
+                            the violation message to be used if the constraint fails (if empty, the default violation message is used)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Stop</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set to true, prevents further validation checks on the property if this constraint fails
+                        </td>
+                    </tr>
+                </table>
+            </details>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <code>StringLessThan</code><br>&nbsp;&nbsp;<code>strlt</code>&nbsp;<em>(i18n tag abbr.)</em>
+        </td>
+        <td>
+            Check that a string value is less than a specified value
+            <details>
+                <summary>Fields</summary>
+                <table>
+                    <tr>
+                        <td>
+                            <code>Value</code> <em>string</em>
+                        </td>
+                        <td>
+                            the value to compare against
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>CaseInsensitive</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set, the comparison is case-insensitive
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Message</code> <em>string</em>
+                        </td>
+                        <td>
+                            the violation message to be used if the constraint fails (if empty, the default violation message is used)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Stop</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set to true, prevents further validation checks on the property if this constraint fails
+                        </td>
+                    </tr>
+                </table>
+            </details>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <code>StringLessThanOrEqual</code><br>&nbsp;&nbsp;<code>strlte</code>&nbsp;<em>(i18n tag abbr.)</em>
+        </td>
+        <td>
+            Check that a string value is less than or equal to a specified value
+            <details>
+                <summary>Fields</summary>
+                <table>
+                    <tr>
+                        <td>
+                            <code>Value</code> <em>string</em>
+                        </td>
+                        <td>
+                            the value to compare against
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>CaseInsensitive</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set, the comparison is case-insensitive
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Message</code> <em>string</em>
+                        </td>
+                        <td>
+                            the violation message to be used if the constraint fails (if empty, the default violation message is used)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Stop</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set to true, prevents further validation checks on the property if this constraint fails
+                        </td>
+                    </tr>
+                </table>
+            </details>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <code>StringLessThanOther</code><br>&nbsp;&nbsp;<code>strlto</code>&nbsp;<em>(i18n tag abbr.)</em>
+        </td>
+        <td>
+            Check that a string value is less than another named property value
+            <details>
+                <summary>Fields</summary>
+                <table>
+                    <tr>
+                        <td>
+                            <code>PropertyName</code> <em>string</em>
+                        </td>
+                        <td>
+                            the property name of the other value to compare against
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>CaseInsensitive</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set, the comparison is case-insensitive
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Message</code> <em>string</em>
+                        </td>
+                        <td>
+                            the violation message to be used if the constraint fails (if empty, the default violation message is used)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Stop</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set to true, prevents further validation checks on the property if this constraint fails
+                        </td>
+                    </tr>
+                </table>
+            </details>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <code>StringLessThanOrEqualOther</code><br>&nbsp;&nbsp;<code>strlteo</code>&nbsp;<em>(i18n tag abbr.)</em>
+        </td>
+        <td>
+            Check that a string value is less than or equal to another named property value
+            <details>
+                <summary>Fields</summary>
+                <table>
+                    <tr>
+                        <td>
+                            <code>PropertyName</code> <em>string</em>
+                        </td>
+                        <td>
+                            the property name of the other value to compare against
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>CaseInsensitive</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set, the comparison is case-insensitive
                         </td>
                     </tr>
                     <tr>
@@ -3191,6 +4063,67 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
     </tr>
     <tr>
         <td>
+            <code>StringStartsWith</code><br>&nbsp;&nbsp;<code>starts</code>&nbsp;<em>(i18n tag abbr.)</em>
+        </td>
+        <td>
+            Check that a string starts with a given prefix
+            <details>
+                <summary>Fields</summary>
+                <table>
+                    <tr>
+                        <td>
+                            <code>Value</code> <em>string</em>
+                        </td>
+                        <td>
+                            the value to check that the string starts with
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Values</code> <em>[]string</em>
+                        </td>
+                        <td>
+                            multiple additional values that the string may start with
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>CaseInsensitive</code> <em>bool</em>
+                        </td>
+                        <td>
+                            whether the check is case-insensitive (by default, the check is case-sensitive)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Not</code> <em>bool</em>
+                        </td>
+                        <td>
+                            whether the check is NOT-ed (i.e. checks that the string does not start with)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Message</code> <em>string</em>
+                        </td>
+                        <td>
+                            the violation message to be used if the constraint fails (if empty, the default violation message is used)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Stop</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set to true, prevents further validation checks on the property if this constraint fails
+                        </td>
+                    </tr>
+                </table>
+            </details>
+        </td>
+    </tr>
+    <tr>
+        <td>
             <code>StringUppercase</code><br>&nbsp;&nbsp;<code>strupper</code>&nbsp;<em>(i18n tag abbr.)</em>
         </td>
         <td>
@@ -3233,6 +4166,193 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
                         </td>
                         <td>
                             if set to true, accepts space separators in the card number (but must appear between each 4 digits)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Message</code> <em>string</em>
+                        </td>
+                        <td>
+                            the violation message to be used if the constraint fails (if empty, the default violation message is used)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Stop</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set to true, prevents further validation checks on the property if this constraint fails
+                        </td>
+                    </tr>
+                </table>
+            </details>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <code>StringValidCountryCode</code><br>&nbsp;&nbsp;<code>strcountry</code>&nbsp;<em>(i18n tag abbr.)</em>
+        </td>
+        <td>
+            Check that a string is a valid ISO-3166 (3166-1 / 3166-2) country code
+            <details>
+                <summary>Fields</summary>
+                <table>
+                    <tr>
+                        <td>
+                            <code>Allow3166_2</code> <em>bool</em>
+                        </td>
+                        <td>
+                            if set to true, allows ISO-3166-2 country and region codes
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Allow3166_2_Obsoletes</code> <em>bool</em>
+                        </td>
+                        <td>
+                            if set to true (along with <code>Allow3166_2</code>), allows ISO-3166-2 obsolete region codes
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>AllowUserAssigned</code> <em>bool</em>
+                        </td>
+                        <td>
+                            if set to true, allows ISO-3166-1 user assigned country codes
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Allow3166_1_ExceptionallyReserved</code> <em>bool</em>
+                        </td>
+                        <td>
+                            if set to true, allows ISO-3166-1 exceptionally reserved country codes
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Allow3166_1_IndeterminatelyReserved</code> <em>bool</em>
+                        </td>
+                        <td>
+                            if set to true, allows ISO-3166-1 indeterminately reserved country codes
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Allow3166_1_TransitionallyReserved</code> <em>bool</em>
+                        </td>
+                        <td>
+                            if set to true, allows ISO-3166-1 transitionally reserved country codes
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Allow3166_1_Deleted</code> <em>bool</em>
+                        </td>
+                        <td>
+                            if set to true, allows ISO-3166-1 deleted country codes
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Allow3166_1_Numeric</code> <em>bool</em>
+                        </td>
+                        <td>
+                            if set to true, allows ISO-3166-1 numeric country codes<br>
+                            if <code>AllowUserAssigned</code> is also set to true, also allows user assigned contry code (i.e 900 - 999)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>NumericOnly</code> <em>bool</em>
+                        </td>
+                        <td>
+                            if set to true, overrides all other flags (with the exception of <code>AllowUserAssigned</code>) and allows only ISO-3166-1 numeric codes
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Message</code> <em>string</em>
+                        </td>
+                        <td>
+                            the violation message to be used if the constraint fails (if empty, the default violation message is used)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Stop</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set to true, prevents further validation checks on the property if this constraint fails
+                        </td>
+                    </tr>
+                </table>
+            </details>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <code>StringValidCurrencyCode</code><br>&nbsp;&nbsp;<code>strccy</code>&nbsp;<em>(i18n tag abbr.)</em>
+        </td>
+        <td>
+            Check that a string is a valid ISO-4217 currency code
+            <details>
+                <summary>Fields</summary>
+                <table>
+                    <tr>
+                        <td>
+                            <code>AllowNumeric</code> <em>bool</em>
+                        </td>
+                        <td>
+                            if set to true, allows ISO-4217 numeric codes
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>AllowHistorical</code> <em>bool</em>
+                        </td>
+                        <td>
+                            if set to true, allows historical ISO-4217 codes (and historical numeric codes - if <code>AllowNumeric</code> is also set)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>AllowTestCode</code> <em>bool</em>
+                        </td>
+                        <td>
+                            if set to true, allows ISO-4217 test code (<code>XTS</code> / <code>963</code>) 
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>AllowNoCode</code> <em>bool</em>
+                        </td>
+                        <td>
+                            if set to true, allows ISO-4217 no currency code (<code>XXX</code> / <code>999</code>) 
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>AllowCrypto</code> <em>bool</em>
+                        </td>
+                        <td>
+                            if set to true, allows commonly used crypto currency codes 
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>AllowUnofficial</code> <em>bool</em>
+                        </td>
+                        <td>
+                            if set to true, allows commonly used unofficial currency codes 
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>NumericOnly</code> <em>bool</em>
+                        </td>
+                        <td>
+                            if set to true, allows only ISO-4217 numeric currency codes 
                         </td>
                     </tr>
                     <tr>
@@ -3360,6 +4480,96 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
     </tr>
     <tr>
         <td>
+            <code>StringValidJson</code><br>&nbsp;&nbsp;<code>strjson</code>&nbsp;<em>(i18n tag abbr.)</em>
+        </td>
+        <td>
+            Checks that a string is valid json
+            <details>
+                <summary>Fields</summary>
+                <table>
+                    <tr>
+                        <td>
+                            <code>DisallowNullJson</code> <em>bool</em>
+                        </td>
+                        <td>
+                            if set to true, disallows <code>"null"</code> as valid
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>DisallowValue</code> <em>bool</em>
+                        </td>
+                        <td>
+                            if set to true, disallows single value (e.g. <code>"true"</code>) as valid
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>DisallowArray</code> <em>bool</em>
+                        </td>
+                        <td>
+                            if set to true, disallows JSON arrays as valid
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>DisallowObject</code> <em>bool</em>
+                        </td>
+                        <td>
+                            if set to true, disallows JSON objects as valid
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Message</code> <em>string</em>
+                        </td>
+                        <td>
+                            the violation message to be used if the constraint fails (if empty, the default violation message is used)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Stop</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set to true, prevents further validation checks on the property if this constraint fails
+                        </td>
+                    </tr>
+                </table>
+            </details>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <code>StringValidLanguageCode</code><br>&nbsp;&nbsp;<code>strlang</code>&nbsp;<em>(i18n tag abbr.)</em>
+        </td>
+        <td>
+            Check that a string is a valid BCP-47 language code
+            <details>
+                <summary>Fields</summary>
+                <table>
+                    <tr>
+                        <td>
+                            <code>Message</code> <em>string</em>
+                        </td>
+                        <td>
+                            the violation message to be used if the constraint fails (if empty, the default violation message is used)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Stop</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set to true, prevents further validation checks on the property if this constraint fails
+                        </td>
+                    </tr>
+                </table>
+            </details>
+        </td>
+    </tr>
+    <tr>
+        <td>
             <code>StringValidToken</code><br>&nbsp;&nbsp;<code>strtoken</code>&nbsp;<em>(i18n tag abbr.)</em>
         </td>
         <td>
@@ -3381,6 +4591,59 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
                         </td>
                         <td>
                             set to true to make the token check case in-sensitive
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Message</code> <em>string</em>
+                        </td>
+                        <td>
+                            the violation message to be used if the constraint fails (if empty, the default violation message is used)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Stop</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set to true, prevents further validation checks on the property if this constraint fails
+                        </td>
+                    </tr>
+                </table>
+            </details>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <code>StringValidTimezone</code><br>&nbsp;&nbsp;<code>strtz</code>&nbsp;<em>(i18n tag abbr.)</em>
+        </td>
+        <td>
+            Check that a string value is a valid timezone
+            <details>
+                <summary>Fields</summary>
+                <table>
+                    <tr>
+                        <td>
+                            <code>LocationOnly</code> <em>bool</em>
+                        </td>
+                        <td>
+                            if set to true, allows location only
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>OffsetOnly</code> <em>bool</em>
+                        </td>
+                        <td>
+                            if set to true, allows offset only
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>AllowNumeric</code> <em>bool</em>
+                        </td>
+                        <td>
+                            if set to true, allows offset to be a numeric value (aswell as a string)
                         </td>
                     </tr>
                     <tr>
