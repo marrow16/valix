@@ -2077,3 +2077,405 @@ func TestDatetimeToleranceToOtherMessages(t *testing.T) {
 	msg = constraint.GetMessage(nil)
 	require.Equal(t, "test", msg)
 }
+
+func TestStringGreaterThan(t *testing.T) {
+	validator := buildFooValidator(JsonString, &StringGreaterThan{Value: "B"}, false)
+	obj := jsonObject(`{
+		"foo": "B"
+	}`)
+	ok, violations := validator.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, fmt.Sprintf(fmtMsgGt, "B"), violations[0].Message)
+
+	obj["foo"] = "C"
+	ok, _ = validator.Validate(obj)
+	require.True(t, ok)
+
+	obj["foo"] = 2.0
+	ok, _ = validator.Validate(obj)
+	require.False(t, ok)
+	obj["foo"] = nil
+	ok, _ = validator.Validate(obj)
+	require.False(t, ok)
+
+	validator = buildFooValidator(JsonString, &StringGreaterThan{Value: "b", CaseInsensitive: true}, false)
+
+	obj["foo"] = "B"
+	ok, _ = validator.Validate(obj)
+	require.False(t, ok)
+
+	obj["foo"] = "C"
+	ok, _ = validator.Validate(obj)
+	require.True(t, ok)
+}
+
+func TestStringGreaterThanOrEqual(t *testing.T) {
+	validator := buildFooValidator(JsonString, &StringGreaterThanOrEqual{Value: "B"}, false)
+	obj := jsonObject(`{
+		"foo": "A"
+	}`)
+	ok, violations := validator.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, fmt.Sprintf(fmtMsgGte, "B"), violations[0].Message)
+
+	obj["foo"] = "B"
+	ok, _ = validator.Validate(obj)
+	require.True(t, ok)
+	obj["foo"] = "C"
+	ok, _ = validator.Validate(obj)
+	require.True(t, ok)
+
+	obj["foo"] = 2.0
+	ok, _ = validator.Validate(obj)
+	require.False(t, ok)
+	obj["foo"] = nil
+	ok, _ = validator.Validate(obj)
+	require.False(t, ok)
+
+	validator = buildFooValidator(JsonString, &StringGreaterThanOrEqual{Value: "B", CaseInsensitive: true}, false)
+
+	obj["foo"] = "a"
+	ok, _ = validator.Validate(obj)
+	require.False(t, ok)
+	obj["foo"] = "b"
+	ok, _ = validator.Validate(obj)
+	require.True(t, ok)
+	obj["foo"] = "c"
+	ok, _ = validator.Validate(obj)
+	require.True(t, ok)
+}
+
+func TestStringLessThan(t *testing.T) {
+	validator := buildFooValidator(JsonString, &StringLessThan{Value: "B"}, false)
+	obj := jsonObject(`{
+		"foo": "B"
+	}`)
+	ok, violations := validator.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, fmt.Sprintf(fmtMsgLt, "B"), violations[0].Message)
+
+	obj["foo"] = "A"
+	ok, _ = validator.Validate(obj)
+	require.True(t, ok)
+
+	obj["foo"] = 2.0
+	ok, _ = validator.Validate(obj)
+	require.False(t, ok)
+	obj["foo"] = nil
+	ok, _ = validator.Validate(obj)
+	require.False(t, ok)
+
+	validator = buildFooValidator(JsonString, &StringLessThan{Value: "b", CaseInsensitive: true}, false)
+
+	obj["foo"] = "B"
+	ok, _ = validator.Validate(obj)
+	require.False(t, ok)
+
+	obj["foo"] = "A"
+	ok, _ = validator.Validate(obj)
+	require.True(t, ok)
+}
+
+func TestStringLessThanOrEqual(t *testing.T) {
+	validator := buildFooValidator(JsonString, &StringLessThanOrEqual{Value: "B"}, false)
+	obj := jsonObject(`{
+		"foo": "C"
+	}`)
+	ok, violations := validator.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, fmt.Sprintf(fmtMsgLte, "B"), violations[0].Message)
+
+	obj["foo"] = "B"
+	ok, _ = validator.Validate(obj)
+	require.True(t, ok)
+	obj["foo"] = "A"
+	ok, _ = validator.Validate(obj)
+	require.True(t, ok)
+
+	obj["foo"] = 2.0
+	ok, _ = validator.Validate(obj)
+	require.False(t, ok)
+	obj["foo"] = nil
+	ok, _ = validator.Validate(obj)
+	require.False(t, ok)
+
+	validator = buildFooValidator(JsonString, &StringLessThanOrEqual{Value: "B", CaseInsensitive: true}, false)
+
+	obj["foo"] = "c"
+	ok, _ = validator.Validate(obj)
+	require.False(t, ok)
+	obj["foo"] = "b"
+	ok, _ = validator.Validate(obj)
+	require.True(t, ok)
+	obj["foo"] = "a"
+	ok, _ = validator.Validate(obj)
+	require.True(t, ok)
+}
+
+func TestStringGreaterThanOther(t *testing.T) {
+	validator := &Validator{
+		Properties: Properties{
+			"foo": {
+				Type:      JsonString,
+				NotNull:   true,
+				Mandatory: true,
+				Constraints: Constraints{
+					&StringGreaterThanOther{PropertyName: "bar"},
+				},
+			},
+			"bar": {
+				Type: JsonAny,
+			},
+		},
+	}
+	obj := jsonObject(`{
+		"foo": "A",
+		"bar": "B"
+	}`)
+	ok, violations := validator.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, fmt.Sprintf(fmtMsgGtOther, "bar"), violations[0].Message)
+
+	obj["foo"] = "B"
+	ok, _ = validator.Validate(obj)
+	require.False(t, ok)
+	obj["foo"] = "C"
+	ok, _ = validator.Validate(obj)
+	require.True(t, ok)
+
+	obj["foo"] = 2.0
+	ok, _ = validator.Validate(obj)
+	require.False(t, ok)
+	obj["foo"] = nil
+	ok, _ = validator.Validate(obj)
+	require.False(t, ok)
+	obj["foo"] = ""
+	delete(obj, "bar")
+	ok, _ = validator.Validate(obj)
+	require.False(t, ok)
+
+	validator = &Validator{
+		Properties: Properties{
+			"foo": {
+				Type:      JsonString,
+				NotNull:   true,
+				Mandatory: true,
+				Constraints: Constraints{
+					&StringGreaterThanOther{PropertyName: "bar", CaseInsensitive: true},
+				},
+			},
+			"bar": {
+				Type: JsonAny,
+			},
+		},
+	}
+	obj = jsonObject(`{
+		"foo": "C",
+		"bar": "b"
+	}`)
+	ok, _ = validator.Validate(obj)
+	require.True(t, ok)
+}
+
+func TestStringGreaterThanOrEqualOther(t *testing.T) {
+	validator := &Validator{
+		Properties: Properties{
+			"foo": {
+				Type:      JsonString,
+				NotNull:   true,
+				Mandatory: true,
+				Constraints: Constraints{
+					&StringGreaterThanOrEqualOther{PropertyName: "bar"},
+				},
+			},
+			"bar": {
+				Type: JsonAny,
+			},
+		},
+	}
+	obj := jsonObject(`{
+		"foo": "A",
+		"bar": "B"
+	}`)
+	ok, violations := validator.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, fmt.Sprintf(fmtMsgGteOther, "bar"), violations[0].Message)
+
+	obj["foo"] = "B"
+	ok, _ = validator.Validate(obj)
+	require.True(t, ok)
+	obj["foo"] = "C"
+	ok, _ = validator.Validate(obj)
+	require.True(t, ok)
+
+	obj["foo"] = 2.0
+	ok, _ = validator.Validate(obj)
+	require.False(t, ok)
+	obj["foo"] = nil
+	ok, _ = validator.Validate(obj)
+	require.False(t, ok)
+	obj["foo"] = ""
+	delete(obj, "bar")
+	ok, _ = validator.Validate(obj)
+	require.False(t, ok)
+
+	validator = &Validator{
+		Properties: Properties{
+			"foo": {
+				Type:      JsonString,
+				NotNull:   true,
+				Mandatory: true,
+				Constraints: Constraints{
+					&StringGreaterThanOrEqualOther{PropertyName: "bar", CaseInsensitive: true},
+				},
+			},
+			"bar": {
+				Type: JsonAny,
+			},
+		},
+	}
+	obj = jsonObject(`{
+		"foo": "C",
+		"bar": "b"
+	}`)
+	ok, _ = validator.Validate(obj)
+	require.True(t, ok)
+}
+
+func TestStringLessThanOther(t *testing.T) {
+	validator := &Validator{
+		Properties: Properties{
+			"foo": {
+				Type:      JsonString,
+				NotNull:   true,
+				Mandatory: true,
+				Constraints: Constraints{
+					&StringLessThanOther{PropertyName: "bar"},
+				},
+			},
+			"bar": {
+				Type: JsonAny,
+			},
+		},
+	}
+	obj := jsonObject(`{
+		"foo": "C",
+		"bar": "B"
+	}`)
+	ok, violations := validator.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, fmt.Sprintf(fmtMsgLtOther, "bar"), violations[0].Message)
+
+	obj["foo"] = "B"
+	ok, _ = validator.Validate(obj)
+	require.False(t, ok)
+	obj["foo"] = "A"
+	ok, _ = validator.Validate(obj)
+	require.True(t, ok)
+
+	obj["foo"] = 2.0
+	ok, _ = validator.Validate(obj)
+	require.False(t, ok)
+	obj["foo"] = nil
+	ok, _ = validator.Validate(obj)
+	require.False(t, ok)
+	obj["foo"] = ""
+	delete(obj, "bar")
+	ok, _ = validator.Validate(obj)
+	require.False(t, ok)
+
+	validator = &Validator{
+		Properties: Properties{
+			"foo": {
+				Type:      JsonString,
+				NotNull:   true,
+				Mandatory: true,
+				Constraints: Constraints{
+					&StringLessThanOther{PropertyName: "bar", CaseInsensitive: true},
+				},
+			},
+			"bar": {
+				Type: JsonAny,
+			},
+		},
+	}
+	obj = jsonObject(`{
+		"foo": "a",
+		"bar": "B"
+	}`)
+	ok, _ = validator.Validate(obj)
+	require.True(t, ok)
+}
+
+func TestStringLessThanOrEqualOther(t *testing.T) {
+	validator := &Validator{
+		Properties: Properties{
+			"foo": {
+				Type:      JsonString,
+				NotNull:   true,
+				Mandatory: true,
+				Constraints: Constraints{
+					&StringLessThanOrEqualOther{PropertyName: "bar"},
+				},
+			},
+			"bar": {
+				Type: JsonAny,
+			},
+		},
+	}
+	obj := jsonObject(`{
+		"foo": "C",
+		"bar": "B"
+	}`)
+	ok, violations := validator.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, fmt.Sprintf(fmtMsgLteOther, "bar"), violations[0].Message)
+
+	obj["foo"] = "B"
+	ok, _ = validator.Validate(obj)
+	require.True(t, ok)
+	obj["foo"] = "A"
+	ok, _ = validator.Validate(obj)
+	require.True(t, ok)
+
+	obj["foo"] = 2.0
+	ok, _ = validator.Validate(obj)
+	require.False(t, ok)
+	obj["foo"] = nil
+	ok, _ = validator.Validate(obj)
+	require.False(t, ok)
+	obj["foo"] = ""
+	delete(obj, "bar")
+	ok, _ = validator.Validate(obj)
+	require.False(t, ok)
+
+	validator = &Validator{
+		Properties: Properties{
+			"foo": {
+				Type:      JsonString,
+				NotNull:   true,
+				Mandatory: true,
+				Constraints: Constraints{
+					&StringLessThanOrEqualOther{PropertyName: "bar", CaseInsensitive: true},
+				},
+			},
+			"bar": {
+				Type: JsonAny,
+			},
+		},
+	}
+	obj = jsonObject(`{
+		"foo": "a",
+		"bar": "B"
+	}`)
+	ok, _ = validator.Validate(obj)
+	require.True(t, ok)
+}

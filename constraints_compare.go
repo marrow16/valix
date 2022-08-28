@@ -302,6 +302,254 @@ func (c *LessThanOrEqualOther) GetMessage(tcx I18nContext) string {
 	return defaultMessage(tcx, c.Message, fmtMsgLteOther, c.PropertyName)
 }
 
+// StringGreaterThan constraint to check that a string value is greater than a specified value
+//
+// Note: this constraint is strict - if the property value is not a string then this constraint fails
+type StringGreaterThan struct {
+	// the value to compare against
+	Value string `v8n:"default"`
+	// when set, the comparison is case-insensitive
+	CaseInsensitive bool
+	// the violation message to be used if the constraint fails (see Violation.Message)
+	//
+	// (if the Message is an empty string then the default violation message is used)
+	Message string
+	// when set to true, Stop prevents further validation checks on the property if this constraint fails
+	Stop bool
+}
+
+// Check implements Constraint.Check
+func (c *StringGreaterThan) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
+	if str, ok := v.(string); ok && stringCompare(str, c.Value, c.CaseInsensitive) > 0 {
+		return true, ""
+	}
+	vcx.CeaseFurtherIf(c.Stop)
+	return false, c.GetMessage(vcx)
+}
+
+// GetMessage implements the Constraint.GetMessage
+func (c *StringGreaterThan) GetMessage(tcx I18nContext) string {
+	return defaultMessage(tcx, c.Message, fmtMsgGt, c.Value)
+}
+
+// StringGreaterThanOrEqual constraint to check that a string value is greater than or equal to a specified value
+//
+// Note: this constraint is strict - if the property value is not a string then this constraint fails
+type StringGreaterThanOrEqual struct {
+	// the value to compare against
+	Value string `v8n:"default"`
+	// when set, the comparison is case-insensitive
+	CaseInsensitive bool
+	// the violation message to be used if the constraint fails (see Violation.Message)
+	//
+	// (if the Message is an empty string then the default violation message is used)
+	Message string
+	// when set to true, Stop prevents further validation checks on the property if this constraint fails
+	Stop bool
+}
+
+// Check implements Constraint.Check
+func (c *StringGreaterThanOrEqual) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
+	if str, ok := v.(string); ok && stringCompare(str, c.Value, c.CaseInsensitive) >= 0 {
+		return true, ""
+	}
+	vcx.CeaseFurtherIf(c.Stop)
+	return false, c.GetMessage(vcx)
+}
+
+// GetMessage implements the Constraint.GetMessage
+func (c *StringGreaterThanOrEqual) GetMessage(tcx I18nContext) string {
+	return defaultMessage(tcx, c.Message, fmtMsgGte, c.Value)
+}
+
+// StringLessThan constraint to check that a string value is less than a specified value
+//
+// Note: this constraint is strict - if the property value is not a string then this constraint fails
+type StringLessThan struct {
+	// the value to compare against
+	Value string `v8n:"default"`
+	// when set, the comparison is case-insensitive
+	CaseInsensitive bool
+	// the violation message to be used if the constraint fails (see Violation.Message)
+	//
+	// (if the Message is an empty string then the default violation message is used)
+	Message string
+	// when set to true, Stop prevents further validation checks on the property if this constraint fails
+	Stop bool
+}
+
+// Check implements Constraint.Check
+func (c *StringLessThan) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
+	if str, ok := v.(string); ok && stringCompare(str, c.Value, c.CaseInsensitive) < 0 {
+		return true, ""
+	}
+	vcx.CeaseFurtherIf(c.Stop)
+	return false, c.GetMessage(vcx)
+}
+
+// GetMessage implements the Constraint.GetMessage
+func (c *StringLessThan) GetMessage(tcx I18nContext) string {
+	return defaultMessage(tcx, c.Message, fmtMsgLt, c.Value)
+}
+
+// StringLessThanOrEqual constraint to check that a string value is less than or equal to a specified value
+//
+// Note: this constraint is strict - if the property value is not a string then this constraint fails
+type StringLessThanOrEqual struct {
+	// the value to compare against
+	Value string `v8n:"default"`
+	// when set, the comparison is case-insensitive
+	CaseInsensitive bool
+	// the violation message to be used if the constraint fails (see Violation.Message)
+	//
+	// (if the Message is an empty string then the default violation message is used)
+	Message string
+	// when set to true, Stop prevents further validation checks on the property if this constraint fails
+	Stop bool
+}
+
+// Check implements Constraint.Check
+func (c *StringLessThanOrEqual) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
+	if str, ok := v.(string); ok && stringCompare(str, c.Value, c.CaseInsensitive) <= 0 {
+		return true, ""
+	}
+	vcx.CeaseFurtherIf(c.Stop)
+	return false, c.GetMessage(vcx)
+}
+
+// GetMessage implements the Constraint.GetMessage
+func (c *StringLessThanOrEqual) GetMessage(tcx I18nContext) string {
+	return defaultMessage(tcx, c.Message, fmtMsgLte, c.Value)
+}
+
+// StringGreaterThanOther constraint to check that a string value is greater than another named property value
+//
+// Note: this constraint is strict - if either property value is not a string then this constraint fails
+type StringGreaterThanOther struct {
+	// the property name of the other value to compare against
+	PropertyName string `v8n:"default"`
+	// when set, the comparison is case-insensitive
+	CaseInsensitive bool
+	// the violation message to be used if the constraint fails (see Violation.Message)
+	//
+	// (if the Message is an empty string then the default violation message is used)
+	Message string
+	// when set to true, Stop prevents further validation checks on the property if this constraint fails
+	Stop bool
+}
+
+// Check implements Constraint.Check
+func (c *StringGreaterThanOther) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
+	if str, ok := v.(string); ok {
+		if other, ok := getOtherPropertyString(c.PropertyName, vcx); ok && stringCompare(str, other, c.CaseInsensitive) > 0 {
+			return true, ""
+		}
+	}
+	vcx.CeaseFurtherIf(c.Stop)
+	return false, c.GetMessage(vcx)
+}
+
+// GetMessage implements the Constraint.GetMessage
+func (c *StringGreaterThanOther) GetMessage(tcx I18nContext) string {
+	return defaultMessage(tcx, c.Message, fmtMsgGtOther, c.PropertyName)
+}
+
+// StringGreaterThanOrEqualOther constraint to check that a string value is greater than or equal to another named property value
+//
+// Note: this constraint is strict - if either property value is not a string then this constraint fails
+type StringGreaterThanOrEqualOther struct {
+	// the property name of the other value to compare against
+	PropertyName string `v8n:"default"`
+	// when set, the comparison is case-insensitive
+	CaseInsensitive bool
+	// the violation message to be used if the constraint fails (see Violation.Message)
+	//
+	// (if the Message is an empty string then the default violation message is used)
+	Message string
+	// when set to true, Stop prevents further validation checks on the property if this constraint fails
+	Stop bool
+}
+
+// Check implements Constraint.Check
+func (c *StringGreaterThanOrEqualOther) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
+	if str, ok := v.(string); ok {
+		if other, ok := getOtherPropertyString(c.PropertyName, vcx); ok && stringCompare(str, other, c.CaseInsensitive) >= 0 {
+			return true, ""
+		}
+	}
+	vcx.CeaseFurtherIf(c.Stop)
+	return false, c.GetMessage(vcx)
+}
+
+// GetMessage implements the Constraint.GetMessage
+func (c *StringGreaterThanOrEqualOther) GetMessage(tcx I18nContext) string {
+	return defaultMessage(tcx, c.Message, fmtMsgGteOther, c.PropertyName)
+}
+
+// StringLessThanOther constraint to check that a string value is less than another named property value
+//
+// Note: this constraint is strict - if either property value is not a string then this constraint fails
+type StringLessThanOther struct {
+	// the property name of the other value to compare against
+	PropertyName string `v8n:"default"`
+	// when set, the comparison is case-insensitive
+	CaseInsensitive bool
+	// the violation message to be used if the constraint fails (see Violation.Message)
+	//
+	// (if the Message is an empty string then the default violation message is used)
+	Message string
+	// when set to true, Stop prevents further validation checks on the property if this constraint fails
+	Stop bool
+}
+
+// Check implements Constraint.Check
+func (c *StringLessThanOther) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
+	if str, ok := v.(string); ok {
+		if other, ok := getOtherPropertyString(c.PropertyName, vcx); ok && stringCompare(str, other, c.CaseInsensitive) < 0 {
+			return true, ""
+		}
+	}
+	vcx.CeaseFurtherIf(c.Stop)
+	return false, c.GetMessage(vcx)
+}
+
+// GetMessage implements the Constraint.GetMessage
+func (c *StringLessThanOther) GetMessage(tcx I18nContext) string {
+	return defaultMessage(tcx, c.Message, fmtMsgLtOther, c.PropertyName)
+}
+
+// StringLessThanOrEqualOther constraint to check that a string value is less than or equal to another named property value
+//
+// Note: this constraint is strict - if either property value is not a string then this constraint fails
+type StringLessThanOrEqualOther struct {
+	// the property name of the other value to compare against
+	PropertyName string `v8n:"default"`
+	// when set, the comparison is case-insensitive
+	CaseInsensitive bool
+	// the violation message to be used if the constraint fails (see Violation.Message)
+	//
+	// (if the Message is an empty string then the default violation message is used)
+	Message string
+	// when set to true, Stop prevents further validation checks on the property if this constraint fails
+	Stop bool
+}
+
+// Check implements Constraint.Check
+func (c *StringLessThanOrEqualOther) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
+	if str, ok := v.(string); ok {
+		if other, ok := getOtherPropertyString(c.PropertyName, vcx); ok && stringCompare(str, other, c.CaseInsensitive) <= 0 {
+			return true, ""
+		}
+	}
+	vcx.CeaseFurtherIf(c.Stop)
+	return false, c.GetMessage(vcx)
+}
+
+// GetMessage implements the Constraint.GetMessage
+func (c *StringLessThanOrEqualOther) GetMessage(tcx I18nContext) string {
+	return defaultMessage(tcx, c.Message, fmtMsgLteOther, c.PropertyName)
+}
+
 // DatetimeGreaterThan constraint to check that a date/time (as an ISO string) value is greater than a specified value
 //
 // Note: this constraint is strict - if either of the compared values is not a valid ISO datetime then this

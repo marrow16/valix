@@ -27,11 +27,18 @@ const (
 	fmtMsgStringMinMaxLen        = "String value length must be between %[1]d (%[2]s) and %[3]d (%[4]s)"
 	msgStringLowercase           = "String value must contain only lowercase letters"
 	msgStringUppercase           = "String value must contain only uppercase letters"
+	msgStringValidJson           = "String value must be valid JSON"
 	msgUnicodeNormalization      = "String value must be correct normalization form"
 	msgUnicodeNormalizationNFC   = "String value must be correct normalization form NFC"
 	msgUnicodeNormalizationNFKC  = "String value must be correct normalization form NFKC"
 	msgUnicodeNormalizationNFD   = "String value must be correct normalization form NFD"
 	msgUnicodeNormalizationNFKD  = "String value must be correct normalization form NFKD"
+	fmtMsgStringContains         = "String must contain %[1]s"
+	fmtMsgStringNotContains      = "String must not contain %[1]s"
+	fmtMsgStringStartsWith       = "String value must start with %[1]s"
+	fmtMsgStringNotStartsWith    = "String value must not start with %[1]s"
+	fmtMsgStringEndsWith         = "String value must end with %[1]s"
+	fmtMsgStringNotEndsWith      = "String value must not end with %[1]s"
 	fmtMsgMinLen                 = "Value length must be at least %[1]d"
 	fmtMsgMinLenExc              = "Value length must be greater than %[1]d"
 	fmtMsgExactLen               = "Value length must be %[1]d"
@@ -53,7 +60,10 @@ const (
 	fmtMsgUuidMinVersion         = "Value must be a valid UUID (minimum version %[1]d)"
 	fmtMsgUuidCorrectVer         = "Value must be a valid UUID (version %[1]d)"
 	msgValidCardNumber           = "Value must be a valid card number"
+	msgValidCountryCode          = "Value must be a valid ISO-3166 country code"
+	msgValidCurrencyCode         = "Value must be a valid ISO-4217 currency code"
 	msgValidEmail                = "Value must be an email address"
+	msgValidLanguageCode         = "Value must be a valid language code"
 	fmtMsgEqualsOther            = "Value must equal the value of property '%[1]s'"
 	fmtMsgNotEqualsOther         = "Value must not equal the value of property '%[1]s'"
 	fmtMsgGtOther                = "Value must be greater than value of property '%[1]s'"
@@ -118,6 +128,7 @@ const (
 	msgDatetimeFutureOrPresent        = "Value must be a valid date/time in the future or present"
 	msgDatetimePast                   = "Value must be a valid date/time in the past"
 	msgDatetimePastOrPresent          = "Value must be a valid date/time in the past or present"
+	msgValidTimezone                  = "Value must be a valid timezone"
 )
 
 var (
@@ -228,6 +239,22 @@ func getOtherPropertyDatetime(propertyName string, vcx *ValidatorContext, truncT
 		}
 	}
 	return nil, false
+}
+
+func getOtherPropertyString(propertyName string, vcx *ValidatorContext) (string, bool) {
+	if other, ok := getOtherProperty(propertyName, vcx); ok {
+		if str, sok := other.(string); sok {
+			return str, true
+		}
+	}
+	return "", false
+}
+
+func stringCompare(a string, b string, caseInsensitive bool) int {
+	if caseInsensitive {
+		return strings.Compare(strings.ToLower(a), strings.ToLower(b))
+	}
+	return strings.Compare(a, b)
 }
 
 func isTime(v interface{}, truncTime bool) (time.Time, bool) {

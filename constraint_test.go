@@ -325,3 +325,16 @@ func (c *testConstraint) Check(v interface{}, vcx *ValidatorContext) (bool, stri
 func (c *testConstraint) GetMessage(tcx I18nContext) string {
 	return c.msg
 }
+
+func buildFooValidator(propertyType JsonType, constraint Constraint, notNull bool) *Validator {
+	return &Validator{
+		Properties: Properties{
+			"foo": {
+				Type:        propertyType,
+				NotNull:     notNull,
+				Mandatory:   true,
+				Constraints: Constraints{constraint},
+			},
+		},
+	}
+}
