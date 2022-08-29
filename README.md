@@ -2155,6 +2155,171 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
     </tr>
     <tr>
         <td>
+            <code>NetIsHostname</code><br>&nbsp;&nbsp;<code>isHostname</code>&nbsp;<em>(i18n tag abbr.)</em>
+        </td>
+        <td>
+            Check that string value is a valid hostname
+            <details>
+                <summary>Fields</summary>
+                <table>
+                    <tr>
+                        <td>
+                            <code>AllowIPAddress</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set, allows IP address hostnames
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>AllowIPV6</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set, allows IP v6 address hostnames
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>AllowLocal</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set, allows hostnames 'local' (e.g. "localhost", "local", "localdomain", "127.0.0.1", "::1")
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>AllowTldOnly</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set, allows hostnames with only Tld specified (e.g. "audi")
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>AllowGeographicTlds</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set, allows hostnames with geographic Tlds (e.g. "some-company.africa")
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>AllowGenericTlds</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set, allows hostnames with generic Tlds (e.g. "some.academy")
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>AllowBrandTlds</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set, allows hostnames with brand Tlds (e.g. "my.audi")
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>AllowInfraTlds</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set, allows hostnames with infrastructure Tlds (e.g. "arpa")
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>AllowTestTlds</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set, allows hostnames with test Tlds and test domains (e.g. "example.com", "test.com")
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>AddCountryCodeTlds</code> <em>[]string</em>
+                        </td>
+                        <td>
+                            is an optional slice of additional country (and geographic) Tlds to allow
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>ExcCountryCodeTlds</code> <em>[]string</em>
+                        </td>
+                        <td>
+                            is an optional slice of country (and geographic) Tlds to disallow
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>AddGenericTlds</code> <em>[]string</em>
+                        </td>
+                        <td>
+                            is an optional slice of additional generic Tlds to allow (only checked if AllowGenericTlds is also set)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>ExcGenericTlds</code> <em>[]string</em>
+                        </td>
+                        <td>
+                            is an optional slice of generic Tlds to disallow (only relevant if AllowGenericTlds is also set)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>AddBrandTlds</code> <em>[]string</em>
+                        </td>
+                        <td>
+                            is an optional slice of additional brand Tlds to allow (only checked if AllowBrandTlds is also set)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>ExcBrandTlds</code> <em>[]string</em>
+                        </td>
+                        <td>
+                            is an optional slice of brand Tlds to disallow (only relevant if AllowBrandTlds is also set)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>AddLocalTlds</code> <em>[]string</em>
+                        </td>
+                        <td>
+                            is an optional slice of additional local Tlds to allow (only checked if AllowLocal is also set)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>ExcLocalTlds</code> <em>[]string</em>
+                        </td>
+                        <td>
+                            is an optional slice of local Tlds to disallow (only relevant if AllowLocal is also set)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Message</code> <em>string</em>
+                        </td>
+                        <td>
+                            the violation message to be used if the constraint fails (if empty, the default violation message is used)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Stop</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set to true, prevents further validation checks on the property if this constraint fails
+                        </td>
+                    </tr>
+                </table>
+            </details>
+        </td>
+    </tr>
+    <tr>
+        <td>
             <code>NetIsIP</code><br>&nbsp;&nbsp;<code>isIP</code>&nbsp;<em>(i18n tag abbr.)</em>
         </td>
         <td>
@@ -2460,6 +2625,352 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
                         </td>
                         <td>
                             if set, disallows private addresses
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Message</code> <em>string</em>
+                        </td>
+                        <td>
+                            the violation message to be used if the constraint fails (if empty, the default violation message is used)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Stop</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set to true, prevents further validation checks on the property if this constraint fails
+                        </td>
+                    </tr>
+                </table>
+            </details>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <code>NetIsURI</code><br>&nbsp;&nbsp;<code>isURI</code>&nbsp;<em>(i18n tag abbr.)</em>
+        </td>
+        <td>
+            Check that string value is a valid URI
+            <details>
+                <summary>Fields</summary>
+                <table>
+                    <tr>
+                        <td>
+                            <code>CheckHost</code> <em>bool</em>
+                        </td>
+                        <td>
+                            if set, the host is also checked (see also AllowIPAddress and others)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>AllowIPAddress</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set, allows IP address hostnames
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>AllowIPV6</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set, allows IP v6 address hostnames
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>AllowLocal</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set, allows hostnames 'local' (e.g. "localhost", "local", "localdomain", "127.0.0.1", "::1")
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>AllowTldOnly</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set, allows hostnames with only Tld specified (e.g. "audi")
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>AllowGeographicTlds</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set, allows hostnames with geographic Tlds (e.g. "some-company.africa")
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>AllowGenericTlds</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set, allows hostnames with generic Tlds (e.g. "some.academy")
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>AllowBrandTlds</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set, allows hostnames with brand Tlds (e.g. "my.audi")
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>AllowInfraTlds</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set, allows hostnames with infrastructure Tlds (e.g. "arpa")
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>AllowTestTlds</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set, allows hostnames with test Tlds and test domains (e.g. "example.com", "test.com")
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>AddCountryCodeTlds</code> <em>[]string</em>
+                        </td>
+                        <td>
+                            is an optional slice of additional country (and geographic) Tlds to allow
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>ExcCountryCodeTlds</code> <em>[]string</em>
+                        </td>
+                        <td>
+                            is an optional slice of country (and geographic) Tlds to disallow
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>AddGenericTlds</code> <em>[]string</em>
+                        </td>
+                        <td>
+                            is an optional slice of additional generic Tlds to allow (only checked if AllowGenericTlds is also set)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>ExcGenericTlds</code> <em>[]string</em>
+                        </td>
+                        <td>
+                            is an optional slice of generic Tlds to disallow (only relevant if AllowGenericTlds is also set)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>AddBrandTlds</code> <em>[]string</em>
+                        </td>
+                        <td>
+                            is an optional slice of additional brand Tlds to allow (only checked if AllowBrandTlds is also set)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>ExcBrandTlds</code> <em>[]string</em>
+                        </td>
+                        <td>
+                            is an optional slice of brand Tlds to disallow (only relevant if AllowBrandTlds is also set)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>AddLocalTlds</code> <em>[]string</em>
+                        </td>
+                        <td>
+                            is an optional slice of additional local Tlds to allow (only checked if AllowLocal is also set)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>ExcLocalTlds</code> <em>[]string</em>
+                        </td>
+                        <td>
+                            is an optional slice of local Tlds to disallow (only relevant if AllowLocal is also set)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Message</code> <em>string</em>
+                        </td>
+                        <td>
+                            the violation message to be used if the constraint fails (if empty, the default violation message is used)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Stop</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set to true, prevents further validation checks on the property if this constraint fails
+                        </td>
+                    </tr>
+                </table>
+            </details>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <code>NetIsURL</code><br>&nbsp;&nbsp;<code>isURL</code>&nbsp;<em>(i18n tag abbr.)</em>
+        </td>
+        <td>
+            Check that string value is a valid URL
+            <details>
+                <summary>Fields</summary>
+                <table>
+                    <tr>
+                        <td>
+                            <code>CheckHost</code> <em>bool</em>
+                        </td>
+                        <td>
+                            if set, the host is also checked (see also AllowIPAddress and others)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>AllowIPAddress</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set, allows IP address hostnames
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>AllowIPV6</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set, allows IP v6 address hostnames
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>AllowLocal</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set, allows hostnames 'local' (e.g. "localhost", "local", "localdomain", "127.0.0.1", "::1")
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>AllowTldOnly</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set, allows hostnames with only Tld specified (e.g. "audi")
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>AllowGeographicTlds</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set, allows hostnames with geographic Tlds (e.g. "some-company.africa")
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>AllowGenericTlds</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set, allows hostnames with generic Tlds (e.g. "some.academy")
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>AllowBrandTlds</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set, allows hostnames with brand Tlds (e.g. "my.audi")
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>AllowInfraTlds</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set, allows hostnames with infrastructure Tlds (e.g. "arpa")
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>AllowTestTlds</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set, allows hostnames with test Tlds and test domains (e.g. "example.com", "test.com")
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>AddCountryCodeTlds</code> <em>[]string</em>
+                        </td>
+                        <td>
+                            is an optional slice of additional country (and geographic) Tlds to allow
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>ExcCountryCodeTlds</code> <em>[]string</em>
+                        </td>
+                        <td>
+                            is an optional slice of country (and geographic) Tlds to disallow
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>AddGenericTlds</code> <em>[]string</em>
+                        </td>
+                        <td>
+                            is an optional slice of additional generic Tlds to allow (only checked if AllowGenericTlds is also set)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>ExcGenericTlds</code> <em>[]string</em>
+                        </td>
+                        <td>
+                            is an optional slice of generic Tlds to disallow (only relevant if AllowGenericTlds is also set)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>AddBrandTlds</code> <em>[]string</em>
+                        </td>
+                        <td>
+                            is an optional slice of additional brand Tlds to allow (only checked if AllowBrandTlds is also set)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>ExcBrandTlds</code> <em>[]string</em>
+                        </td>
+                        <td>
+                            is an optional slice of brand Tlds to disallow (only relevant if AllowBrandTlds is also set)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>AddLocalTlds</code> <em>[]string</em>
+                        </td>
+                        <td>
+                            is an optional slice of additional local Tlds to allow (only checked if AllowLocal is also set)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>ExcLocalTlds</code> <em>[]string</em>
+                        </td>
+                        <td>
+                            is an optional slice of local Tlds to disallow (only relevant if AllowLocal is also set)
                         </td>
                     </tr>
                     <tr>
