@@ -2,23 +2,28 @@ package valix
 
 import (
 	"net"
+	"net/url"
+	"strings"
 )
 
 const (
-	msgValidMAC    = "String value must be a valid MAC address"
-	msgValidCIDR   = "String value must be a valid CIDR address"
-	msgValidCIDRv4 = "String value must be a valid CIDR (version 4) address"
-	msgValidCIDRv6 = "String value must be a valid CIDR (version 6) address"
-	msgValidIP     = "String must be a valid IP address"
-	msgValidIPv4   = "String must be a valid IP (version 4) address"
-	msgValidIPv6   = "String must be a valid IP (version 6) address"
-	msgValidTCP    = "String must be a valid TCP address"
-	msgValidTCPv4  = "String must be a valid TCP (version 4) address"
-	msgValidTCPv6  = "String must be a valid TCP (version 6) address"
-	msgValidUDP    = "String must be a valid UDP address"
-	msgValidUDPv4  = "String must be a valid UDP (version 4) address"
-	msgValidUDPv6  = "String must be a valid UDP (version 6) address"
-	msgValidTld    = "String must be a valid TLD"
+	msgValidMAC      = "String value must be a valid MAC address"
+	msgValidCIDR     = "String value must be a valid CIDR address"
+	msgValidCIDRv4   = "String value must be a valid CIDR (version 4) address"
+	msgValidCIDRv6   = "String value must be a valid CIDR (version 6) address"
+	msgValidIP       = "String must be a valid IP address"
+	msgValidIPv4     = "String must be a valid IP (version 4) address"
+	msgValidIPv6     = "String must be a valid IP (version 6) address"
+	msgValidTCP      = "String must be a valid TCP address"
+	msgValidTCPv4    = "String must be a valid TCP (version 4) address"
+	msgValidTCPv6    = "String must be a valid TCP (version 6) address"
+	msgValidUDP      = "String must be a valid UDP address"
+	msgValidUDPv4    = "String must be a valid UDP (version 4) address"
+	msgValidUDPv6    = "String must be a valid UDP (version 6) address"
+	msgValidTld      = "String must be a valid TLD"
+	msgValidHostname = "String must be a valid hostname"
+	msgValidURI      = "String must be a valid URI"
+	msgValidURL      = "String must be a valid URL"
 )
 
 // NetIsCIDR constraint to check that string value is a valid CIDR (v4 or v6) address
@@ -57,12 +62,12 @@ func (c *NetIsCIDR) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
 				}
 			}
 		}
-		if !pass {
-			vcx.CeaseFurtherIf(c.Stop)
-			return false, c.GetMessage(vcx)
+		if pass {
+			return true, ""
 		}
 	}
-	return true, ""
+	vcx.CeaseFurtherIf(c.Stop)
+	return false, c.GetMessage(vcx)
 }
 
 // GetMessage implements the Constraint.GetMessage
@@ -73,6 +78,84 @@ func (c *NetIsCIDR) GetMessage(tcx I18nContext) string {
 		return defaultMessage(tcx, c.Message, msgValidCIDRv6)
 	}
 	return defaultMessage(tcx, c.Message, msgValidCIDR)
+}
+
+// NetIsHostname constraint to check that string value is a valid hostname
+type NetIsHostname struct {
+	// AllowIPAddress when set, allows IP address hostnames
+	AllowIPAddress bool
+	// AllowIPV6 when set, allows IP v6 address hostnames
+	AllowIPV6 bool
+	// AllowLocal when set, allows hostnames 'local' (e.g. "localhost", "local", "localdomain", "127.0.0.1", "::1")
+	AllowLocal bool
+	// AllowTldOnly when set, allows hostnames with only Tld specified (e.g. "audi")
+	AllowTldOnly bool
+	// AllowGeographicTlds when set, allows hostnames with geographic Tlds (e.g. "some-company.africa")
+	AllowGeographicTlds bool
+	// AllowGenericTlds when set, allows hostnames with generic Tlds (e.g. "some.academy")
+	AllowGenericTlds bool
+	// AllowBrandTlds when set, allows hostnames with brand Tlds (e.g. "my.audi")
+	AllowBrandTlds bool
+	// AllowInfraTlds when set, allows hostnames with infrastructure Tlds (e.g. "arpa")
+	AllowInfraTlds bool
+	// AllowTestTlds when set, allows hostnames with test Tlds and test domains (e.g. "example.com", "test.com")
+	AllowTestTlds bool
+	// AddCountryCodeTlds is an optional slice of additional country (and geographic) Tlds to allow
+	AddCountryCodeTlds []string
+	// ExcCountryCodeTlds is an optional slice of country (and geographic) Tlds to disallow
+	ExcCountryCodeTlds []string
+	// AddGenericTlds is an optional slice of additional generic Tlds to allow (only checked if AllowGenericTlds is also set)
+	AddGenericTlds []string
+	// ExcGenericTlds is an optional slice of generic Tlds to disallow (only relevant if AllowGenericTlds is also set)
+	ExcGenericTlds []string
+	// AddBrandTlds is an optional slice of additional brand Tlds to allow (only checked if AllowBrandTlds is also set)
+	AddBrandTlds []string
+	// ExcBrandTlds is an optional slice of brand Tlds to disallow (only relevant if AllowBrandTlds is also set)
+	ExcBrandTlds []string
+	// AddLocalTlds is an optional slice of additional local Tlds to allow (only checked if AllowLocal is also set)
+	AddLocalTlds []string
+	// ExcLocalTlds is an optional slice of local Tlds to disallow (only relevant if AllowLocal is also set)
+	ExcLocalTlds []string
+	// the violation message to be used if the constraint fails (see Violation.Message)
+	//
+	// (if the Message is an empty string then the default violation message is used)
+	Message string
+	// when set to true, Stop prevents further validation checks on the property if this constraint fails
+	Stop bool
+}
+
+// Check implements Constraint.Check
+func (c *NetIsHostname) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
+	if str, ok := v.(string); ok {
+		if len(str) > 0 && isValidDomain(str, domainOptions{
+			allowIPAddress:      c.AllowIPAddress,
+			allowIPV6:           c.AllowIPV6,
+			allowLocal:          c.AllowLocal,
+			allowTldOnly:        c.AllowTldOnly,
+			allowGeographicTlds: c.AllowGeographicTlds,
+			allowGenericTlds:    c.AllowGenericTlds,
+			allowBrandTlds:      c.AllowBrandTlds,
+			allowInfraTlds:      c.AllowInfraTlds,
+			allowTestTlds:       c.AllowTestTlds,
+			addCountryCodeTlds:  c.AddCountryCodeTlds,
+			excCountryCodeTlds:  c.ExcCountryCodeTlds,
+			addGenericTlds:      c.AddGenericTlds,
+			excGenericTlds:      c.ExcGenericTlds,
+			addBrandTlds:        c.AddBrandTlds,
+			excBrandTlds:        c.ExcBrandTlds,
+			addLocalTlds:        c.AddLocalTlds,
+			excLocalTlds:        c.ExcLocalTlds,
+		}) {
+			return true, ""
+		}
+	}
+	vcx.CeaseFurtherIf(c.Stop)
+	return false, c.GetMessage(vcx)
+}
+
+// GetMessage implements the Constraint.GetMessage
+func (c *NetIsHostname) GetMessage(tcx I18nContext) string {
+	return defaultMessage(tcx, c.Message, msgValidHostname)
 }
 
 // NetIsIP constraint to check that string value is a valid IP (v4 or v6) address
@@ -134,12 +217,12 @@ func (c *NetIsIP) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
 				}
 			}
 		}
-		if !pass {
-			vcx.CeaseFurtherIf(c.Stop)
-			return false, c.GetMessage(vcx)
+		if pass {
+			return true, ""
 		}
 	}
-	return true, ""
+	vcx.CeaseFurtherIf(c.Stop)
+	return false, c.GetMessage(vcx)
 }
 
 // GetMessage implements the Constraint.GetMessage
@@ -165,12 +248,12 @@ type NetIsMac struct {
 // Check implements Constraint.Check
 func (c *NetIsMac) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
 	if str, ok := v.(string); ok {
-		if _, err := net.ParseMAC(str); err != nil {
-			vcx.CeaseFurtherIf(c.Stop)
-			return false, c.GetMessage(vcx)
+		if _, err := net.ParseMAC(str); err == nil {
+			return true, ""
 		}
 	}
-	return true, ""
+	vcx.CeaseFurtherIf(c.Stop)
+	return false, c.GetMessage(vcx)
 }
 
 // GetMessage implements the Constraint.GetMessage
@@ -215,12 +298,12 @@ func (c *NetIsTCP) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
 				}
 			}
 		}
-		if !pass {
-			vcx.CeaseFurtherIf(c.Stop)
-			return false, c.GetMessage(vcx)
+		if pass {
+			return true, ""
 		}
 	}
-	return true, ""
+	vcx.CeaseFurtherIf(c.Stop)
+	return false, c.GetMessage(vcx)
 }
 
 // GetMessage implements the Constraint.GetMessage
@@ -255,7 +338,7 @@ type NetIsTld struct {
 // Check implements Constraint.Check
 func (c *NetIsTld) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
 	if str, ok := v.(string); ok {
-		if !tld(str).isValid(domainOptions{
+		if tld(str).isValid(domainOptions{
 			allowGeographicTlds: c.AllowGeographicTlds,
 			allowGenericTlds:    c.AllowGenericTlds,
 			allowBrandTlds:      c.AllowBrandTlds,
@@ -266,11 +349,11 @@ func (c *NetIsTld) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
 			addBrandTlds:        c.AddBrandTlds,
 			excBrandTlds:        c.ExcBrandTlds,
 		}) {
-			vcx.CeaseFurtherIf(c.Stop)
-			return false, c.GetMessage(vcx)
+			return true, ""
 		}
 	}
-	return true, ""
+	vcx.CeaseFurtherIf(c.Stop)
+	return false, c.GetMessage(vcx)
 }
 
 // GetMessage implements the Constraint.GetMessage
@@ -315,12 +398,12 @@ func (c *NetIsUDP) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
 				}
 			}
 		}
-		if !pass {
-			vcx.CeaseFurtherIf(c.Stop)
-			return false, c.GetMessage(vcx)
+		if pass {
+			return true, ""
 		}
 	}
-	return true, ""
+	vcx.CeaseFurtherIf(c.Stop)
+	return false, c.GetMessage(vcx)
 }
 
 // GetMessage implements the Constraint.GetMessage
@@ -340,4 +423,186 @@ func useNetwork(addr string, v4, v6 bool) string {
 		return addr + "6"
 	}
 	return addr
+}
+
+// NetIsURI constraint to check that string value is a valid URN
+type NetIsURI struct {
+	// if set, the host is also checked (see also AllowIPAddress and others)
+	CheckHost bool `v8n:"default"`
+	// AllowIPAddress when set, allows IP address hostnames
+	AllowIPAddress bool
+	// AllowIPV6 when set, allows IP v6 address hostnames
+	AllowIPV6 bool
+	// AllowLocal when set, allows hostnames 'local' (e.g. "localhost", "local", "localdomain", "127.0.0.1", "::1")
+	AllowLocal bool
+	// AllowTldOnly when set, allows hostnames with only Tld specified (e.g. "audi")
+	AllowTldOnly bool
+	// AllowGeographicTlds when set, allows hostnames with geographic Tlds (e.g. "some-company.africa")
+	AllowGeographicTlds bool
+	// AllowGenericTlds when set, allows hostnames with generic Tlds (e.g. "some.academy")
+	AllowGenericTlds bool
+	// AllowBrandTlds when set, allows hostnames with brand Tlds (e.g. "my.audi")
+	AllowBrandTlds bool
+	// AllowInfraTlds when set, allows hostnames with infrastructure Tlds (e.g. "arpa")
+	AllowInfraTlds bool
+	// AllowTestTlds when set, allows hostnames with test Tlds and test domains (e.g. "example.com", "test.com")
+	AllowTestTlds bool
+	// AddCountryCodeTlds is an optional slice of additional country (and geographic) Tlds to allow
+	AddCountryCodeTlds []string
+	// ExcCountryCodeTlds is an optional slice of country (and geographic) Tlds to disallow
+	ExcCountryCodeTlds []string
+	// AddGenericTlds is an optional slice of additional generic Tlds to allow (only checked if AllowGenericTlds is also set)
+	AddGenericTlds []string
+	// ExcGenericTlds is an optional slice of generic Tlds to disallow (only relevant if AllowGenericTlds is also set)
+	ExcGenericTlds []string
+	// AddBrandTlds is an optional slice of additional brand Tlds to allow (only checked if AllowBrandTlds is also set)
+	AddBrandTlds []string
+	// ExcBrandTlds is an optional slice of brand Tlds to disallow (only relevant if AllowBrandTlds is also set)
+	ExcBrandTlds []string
+	// AddLocalTlds is an optional slice of additional local Tlds to allow (only checked if AllowLocal is also set)
+	AddLocalTlds []string
+	// ExcLocalTlds is an optional slice of local Tlds to disallow (only relevant if AllowLocal is also set)
+	ExcLocalTlds []string
+	// the violation message to be used if the constraint fails (see Violation.Message)
+	//
+	// (if the Message is an empty string then the default violation message is used)
+	Message string
+	// when set to true, Stop prevents further validation checks on the property if this constraint fails
+	Stop bool
+}
+
+// Check implements Constraint.Check
+func (c *NetIsURI) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
+	if str, ok := v.(string); ok {
+		if hat := strings.Index(str, "#"); hat != -1 {
+			str = str[:hat]
+		}
+		if len(str) > 0 {
+			if u, err := url.ParseRequestURI(str); err == nil {
+				if c.CheckHost {
+					if isValidDomain(u.Hostname(), domainOptions{
+						allowIPAddress:      c.AllowIPAddress,
+						allowIPV6:           c.AllowIPV6,
+						allowLocal:          c.AllowLocal,
+						allowTldOnly:        c.AllowTldOnly,
+						allowGeographicTlds: c.AllowGeographicTlds,
+						allowGenericTlds:    c.AllowGenericTlds,
+						allowBrandTlds:      c.AllowBrandTlds,
+						allowInfraTlds:      c.AllowInfraTlds,
+						allowTestTlds:       c.AllowTestTlds,
+						addCountryCodeTlds:  c.AddCountryCodeTlds,
+						excCountryCodeTlds:  c.ExcCountryCodeTlds,
+						addGenericTlds:      c.AddGenericTlds,
+						excGenericTlds:      c.ExcGenericTlds,
+						addBrandTlds:        c.AddBrandTlds,
+						excBrandTlds:        c.ExcBrandTlds,
+						addLocalTlds:        c.AddLocalTlds,
+						excLocalTlds:        c.ExcLocalTlds,
+					}) {
+						return true, ""
+					}
+				} else {
+					return true, ""
+				}
+			}
+		}
+	}
+	vcx.CeaseFurtherIf(c.Stop)
+	return false, c.GetMessage(vcx)
+}
+
+// GetMessage implements the Constraint.GetMessage
+func (c *NetIsURI) GetMessage(tcx I18nContext) string {
+	return defaultMessage(tcx, c.Message, msgValidURI)
+}
+
+// NetIsURL constraint to check that string value is a valid URL
+type NetIsURL struct {
+	// if set, the host is also checked (see also AllowIPAddress and others)
+	CheckHost bool `v8n:"default"`
+	// AllowIPAddress when set, allows IP address hostnames
+	AllowIPAddress bool
+	// AllowIPV6 when set, allows IP v6 address hostnames
+	AllowIPV6 bool
+	// AllowLocal when set, allows hostnames 'local' (e.g. "localhost", "local", "localdomain", "127.0.0.1", "::1")
+	AllowLocal bool
+	// AllowTldOnly when set, allows hostnames with only Tld specified (e.g. "audi")
+	AllowTldOnly bool
+	// AllowGeographicTlds when set, allows hostnames with geographic Tlds (e.g. "some-company.africa")
+	AllowGeographicTlds bool
+	// AllowGenericTlds when set, allows hostnames with generic Tlds (e.g. "some.academy")
+	AllowGenericTlds bool
+	// AllowBrandTlds when set, allows hostnames with brand Tlds (e.g. "my.audi")
+	AllowBrandTlds bool
+	// AllowInfraTlds when set, allows hostnames with infrastructure Tlds (e.g. "arpa")
+	AllowInfraTlds bool
+	// AllowTestTlds when set, allows hostnames with test Tlds and test domains (e.g. "example.com", "test.com")
+	AllowTestTlds bool
+	// AddCountryCodeTlds is an optional slice of additional country (and geographic) Tlds to allow
+	AddCountryCodeTlds []string
+	// ExcCountryCodeTlds is an optional slice of country (and geographic) Tlds to disallow
+	ExcCountryCodeTlds []string
+	// AddGenericTlds is an optional slice of additional generic Tlds to allow (only checked if AllowGenericTlds is also set)
+	AddGenericTlds []string
+	// ExcGenericTlds is an optional slice of generic Tlds to disallow (only relevant if AllowGenericTlds is also set)
+	ExcGenericTlds []string
+	// AddBrandTlds is an optional slice of additional brand Tlds to allow (only checked if AllowBrandTlds is also set)
+	AddBrandTlds []string
+	// ExcBrandTlds is an optional slice of brand Tlds to disallow (only relevant if AllowBrandTlds is also set)
+	ExcBrandTlds []string
+	// AddLocalTlds is an optional slice of additional local Tlds to allow (only checked if AllowLocal is also set)
+	AddLocalTlds []string
+	// ExcLocalTlds is an optional slice of local Tlds to disallow (only relevant if AllowLocal is also set)
+	ExcLocalTlds []string
+	// the violation message to be used if the constraint fails (see Violation.Message)
+	//
+	// (if the Message is an empty string then the default violation message is used)
+	Message string
+	// when set to true, Stop prevents further validation checks on the property if this constraint fails
+	Stop bool
+}
+
+// Check implements Constraint.Check
+func (c *NetIsURL) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
+	if str, ok := v.(string); ok {
+		if hat := strings.Index(str, "#"); hat != -1 {
+			str = str[:hat]
+		}
+		if len(str) > 0 {
+			if u, err := url.ParseRequestURI(str); err == nil && u.Scheme != "" && u.Host != "" {
+				if c.CheckHost {
+					if isValidDomain(u.Hostname(), domainOptions{
+						allowIPAddress:      c.AllowIPAddress,
+						allowIPV6:           c.AllowIPV6,
+						allowLocal:          c.AllowLocal,
+						allowTldOnly:        c.AllowTldOnly,
+						allowGeographicTlds: c.AllowGeographicTlds,
+						allowGenericTlds:    c.AllowGenericTlds,
+						allowBrandTlds:      c.AllowBrandTlds,
+						allowInfraTlds:      c.AllowInfraTlds,
+						allowTestTlds:       c.AllowTestTlds,
+						addCountryCodeTlds:  c.AddCountryCodeTlds,
+						excCountryCodeTlds:  c.ExcCountryCodeTlds,
+						addGenericTlds:      c.AddGenericTlds,
+						excGenericTlds:      c.ExcGenericTlds,
+						addBrandTlds:        c.AddBrandTlds,
+						excBrandTlds:        c.ExcBrandTlds,
+						addLocalTlds:        c.AddLocalTlds,
+						excLocalTlds:        c.ExcLocalTlds,
+					}) {
+						return true, ""
+					}
+				} else {
+					return true, ""
+				}
+			}
+		}
+	}
+	vcx.CeaseFurtherIf(c.Stop)
+	return false, c.GetMessage(vcx)
+}
+
+// GetMessage implements the Constraint.GetMessage
+func (c *NetIsURL) GetMessage(tcx I18nContext) string {
+	return defaultMessage(tcx, c.Message, msgValidURL)
 }
