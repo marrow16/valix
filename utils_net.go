@@ -86,6 +86,9 @@ func isValidEmailDomain(d string, opts domainOptions) bool {
 }
 
 func isValidDomain(d string, opts domainOptions) bool {
+	if opts.allowIPAddress && inetAddress(d).isValid(opts.allowLocal, opts.allowIPV6) {
+		return true
+	}
 	return domain(d).isValid(opts)
 }
 

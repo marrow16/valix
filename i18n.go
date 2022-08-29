@@ -252,6 +252,7 @@ var internalMessages = map[string]string{
 	msgValidCIDR:                      msgValidCIDR,
 	msgValidCIDRv4:                    msgValidCIDRv4,
 	msgValidCIDRv6:                    msgValidCIDRv6,
+	msgValidHostname:                  msgValidHostname,
 	msgValidIP:                        msgValidIP,
 	msgValidIPv4:                      msgValidIPv4,
 	msgValidIPv6:                      msgValidIPv6,
@@ -262,6 +263,8 @@ var internalMessages = map[string]string{
 	msgValidUDPv4:                     msgValidUDPv4,
 	msgValidUDPv6:                     msgValidUDPv6,
 	msgValidTld:                       msgValidTld,
+	msgValidURI:                       msgValidURI,
+	msgValidURL:                       msgValidURL,
 }
 
 // used by defaultI18nContext.MarshalJSON - to allow listing of translation reference
