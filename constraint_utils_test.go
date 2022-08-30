@@ -138,6 +138,96 @@ func TestGetOtherProperty(t *testing.T) {
 	require.False(t, ok)
 }
 
+func TestGetOtherPropertyPathed(t *testing.T) {
+	obj := map[string]interface{}{
+		"foo": "foo value",
+		"bar": map[string]interface{}{
+			"foo": "bar.foo value",
+			"baz": map[string]interface{}{
+				"foo": "bar.baz.foo value",
+				"qux": map[string]interface{}{
+					"foo": "bar.baz.qux.foo value",
+				},
+			},
+		},
+	}
+	vcx := newValidatorContext(obj, nil, false, nil)
+	bar := obj["bar"].(map[string]interface{})
+	vcx.pushPathProperty("bar", bar, nil)
+
+	// test walking down...
+	v, ok := getOtherProperty("foo", vcx)
+	require.True(t, ok)
+	require.Equal(t, "foo value", v)
+	v, ok = getOtherProperty(".foo", vcx)
+	require.True(t, ok)
+	require.Equal(t, "foo value", v)
+
+	v, ok = getOtherProperty(".bar.foo", vcx)
+	require.True(t, ok)
+	require.Equal(t, "bar.foo value", v)
+	v, ok = getOtherProperty("bar.foo", vcx)
+	require.True(t, ok)
+	require.Equal(t, "bar.foo value", v)
+
+	v, ok = getOtherProperty(".bar.baz.foo", vcx)
+	require.True(t, ok)
+	require.Equal(t, "bar.baz.foo value", v)
+
+	v, ok = getOtherProperty(".bar.baz.qux.foo", vcx)
+	require.True(t, ok)
+	require.Equal(t, "bar.baz.qux.foo value", v)
+
+	_, ok = getOtherProperty(".bar.baz.qux.foo.oops", vcx)
+	require.False(t, ok)
+	_, ok = getOtherProperty(".bar.baz....", vcx)
+	require.False(t, ok)
+
+	// setup for walking up...
+	baz := bar["baz"].(map[string]interface{})
+	vcx.pushPathProperty("baz", baz, nil)
+	qux := baz["qux"].(map[string]interface{})
+	vcx.pushPathProperty("qux", qux, nil)
+	finalFoo := qux["foo"]
+	vcx.pushPathProperty("foo", finalFoo, nil)
+
+	// test walking up...
+	v, ok = getOtherProperty("foo", vcx)
+	require.True(t, ok)
+	require.Equal(t, "bar.baz.qux.foo value", v)
+	v, ok = getOtherProperty(".foo", vcx)
+	require.True(t, ok)
+	require.Equal(t, "bar.baz.qux.foo value", v)
+
+	v, ok = getOtherProperty("..foo", vcx)
+	require.True(t, ok)
+	require.Equal(t, "bar.baz.foo value", v)
+
+	v, ok = getOtherProperty("...foo", vcx)
+	require.True(t, ok)
+	require.Equal(t, "bar.foo value", v)
+
+	v, ok = getOtherProperty("....foo", vcx)
+	require.True(t, ok)
+	require.Equal(t, "foo value", v)
+
+	_, ok = getOtherProperty(".....foo", vcx)
+	require.False(t, ok)
+
+	// test walking up and then down...
+	v, ok = getOtherProperty("....bar.foo", vcx)
+	require.True(t, ok)
+	require.Equal(t, "bar.foo value", v)
+
+	v, ok = getOtherProperty("....bar.baz.foo", vcx)
+	require.True(t, ok)
+	require.Equal(t, "bar.baz.foo value", v)
+
+	v, ok = getOtherProperty("....bar.baz.qux.foo", vcx)
+	require.True(t, ok)
+	require.Equal(t, "bar.baz.qux.foo value", v)
+}
+
 func TestGetOtherPropertyDatetime(t *testing.T) {
 	obj := map[string]interface{}{
 		"foo": "2022-05-04T10:11:12",

@@ -568,7 +568,10 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
                             <code>PropertyName</code> <em>string</em>
                         </td>
                         <td>
-                            the property name of the other value to compare against
+                            the property name of the other value to compare against<br><br>
+                            Note: the <code>PropertyName</code> can also be JSON dot notation path - where leading dots allow traversal up
+                            the object tree and names, separated by dots, allow traversal down the object tree.<br>
+                            A single dot at start is equivalent to no starting dot (i.e. a property name at the same level)
                         </td>
                     </tr>
                     <tr>
@@ -660,7 +663,10 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
                             <code>PropertyName</code> <em>string</em>
                         </td>
                         <td>
-                            the property name of the other value to compare against
+                            the property name of the other value to compare against<br><br>
+                            Note: the <code>PropertyName</code> can also be JSON dot notation path - where leading dots allow traversal up
+                            the object tree and names, separated by dots, allow traversal down the object tree.<br>
+                            A single dot at start is equivalent to no starting dot (i.e. a property name at the same level)
                         </td>
                     </tr>
                     <tr>
@@ -752,7 +758,10 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
                             <code>PropertyName</code> <em>string</em>
                         </td>
                         <td>
-                            the property name of the other value to compare against
+                            the property name of the other value to compare against<br><br>
+                            Note: the <code>PropertyName</code> can also be JSON dot notation path - where leading dots allow traversal up
+                            the object tree and names, separated by dots, allow traversal down the object tree.<br>
+                            A single dot at start is equivalent to no starting dot (i.e. a property name at the same level)
                         </td>
                     </tr>
                     <tr>
@@ -844,7 +853,10 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
                             <code>PropertyName</code> <em>string</em>
                         </td>
                         <td>
-                            the property name of the other value to compare against
+                            the property name of the other value to compare against<br><br>
+                            Note: the <code>PropertyName</code> can also be JSON dot notation path - where leading dots allow traversal up
+                            the object tree and names, separated by dots, allow traversal down the object tree.<br>
+                            A single dot at start is equivalent to no starting dot (i.e. a property name at the same level)
                         </td>
                     </tr>
                     <tr>
@@ -1222,7 +1234,10 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
                             <code>PropertyName</code> <em>string</em>
                         </td>
                         <td>
-                            the property name of the other value to compare against
+                            the property name of the other value to compare against<br><br>
+                            Note: the <code>PropertyName</code> can also be JSON dot notation path - where leading dots allow traversal up
+                            the object tree and names, separated by dots, allow traversal down the object tree.<br>
+                            A single dot at start is equivalent to no starting dot (i.e. a property name at the same level)
                         </td>
                     </tr>
                     <tr>
@@ -1316,7 +1331,10 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
                             <code>PropertyName</code> <em>string</em>
                         </td>
                         <td>
-                            the property name of the other value to compare against
+                            the property name of the other value to compare against<br><br>
+                            Note: the <code>PropertyName</code> can also be JSON dot notation path - where leading dots allow traversal up
+                            the object tree and names, separated by dots, allow traversal down the object tree.<br>
+                            A single dot at start is equivalent to no starting dot (i.e. a property name at the same level)
                         </td>
                     </tr>
                     <tr>
@@ -1509,7 +1527,10 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
                             <code>PropertyName</code> <em>string</em>
                         </td>
                         <td>
-                            the property name of the other value to compare against
+                            the property name of the other value to compare against<br><br>
+                            Note: the <code>PropertyName</code> can also be JSON dot notation path - where leading dots allow traversal up
+                            the object tree and names, separated by dots, allow traversal down the object tree.<br>
+                            A single dot at start is equivalent to no starting dot (i.e. a property name at the same level)
                         </td>
                     </tr>
                     <tr>
@@ -1546,7 +1567,10 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
                             <code>PropertyName</code> <em>string</em>
                         </td>
                         <td>
-                            the property name of the other value to compare against
+                            the property name of the other value to compare against<br><br>
+                            Note: the <code>PropertyName</code> can also be JSON dot notation path - where leading dots allow traversal up
+                            the object tree and names, separated by dots, allow traversal down the object tree.<br>
+                            A single dot at start is equivalent to no starting dot (i.e. a property name at the same level)
                         </td>
                     </tr>
                     <tr>
@@ -1757,7 +1781,10 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
                             <code>PropertyName</code> <em>string</em>
                         </td>
                         <td>
-                            the property name of the other value to compare against
+                            the property name of the other value to compare against<br><br>
+                            Note: the <code>PropertyName</code> can also be JSON dot notation path - where leading dots allow traversal up
+                            the object tree and names, separated by dots, allow traversal down the object tree.<br>
+                            A single dot at start is equivalent to no starting dot (i.e. a property name at the same level)
                         </td>
                     </tr>
                     <tr>
@@ -1794,7 +1821,10 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
                             <code>PropertyName</code> <em>string</em>
                         </td>
                         <td>
-                            the property name of the other value to compare against
+                            the property name of the other value to compare against<br><br>
+                            Note: the <code>PropertyName</code> can also be JSON dot notation path - where leading dots allow traversal up
+                            the object tree and names, separated by dots, allow traversal down the object tree.<br>
+                            A single dot at start is equivalent to no starting dot (i.e. a property name at the same level)
                         </td>
                     </tr>
                     <tr>
@@ -3007,7 +3037,10 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
                             <code>PropertyName</code> <em>string</em>
                         </td>
                         <td>
-                            the property name of the other value to compare against
+                            the property name of the other value to compare against<br><br>
+                            Note: the <code>PropertyName</code> can also be JSON dot notation path - where leading dots allow traversal up
+                            the object tree and names, separated by dots, allow traversal down the object tree.<br>
+                            A single dot at start is equivalent to no starting dot (i.e. a property name at the same level)
                         </td>
                     </tr>
                     <tr>
@@ -3737,7 +3770,10 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
                             <code>PropertyName</code> <em>string</em>
                         </td>
                         <td>
-                            the property name of the other value to compare against
+                            the property name of the other value to compare against<br><br>
+                            Note: the <code>PropertyName</code> can also be JSON dot notation path - where leading dots allow traversal up
+                            the object tree and names, separated by dots, allow traversal down the object tree.<br>
+                            A single dot at start is equivalent to no starting dot (i.e. a property name at the same level)
                         </td>
                     </tr>
                     <tr>
@@ -3782,7 +3818,10 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
                             <code>PropertyName</code> <em>string</em>
                         </td>
                         <td>
-                            the property name of the other value to compare against
+                            the property name of the other value to compare against<br><br>
+                            Note: the <code>PropertyName</code> can also be JSON dot notation path - where leading dots allow traversal up
+                            the object tree and names, separated by dots, allow traversal down the object tree.<br>
+                            A single dot at start is equivalent to no starting dot (i.e. a property name at the same level)
                         </td>
                     </tr>
                     <tr>
@@ -3917,7 +3956,10 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
                             <code>PropertyName</code> <em>string</em>
                         </td>
                         <td>
-                            the property name of the other value to compare against
+                            the property name of the other value to compare against<br><br>
+                            Note: the <code>PropertyName</code> can also be JSON dot notation path - where leading dots allow traversal up
+                            the object tree and names, separated by dots, allow traversal down the object tree.<br>
+                            A single dot at start is equivalent to no starting dot (i.e. a property name at the same level)
                         </td>
                     </tr>
                     <tr>
@@ -3962,7 +4004,10 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
                             <code>PropertyName</code> <em>string</em>
                         </td>
                         <td>
-                            the property name of the other value to compare against
+                            the property name of the other value to compare against<br><br>
+                            Note: the <code>PropertyName</code> can also be JSON dot notation path - where leading dots allow traversal up
+                            the object tree and names, separated by dots, allow traversal down the object tree.<br>
+                            A single dot at start is equivalent to no starting dot (i.e. a property name at the same level)
                         </td>
                     </tr>
                     <tr>

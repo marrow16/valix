@@ -219,14 +219,47 @@ const (
 )
 
 func getOtherProperty(propertyName string, vcx *ValidatorContext) (interface{}, bool) {
-	if parent, ok := vcx.AncestorValue(0); ok {
-		if pMap, ok := parent.(map[string]interface{}); ok {
-			if v, ok := pMap[propertyName]; ok {
-				return v, ok
+	ancestry, down := getOtherPropertyPath(propertyName)
+	if from, ok := vcx.AncestorValue(ancestry); ok {
+		return propertyWalkDown(from, down, 0)
+	}
+	return nil, false
+}
+
+func propertyWalkDown(from interface{}, down []string, on int) (interface{}, bool) {
+	if obj, ok := from.(map[string]interface{}); ok {
+		propertyName := down[on]
+		if v, ok := obj[propertyName]; ok {
+			if on == len(down)-1 {
+				return v, true
+			} else {
+				return propertyWalkDown(v, down, on+1)
 			}
 		}
 	}
 	return nil, false
+}
+
+func getOtherPropertyPath(propertyName string) (uint, []string) {
+	if !strings.Contains(propertyName, ".") {
+		return 0, []string{propertyName}
+	}
+	pth := strings.Split(propertyName, ".")
+	if !strings.HasPrefix(propertyName, ".") {
+		return 0, pth
+	}
+	ancestry := -1
+	down := make([]string, 0, len(pth))
+	atStart := true
+	for _, pt := range pth {
+		if pt == "" && atStart {
+			ancestry++
+		} else {
+			atStart = false
+			down = append(down, pt)
+		}
+	}
+	return uint(ancestry), down
 }
 
 func getOtherPropertyDatetime(propertyName string, vcx *ValidatorContext, truncTime bool, allowNull bool) (*time.Time, bool) {

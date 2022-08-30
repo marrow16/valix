@@ -2479,3 +2479,175 @@ func TestStringLessThanOrEqualOther(t *testing.T) {
 	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
 }
+
+func TestComparePathed(t *testing.T) {
+	obj := jsonObject(`{
+		"foo0": "0 foo value",
+		"bar0": {
+			"foo1": "1 bar.foo value",
+			"bar1": {
+				"foo2": "2 bar.bar.foo value",
+				"bar2": {
+					"foo3": "3 bar.bar.bar.foo value",
+					"baz3": 3
+				},
+				"baz2": 2
+			},
+			"baz1": 1 
+		},
+		"baz0": 0
+	}`)
+	v := &Validator{
+		Properties: Properties{
+			"foo0": {
+				Type: JsonString,
+				Constraints: Constraints{
+					&StringLessThanOther{
+						PropertyName: ".bar0.foo1",
+					},
+					&StringLessThanOther{
+						PropertyName: ".bar0.bar1.foo2",
+					},
+					&StringLessThanOther{
+						PropertyName: ".bar0.bar1.bar2.foo3",
+					},
+				},
+			},
+			"bar0": {
+				Type: JsonObject,
+				ObjectValidator: &Validator{
+					Properties: Properties{
+						"foo1": {
+							Type: JsonString,
+							Constraints: Constraints{
+								&StringGreaterThanOther{
+									PropertyName: "..foo0",
+								},
+								&StringLessThanOther{
+									PropertyName: "bar1.foo2",
+								},
+								&StringLessThanOther{
+									PropertyName: ".bar1.bar2.foo3",
+								},
+							},
+						},
+						"bar1": {
+							Type: JsonObject,
+							ObjectValidator: &Validator{
+								Properties: Properties{
+									"foo2": {
+										Type: JsonString,
+										Constraints: Constraints{
+											&StringGreaterThanOther{
+												PropertyName: "...foo0",
+											},
+											&StringGreaterThanOther{
+												PropertyName: "...bar0.foo1",
+											},
+											&EqualsOther{
+												PropertyName: "...bar0.bar1.foo2",
+											},
+											&StringLessThanOther{
+												PropertyName: "...bar0.bar1.bar2.foo3",
+											},
+										},
+									},
+									"bar2": {
+										Type: JsonObject,
+										ObjectValidator: &Validator{
+											Properties: Properties{
+												"foo3": {
+													Type: JsonString,
+													Constraints: Constraints{
+														&StringGreaterThanOther{
+															PropertyName: "....foo0",
+														},
+														&StringGreaterThanOther{
+															PropertyName: "....bar0.foo1",
+														},
+														&StringGreaterThanOther{
+															PropertyName: "...bar1.foo2",
+														},
+														&EqualsOther{
+															PropertyName: "....bar0.bar1.bar2.foo3",
+														},
+													},
+												},
+												"baz3": {
+													Type: JsonInteger,
+													Constraints: Constraints{
+														&GreaterThanOther{
+															PropertyName: "....baz0",
+														},
+														&GreaterThanOther{
+															PropertyName: "....bar0.baz1",
+														},
+														&GreaterThanOther{
+															PropertyName: "...bar1.baz2",
+														},
+														&EqualsOther{
+															PropertyName: "....bar0.bar1.bar2.baz3",
+														},
+													},
+												},
+											},
+										},
+									},
+									"baz2": {
+										Type: JsonInteger,
+										Constraints: Constraints{
+											&GreaterThanOther{
+												PropertyName: "...baz0",
+											},
+											&GreaterThanOther{
+												PropertyName: "...bar0.baz1",
+											},
+											&EqualsOther{
+												PropertyName: "...bar0.bar1.baz2",
+											},
+											&LessThanOther{
+												PropertyName: "...bar0.bar1.bar2.baz3",
+											},
+										},
+									},
+								},
+							},
+						},
+						"baz1": {
+							Type: JsonInteger,
+							Constraints: Constraints{
+								&GreaterThanOther{
+									PropertyName: "..baz0",
+								},
+								&LessThanOther{
+									PropertyName: "bar1.baz2",
+								},
+								&LessThanOther{
+									PropertyName: ".bar1.bar2.baz3",
+								},
+							},
+						},
+					},
+				},
+			},
+			"baz0": {
+				Type: JsonInteger,
+				Constraints: Constraints{
+					&LessThanOther{
+						PropertyName: ".bar0.baz1",
+					},
+					&LessThanOther{
+						PropertyName: ".bar0.bar1.baz2",
+					},
+					&LessThanOther{
+						PropertyName: ".bar0.bar1.bar2.baz3",
+					},
+				},
+			},
+		},
+	}
+
+	ok, violations := v.Validate(obj)
+	require.True(t, ok)
+	require.Equal(t, 0, len(violations))
+}
