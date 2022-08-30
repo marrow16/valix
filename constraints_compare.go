@@ -7,6 +7,10 @@ import (
 // EqualsOther constraint to check that a property value equals the value of another named property
 type EqualsOther struct {
 	// the property name of the other value to compare against
+	//
+	// Note: the PropertyName can also be JSON dot notation path - where leading dots allow traversal up
+	// the object tree and names, separated by dots, allow traversal down the object tree.
+	// A single dot at start is equivalent to no starting dot (i.e. a property name at the same level)
 	PropertyName string `v8n:"default"`
 	// the violation message to be used if the constraint fails (see Violation.Message)
 	//
@@ -35,6 +39,10 @@ func (c *EqualsOther) GetMessage(tcx I18nContext) string {
 // NotEqualsOther constraint to check that a property value not equals the value of another named property
 type NotEqualsOther struct {
 	// the property name of the other value to compare against
+	//
+	// Note: the PropertyName can also be JSON dot notation path - where leading dots allow traversal up
+	// the object tree and names, separated by dots, allow traversal down the object tree.
+	// A single dot at start is equivalent to no starting dot (i.e. a property name at the same level)
 	PropertyName string `v8n:"default"`
 	// the violation message to be used if the constraint fails (see Violation.Message)
 	//
@@ -182,6 +190,10 @@ func (c *LessThanOrEqual) GetMessage(tcx I18nContext) string {
 // constraint fails
 type GreaterThanOther struct {
 	// the property name of the other value to compare against
+	//
+	// Note: the PropertyName can also be JSON dot notation path - where leading dots allow traversal up
+	// the object tree and names, separated by dots, allow traversal down the object tree.
+	// A single dot at start is equivalent to no starting dot (i.e. a property name at the same level)
 	PropertyName string `v8n:"default"`
 	// the violation message to be used if the constraint fails (see Violation.Message)
 	//
@@ -214,6 +226,10 @@ func (c *GreaterThanOther) GetMessage(tcx I18nContext) string {
 // constraint fails
 type GreaterThanOrEqualOther struct {
 	// the property name of the other value to compare against
+	//
+	// Note: the PropertyName can also be JSON dot notation path - where leading dots allow traversal up
+	// the object tree and names, separated by dots, allow traversal down the object tree.
+	// A single dot at start is equivalent to no starting dot (i.e. a property name at the same level)
 	PropertyName string `v8n:"default"`
 	// the violation message to be used if the constraint fails (see Violation.Message)
 	//
@@ -245,6 +261,10 @@ func (c *GreaterThanOrEqualOther) GetMessage(tcx I18nContext) string {
 // constraint fails
 type LessThanOther struct {
 	// the property name of the other value to compare against
+	//
+	// Note: the PropertyName can also be JSON dot notation path - where leading dots allow traversal up
+	// the object tree and names, separated by dots, allow traversal down the object tree.
+	// A single dot at start is equivalent to no starting dot (i.e. a property name at the same level)
 	PropertyName string `v8n:"default"`
 	// the violation message to be used if the constraint fails (see Violation.Message)
 	//
@@ -277,6 +297,10 @@ func (c *LessThanOther) GetMessage(tcx I18nContext) string {
 // constraint fails
 type LessThanOrEqualOther struct {
 	// the property name of the other value to compare against
+	//
+	// Note: the PropertyName can also be JSON dot notation path - where leading dots allow traversal up
+	// the object tree and names, separated by dots, allow traversal down the object tree.
+	// A single dot at start is equivalent to no starting dot (i.e. a property name at the same level)
 	PropertyName string `v8n:"default"`
 	// the violation message to be used if the constraint fails (see Violation.Message)
 	//
@@ -427,6 +451,10 @@ func (c *StringLessThanOrEqual) GetMessage(tcx I18nContext) string {
 // Note: this constraint is strict - if either property value is not a string then this constraint fails
 type StringGreaterThanOther struct {
 	// the property name of the other value to compare against
+	//
+	// Note: the PropertyName can also be JSON dot notation path - where leading dots allow traversal up
+	// the object tree and names, separated by dots, allow traversal down the object tree.
+	// A single dot at start is equivalent to no starting dot (i.e. a property name at the same level)
 	PropertyName string `v8n:"default"`
 	// when set, the comparison is case-insensitive
 	CaseInsensitive bool
@@ -459,6 +487,10 @@ func (c *StringGreaterThanOther) GetMessage(tcx I18nContext) string {
 // Note: this constraint is strict - if either property value is not a string then this constraint fails
 type StringGreaterThanOrEqualOther struct {
 	// the property name of the other value to compare against
+	//
+	// Note: the PropertyName can also be JSON dot notation path - where leading dots allow traversal up
+	// the object tree and names, separated by dots, allow traversal down the object tree.
+	// A single dot at start is equivalent to no starting dot (i.e. a property name at the same level)
 	PropertyName string `v8n:"default"`
 	// when set, the comparison is case-insensitive
 	CaseInsensitive bool
@@ -491,6 +523,10 @@ func (c *StringGreaterThanOrEqualOther) GetMessage(tcx I18nContext) string {
 // Note: this constraint is strict - if either property value is not a string then this constraint fails
 type StringLessThanOther struct {
 	// the property name of the other value to compare against
+	//
+	// Note: the PropertyName can also be JSON dot notation path - where leading dots allow traversal up
+	// the object tree and names, separated by dots, allow traversal down the object tree.
+	// A single dot at start is equivalent to no starting dot (i.e. a property name at the same level)
 	PropertyName string `v8n:"default"`
 	// when set, the comparison is case-insensitive
 	CaseInsensitive bool
@@ -523,6 +559,10 @@ func (c *StringLessThanOther) GetMessage(tcx I18nContext) string {
 // Note: this constraint is strict - if either property value is not a string then this constraint fails
 type StringLessThanOrEqualOther struct {
 	// the property name of the other value to compare against
+	//
+	// Note: the PropertyName can also be JSON dot notation path - where leading dots allow traversal up
+	// the object tree and names, separated by dots, allow traversal down the object tree.
+	// A single dot at start is equivalent to no starting dot (i.e. a property name at the same level)
 	PropertyName string `v8n:"default"`
 	// when set, the comparison is case-insensitive
 	CaseInsensitive bool
@@ -696,6 +736,10 @@ func (c *DatetimeLessThanOrEqual) GetMessage(tcx I18nContext) string {
 // constraint fails
 type DatetimeGreaterThanOther struct {
 	// the property name of the other value to compare against
+	//
+	// Note: the PropertyName can also be JSON dot notation path - where leading dots allow traversal up
+	// the object tree and names, separated by dots, allow traversal down the object tree.
+	// A single dot at start is equivalent to no starting dot (i.e. a property name at the same level)
 	PropertyName string `v8n:"default"`
 	// when set to true, excludes the time when comparing
 	//
@@ -731,6 +775,10 @@ func (c *DatetimeGreaterThanOther) GetMessage(tcx I18nContext) string {
 // constraint fails
 type DatetimeGreaterThanOrEqualOther struct {
 	// the property name of the other value to compare against
+	//
+	// Note: the PropertyName can also be JSON dot notation path - where leading dots allow traversal up
+	// the object tree and names, separated by dots, allow traversal down the object tree.
+	// A single dot at start is equivalent to no starting dot (i.e. a property name at the same level)
 	PropertyName string `v8n:"default"`
 	// when set to true, excludes the time when comparing
 	//
@@ -766,6 +814,10 @@ func (c *DatetimeGreaterThanOrEqualOther) GetMessage(tcx I18nContext) string {
 // constraint fails
 type DatetimeLessThanOther struct {
 	// the property name of the other value to compare against
+	//
+	// Note: the PropertyName can also be JSON dot notation path - where leading dots allow traversal up
+	// the object tree and names, separated by dots, allow traversal down the object tree.
+	// A single dot at start is equivalent to no starting dot (i.e. a property name at the same level)
 	PropertyName string `v8n:"default"`
 	// when set to true, excludes the time when comparing
 	//
@@ -801,6 +853,10 @@ func (c *DatetimeLessThanOther) GetMessage(tcx I18nContext) string {
 // constraint fails
 type DatetimeLessThanOrEqualOther struct {
 	// the property name of the other value to compare against
+	//
+	// Note: the PropertyName can also be JSON dot notation path - where leading dots allow traversal up
+	// the object tree and names, separated by dots, allow traversal down the object tree.
+	// A single dot at start is equivalent to no starting dot (i.e. a property name at the same level)
 	PropertyName string `v8n:"default"`
 	// when set to true, excludes the time when comparing
 	//
@@ -1031,6 +1087,10 @@ const (
 // this constraint fails
 type DatetimeToleranceToOther struct {
 	// the property name of the other value to compare against
+	//
+	// Note: the PropertyName can also be JSON dot notation path - where leading dots allow traversal up
+	// the object tree and names, separated by dots, allow traversal down the object tree.
+	// A single dot at start is equivalent to no starting dot (i.e. a property name at the same level)
 	PropertyName string `v8n:"default"`
 	// the tolerance duration amount - which can be positive, negative or zero
 	//
