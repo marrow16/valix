@@ -202,7 +202,6 @@ func constraintToJson(constraint Constraint) (map[string]interface{}, error) {
 			conditions[i] = s
 		}
 	}
-	//	ty := reflect.TypeOf(constraint)
 	by, err := json.Marshal(useConstraint)
 	if err != nil {
 		return nil, err
@@ -273,6 +272,19 @@ func (c *StringValidUnicodeNormalization) MarshalJSON() ([]byte, error) {
 		"Form":    strForm,
 		"Message": c.Message,
 		"Stop":    c.Stop,
+	}
+	return json.Marshal(j)
+}
+
+func (c *ArrayConditionalConstraint) MarshalJSON() ([]byte, error) {
+	j := map[string]interface{}{
+		"When":     c.When,
+		"Ancestry": c.Ancestry,
+	}
+	if cj, err := constraintToJson(c.Constraint); err == nil {
+		j["Constraint"] = cj
+	} else {
+		return nil, err
 	}
 	return json.Marshal(j)
 }

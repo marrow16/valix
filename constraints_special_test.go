@@ -823,3 +823,147 @@ func TestSetConditionOnTypeWithFailingWhen(t *testing.T) {
 	require.Equal(t, 1, len(violations))
 	require.Equal(t, fmt.Sprintf(fmtMsgValueExpectedType, "number"), violations[0].Message)
 }
+
+func TestArrayConditionalConstraint(t *testing.T) {
+	// also tests array pathing!!!
+	v := &Validator{
+		Properties: Properties{
+			"foo": {
+				Type: JsonArray,
+				Constraints: Constraints{
+					&Length{Minimum: 1},
+				},
+				ObjectValidator: &Validator{
+					AllowArray:     true,
+					DisallowObject: true,
+					Properties: Properties{
+						"bar": {
+							Type:      JsonString,
+							Mandatory: true,
+							Constraints: Constraints{
+								&ArrayConditionalConstraint{
+									When: "!first",
+									Constraint: &StringGreaterThanOther{
+										PropertyName: "..[-1].bar",
+									},
+								},
+								&ArrayConditionalConstraint{
+									When: "!last",
+									Constraint: &StringLessThanOther{
+										PropertyName: "..[+1].bar",
+									},
+								},
+								&ArrayConditionalConstraint{
+									When: "first",
+									Constraint: &StringLessThanOther{
+										PropertyName: "..[+1].bar",
+									},
+								},
+								&ArrayConditionalConstraint{
+									When: "last",
+									Constraint: &StringGreaterThanOther{
+										PropertyName: "..[-1].bar",
+									},
+								},
+								&ArrayConditionalConstraint{
+									When: ">0",
+									Constraint: &StringGreaterThanOther{
+										PropertyName: "..[-1].bar",
+									},
+								},
+								&ArrayConditionalConstraint{
+									When: "<1",
+									Constraint: &StringLessThanOther{
+										PropertyName: "..[+1].bar",
+									},
+								},
+								&ArrayConditionalConstraint{
+									When: "0",
+									Constraint: &StringLessThanOther{
+										PropertyName: "..[+1].bar",
+									},
+								},
+								&ArrayConditionalConstraint{
+									When: "%2",
+									Constraint: &StringLessThanOther{
+										PropertyName: "..[+1].bar",
+									},
+								},
+							},
+						},
+						"qux": {
+							Type:      JsonArray,
+							Mandatory: true,
+							ObjectValidator: &Validator{
+								AllowArray:     true,
+								DisallowObject: true,
+								Properties: Properties{
+									"foo": {
+										Type: JsonString,
+										Constraints: Constraints{
+											&ArrayConditionalConstraint{
+												When: "!first",
+												Constraint: &StringGreaterThanOther{
+													PropertyName: "..[-1].foo",
+												},
+											},
+											&StringGreaterThanOther{
+												PropertyName: "....[0].bar",
+											},
+											&StringGreaterThanOrEqualOther{
+												PropertyName: "....[0].qux[0].foo",
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	obj := jsonObject(`{
+		"foo": [
+			{
+				"bar": "A",
+				"qux": [
+					{
+						"foo": "AA"
+					},
+					{
+						"foo": "AB"
+					}
+				]
+			},
+			{
+				"bar": "B",
+				"qux": [
+					{
+						"foo": "BA"
+					}
+				]
+			},
+			{
+				"bar": "C",
+				"qux": [
+					{
+						"foo": "CA"
+					}
+				]
+			},
+			{
+				"bar": "D",
+				"qux": [
+					{
+						"foo": "DA"
+					}
+				]
+			}
+		]
+	}`)
+
+	ok, violations := v.Validate(obj)
+	require.True(t, ok)
+	require.Equal(t, 0, len(violations))
+}

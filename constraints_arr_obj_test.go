@@ -352,3 +352,47 @@ func TestLengthExactWithArray(t *testing.T) {
 	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
 }
+
+func TestNotEmpty(t *testing.T) {
+	validator := buildFooValidator(JsonAny,
+		&NotEmpty{}, false)
+	obj := jsonObject(`{
+		"foo": []
+	}`)
+	ok, violations := validator.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, msgNotEmpty, violations[0].Message)
+	obj = jsonObject(`{
+		"foo": ["bar"]
+	}`)
+	ok, _ = validator.Validate(obj)
+	require.True(t, ok)
+
+	obj = jsonObject(`{
+		"foo": {}
+	}`)
+	ok, violations = validator.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, msgNotEmpty, violations[0].Message)
+	obj = jsonObject(`{
+		"foo": {"foo": "bar"}
+	}`)
+	ok, _ = validator.Validate(obj)
+	require.True(t, ok)
+
+	obj = jsonObject(`{
+		"foo": ""
+	}`)
+	ok, violations = validator.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, msgNotEmpty, violations[0].Message)
+
+	obj = jsonObject(`{
+		"foo": "bar"
+	}`)
+	ok, _ = validator.Validate(obj)
+	require.True(t, ok)
+}

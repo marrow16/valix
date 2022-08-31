@@ -175,6 +175,7 @@ var internalMessages = map[string]string{
 	msgValueMustBeArray:               msgValueMustBeArray,
 	msgValueMustBeObjectOrArray:       msgValueMustBeObjectOrArray,
 	msgPropertyObjectValidatorError:   msgPropertyObjectValidatorError,
+	msgNotEmpty:                       msgNotEmpty,
 	msgNotEmptyString:                 msgNotEmptyString,
 	msgNotBlankString:                 msgNotBlankString,
 	msgNoControlChars:                 msgNoControlChars,

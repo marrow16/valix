@@ -392,7 +392,8 @@ func constraintNameCheck(value interface{}, vcx *ValidatorContext, this *CustomC
 	result := false
 	msg := msgConstraintNameString
 	if name, ok := value.(string); ok {
-		if name != constraintSetName && name != conditionalConstraintName && name != constraintVariableProperty && !constraintsRegistry.has(name) {
+		if name != constraintSetName && name != conditionalConstraintName && name != arrayconditionalConstraintName &&
+			name != constraintVariableProperty && !constraintsRegistry.has(name) {
 			msg = vcx.TranslateFormat(msgUnknownConstraintName, name)
 		} else {
 			result = true
@@ -582,6 +583,9 @@ func unmarshalConstraint(c map[string]interface{}) (Constraint, error) {
 	} else if constraintName == constraintVariableProperty {
 		constraint = &VariablePropertyConstraint{}
 		constraintFound = true
+	} else if constraintName == arrayconditionalConstraintName {
+		constraint = &ArrayConditionalConstraint{}
+		constraintFound = true
 	} else {
 		constraint, constraintFound = constraintsRegistry.get(constraintName)
 	}
@@ -707,6 +711,39 @@ func (c *StringValidUnicodeNormalization) UnmarshalJSON(data []byte) error {
 		} else {
 			return fmt.Errorf(errMsgFieldExpectedType, constraintPtyNameStop, "string (\"NFC\", \"NFD\", \"NFKC\" or \"NFKD\")")
 		}
+	}
+	return nil
+}
+
+func (c *ArrayConditionalConstraint) UnmarshalJSON(data []byte) error {
+	obj := map[string]interface{}{}
+	_ = json.Unmarshal(data, &obj)
+	if raw, ok := obj["When"]; ok {
+		if v, ok := raw.(string); ok {
+			c.When = v
+		} else {
+			return fmt.Errorf(errMsgFieldExpectedType, "When", "string")
+		}
+	}
+	if raw, ok := obj["Ancestry"]; ok {
+		if v, ok := raw.(float64); ok {
+			c.Ancestry = uint(v)
+		} else {
+			return fmt.Errorf(errMsgFieldExpectedType, "Ancestry", "int")
+		}
+	}
+	if raw, ok := obj["Constraint"]; ok {
+		if v, ok := raw.(map[string]interface{}); ok {
+			if wrapped, err := unmarshalConstraint(v); err == nil {
+				c.Constraint = wrapped
+			} else {
+				return err
+			}
+		} else {
+			return fmt.Errorf(errMsgFieldExpectedType, "Constraint", "object")
+		}
+	} else {
+		return fmt.Errorf(errMsgFieldExpectedType, "Constraint", "object")
 	}
 	return nil
 }

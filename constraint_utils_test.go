@@ -392,3 +392,72 @@ func TestIsUniqueCompare(t *testing.T) {
 	unique = isUniqueCompare(json.Number("1"), false, &distinctList)
 	require.False(t, unique)
 }
+
+func TestGetOtherPropertyPath(t *testing.T) {
+	level, path := getOtherPropertyPath(".foo")
+	require.Equal(t, uint(0), level)
+	require.Equal(t, 1, len(path))
+	require.Equal(t, "foo", path[0])
+
+	level, path = getOtherPropertyPath("foo")
+	require.Equal(t, uint(0), level)
+	require.Equal(t, 1, len(path))
+	require.Equal(t, "foo", path[0])
+
+	level, path = getOtherPropertyPath("...foo")
+	require.Equal(t, uint(2), level)
+	require.Equal(t, 1, len(path))
+	require.Equal(t, "foo", path[0])
+
+	level, path = getOtherPropertyPath("...foo[0]")
+	require.Equal(t, uint(2), level)
+	require.Equal(t, 2, len(path))
+	require.Equal(t, "foo", path[0])
+	require.Equal(t, "[0]", path[1])
+
+	level, path = getOtherPropertyPath("...foo.[0]")
+	require.Equal(t, uint(2), level)
+	require.Equal(t, 2, len(path))
+	require.Equal(t, "foo", path[0])
+	require.Equal(t, "[0]", path[1])
+}
+
+func TestPropertyWalkDown(t *testing.T) {
+	subm := map[string]interface{}{"foo": "bar"}
+	sl := []interface{}{"a", "b", "c", subm}
+	mp := map[string]interface{}{"foo": sl}
+
+	v, ok := propertyWalkDown(mp, []string{"foo", "[1]"}, 0, -1)
+	require.True(t, ok)
+	require.Equal(t, "b", v)
+
+	v, ok = propertyWalkDown(mp, []string{"foo", "[3]", "foo"}, 0, -1)
+	require.True(t, ok)
+	require.Equal(t, "bar", v)
+
+	v, ok = propertyWalkDown(sl, []string{"[2]"}, 0, -1)
+	require.True(t, ok)
+	require.Equal(t, "c", v)
+
+	v, ok = propertyWalkDown(sl, []string{"[+1]"}, 0, 1)
+	require.True(t, ok)
+	require.Equal(t, "c", v)
+
+	v, ok = propertyWalkDown(sl, []string{"[+1]", "foo"}, 0, 2)
+	require.True(t, ok)
+	require.Equal(t, "bar", v)
+}
+
+func TestPropertyWalkDownSlice(t *testing.T) {
+	sl := []interface{}{"a", "b", "c"}
+
+	// test with invalid array index token...
+	v, ok := propertyWalkDownSlice(sl, []string{"not an [] index"}, 0, -1)
+	require.False(t, ok)
+	require.Nil(t, v)
+
+	// test getting value...
+	v, ok = propertyWalkDownSlice(sl, []string{"[1]"}, 0, -1)
+	require.True(t, ok)
+	require.Equal(t, "b", v)
+}
