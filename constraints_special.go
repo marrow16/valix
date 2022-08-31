@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"strconv"
+	"strings"
 )
 
 // FailingConstraint is a utility constraint that always fails
@@ -324,7 +326,8 @@ func (c *VariablePropertyConstraint) GetMessage(tcx I18nContext) string {
 
 const (
 	// used for marshaling & unmarshalling...
-	conditionalConstraintName = "ConditionalConstraint"
+	conditionalConstraintName      = "ConditionalConstraint"
+	arrayconditionalConstraintName = "ArrayConditionalConstraint"
 )
 
 // ConditionalConstraint is a special constraint that wraps another constraint - but the wrapped
@@ -337,12 +340,87 @@ type ConditionalConstraint struct {
 }
 
 func (c *ConditionalConstraint) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
-	if vcx.meetsWhenConditions(c.When) {
+	if vcx.meetsWhenConditions(c.When) && c.Constraint != nil {
 		return c.Constraint.Check(v, vcx)
 	}
 	return true, c.GetMessage(vcx)
 }
 
 func (c *ConditionalConstraint) GetMessage(tcx I18nContext) string {
+	return ""
+}
+
+// ArrayConditionalConstraint is a special constraint that wraps another constraint - but the wrapped
+// constraint is only checked when the specified array condition is met (see When property)
+type ArrayConditionalConstraint struct {
+	// When is the special token denoting the array condition on which the wrapped constraint is to be checked
+	//
+	// The special token can be one of:
+	//
+	// * "first" - when the array item is the first
+	//
+	// * "!first" - when the array item is not the first
+	//
+	// * "last" - when the array item is the last
+	//
+	// * "!last" - when the array item is not the last
+	//
+	// * "%n" - when the modulus of the array index is n
+	//
+	// * ">n" - when the array index is greater than n
+	//
+	// * "<n" - when the array index is less than n
+	//
+	// * "n" - when the array index is n
+	When string
+	// Ancestry is ancestry depth at which to obtain the current array index information
+	//
+	// Note: the ancestry level is only for arrays in the object tree (and does not need to include other levels).
+	// Therefore, by default the value is 0 (zero) - which means the last encountered array
+	Ancestry   uint
+	Constraint Constraint
+}
+
+func (c *ArrayConditionalConstraint) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
+	if index, max, ok := vcx.AncestryIndex(c.Ancestry); ok {
+		check := false
+		switch c.When {
+		case "first":
+			check = index == 0
+		case "!first":
+			check = index != 0
+		case "last":
+			check = index == max
+		case "!last":
+			check = index != max
+		default:
+			if len(c.When) > 0 {
+				pfx := c.When[:1]
+				nOffs := 0
+				if strings.ContainsAny(pfx, "%><") {
+					nOffs = 1
+				}
+				if n, err := strconv.Atoi(c.When[nOffs:]); err == nil {
+					switch pfx {
+					case "%":
+						check = (index % n) == 0
+					case ">":
+						check = index > n
+					case "<":
+						check = index < n
+					default:
+						check = index == n
+					}
+				}
+			}
+		}
+		if check && c.Constraint != nil {
+			return c.Constraint.Check(v, vcx)
+		}
+	}
+	return true, c.GetMessage(vcx)
+}
+
+func (c *ArrayConditionalConstraint) GetMessage(tcx I18nContext) string {
 	return ""
 }

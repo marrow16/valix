@@ -5,6 +5,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"math"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 	"unicode"
@@ -12,6 +13,7 @@ import (
 
 const (
 	// Note: In formats, explicit argument indices are used - this is to aid i18n translations
+	msgNotEmpty                  = "Value must not be empty"
 	msgNotEmptyString            = "String value must not be an empty string"
 	msgNotBlankString            = "String value must not be a blank string"
 	msgNoControlChars            = "String value must not contain control characters"
@@ -219,21 +221,49 @@ const (
 )
 
 func getOtherProperty(propertyName string, vcx *ValidatorContext) (interface{}, bool) {
-	ancestry, down := getOtherPropertyPath(propertyName)
-	if from, ok := vcx.AncestorValue(ancestry); ok {
-		return propertyWalkDown(from, down, 0)
+	ancestryLevel, down := getOtherPropertyPath(propertyName)
+	if from, idx, ok := vcx.ancestorValueAndIndex(ancestryLevel); ok {
+		return propertyWalkDown(from, down, 0, idx)
 	}
 	return nil, false
 }
 
-func propertyWalkDown(from interface{}, down []string, on int) (interface{}, bool) {
-	if obj, ok := from.(map[string]interface{}); ok {
-		propertyName := down[on]
-		if v, ok := obj[propertyName]; ok {
-			if on == len(down)-1 {
-				return v, true
-			} else {
-				return propertyWalkDown(v, down, on+1)
+func propertyWalkDown(from interface{}, down []string, on int, currIdx int) (interface{}, bool) {
+	switch oa := from.(type) {
+	case map[string]interface{}:
+		return propertyWalkDownMap(oa, down, on, currIdx)
+	case []interface{}:
+		return propertyWalkDownSlice(oa, down, on, currIdx)
+	}
+	return nil, false
+}
+
+func propertyWalkDownMap(from map[string]interface{}, down []string, on int, currIdx int) (interface{}, bool) {
+	if v, ok := from[down[on]]; ok {
+		if on == len(down)-1 {
+			return v, true
+		} else {
+			return propertyWalkDown(v, down, on+1, currIdx)
+		}
+	}
+	return nil, false
+}
+
+func propertyWalkDownSlice(from []interface{}, down []string, on int, currIdx int) (interface{}, bool) {
+	pty := down[on]
+	if strings.HasPrefix(pty, "[") && strings.HasSuffix(pty, "]") {
+		pty = pty[1 : len(pty)-1]
+		if idx, err := strconv.Atoi(pty); err == nil {
+			if currIdx != -1 && on == 0 && (strings.HasPrefix(pty, "+") || strings.HasPrefix(pty, "-")) {
+				idx = currIdx + idx
+			}
+			if idx >= 0 && idx < len(from) {
+				v := from[idx]
+				if on == len(down)-1 {
+					return v, true
+				} else {
+					return propertyWalkDown(v, down, on+1, currIdx)
+				}
 			}
 		}
 	}
@@ -241,6 +271,24 @@ func propertyWalkDown(from interface{}, down []string, on int) (interface{}, boo
 }
 
 func getOtherPropertyPath(propertyName string) (uint, []string) {
+	level, path := splicePropertyPath(propertyName)
+	// fix up any array index indicators...
+	actualPath := make([]string, 0, len(path))
+	for _, part := range path {
+		if strings.HasSuffix(part, "]") {
+			if at := strings.Index(part, "["); at == 0 {
+				actualPath = append(actualPath, part)
+			} else if at != -1 {
+				actualPath = append(actualPath, part[:at], part[at:])
+			}
+		} else {
+			actualPath = append(actualPath, part)
+		}
+	}
+	return level, actualPath
+}
+
+func splicePropertyPath(propertyName string) (uint, []string) {
 	if !strings.Contains(propertyName, ".") {
 		return 0, []string{propertyName}
 	}
@@ -248,18 +296,18 @@ func getOtherPropertyPath(propertyName string) (uint, []string) {
 	if !strings.HasPrefix(propertyName, ".") {
 		return 0, pth
 	}
-	ancestry := -1
+	level := -1
 	down := make([]string, 0, len(pth))
 	atStart := true
-	for _, pt := range pth {
-		if pt == "" && atStart {
-			ancestry++
+	for _, part := range pth {
+		if part == "" && atStart {
+			level++
 		} else {
 			atStart = false
-			down = append(down, pt)
+			down = append(down, part)
 		}
 	}
-	return uint(ancestry), down
+	return uint(level), down
 }
 
 func getOtherPropertyDatetime(propertyName string, vcx *ValidatorContext, truncTime bool, allowNull bool) (*time.Time, bool) {

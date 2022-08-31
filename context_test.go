@@ -627,3 +627,52 @@ func TestValuesAncestry(t *testing.T) {
 	av = vcx.CurrentValue()
 	require.Equal(t, obj3, av)
 }
+
+func TestAncestryIndex(t *testing.T) {
+	obj3 := map[string]interface{}{
+		"level": 3,
+	}
+	obj2 := map[string]interface{}{
+		"foo":   obj3,
+		"level": 2,
+	}
+	arr2 := []interface{}{obj2, obj2, obj2, obj2}
+	obj1 := map[string]interface{}{
+		"foo":   arr2,
+		"level": 1,
+	}
+	rootObj := map[string]interface{}{
+		"foo":   obj1,
+		"level": 0,
+	}
+
+	vcx := newValidatorContext(rootObj, nil, false, nil)
+	// no pathing as yet...
+	_, _, ok := vcx.AncestryIndex(0)
+	require.False(t, ok)
+
+	vcx.pushPathProperty("foo", obj1, nil)
+	_, _, ok = vcx.AncestryIndex(0)
+	require.False(t, ok)
+
+	vcx.pushPathProperty("foo", arr2, nil)
+	_, _, ok = vcx.AncestryIndex(0)
+	require.False(t, ok)
+
+	vcx.pushPathIndex(1, obj2, nil)
+	index, max, ok := vcx.AncestryIndex(0)
+	require.True(t, ok)
+	require.Equal(t, 1, index)
+	require.Equal(t, 3, max)
+
+	_, _, ok = vcx.AncestryIndex(1)
+	require.False(t, ok)
+
+	// test the odd situation (which should never occur) where things are pushed with incoherent order (i.e. an index into an object)...
+	vcx = newValidatorContext(rootObj, nil, false, nil)
+	vcx.pushPathIndex(16, obj2, nil)
+	index, max, ok = vcx.AncestryIndex(0)
+	require.True(t, ok)
+	require.Equal(t, 16, index)
+	require.Equal(t, -1, max)
+}

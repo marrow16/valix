@@ -171,6 +171,28 @@ func (vc *ValidatorContext) CurrentDepth() int {
 	return len(vc.pathStack) - 1
 }
 
+func (vc *ValidatorContext) AncestryIndex(level uint) (index int, max int, ok bool) {
+	atLevel := uint(0)
+	for i := len(vc.pathStack) - 1; i >= 0; i-- {
+		pi := vc.pathStack[i]
+		if idx, ok := pi.property.(int); ok {
+			if atLevel == level {
+				// the next upwards must be an array (or should be!) - so get its length
+				if i > 0 {
+					pip := vc.pathStack[i-1]
+					if sl, ok := pip.value.([]interface{}); ok {
+						return idx, len(sl) - 1, true
+					}
+				}
+				return idx, -1, true
+			} else {
+				atLevel++
+			}
+		}
+	}
+	return 0, -1, false
+}
+
 // AncestorProperty returns an ancestor property - which may be a string (for property name)
 // or an int (for array index)
 //
@@ -222,6 +244,22 @@ func (vc *ValidatorContext) AncestorValue(level uint) (interface{}, bool) {
 		return itm.value, true
 	}
 	return nil, false
+}
+
+// ancestorValueAndIndex returns an ancestor value
+func (vc *ValidatorContext) ancestorValueAndIndex(level uint) (interface{}, int, bool) {
+	if itm, ok := vc.ancestorStackItem(level); ok {
+		if sl, ok := itm.value.([]interface{}); ok && level > 0 {
+			// if the value is a slice(array) - then also figure out current index in that array...
+			if idxItm, ok := vc.ancestorStackItem(level - 1); ok {
+				if idx, ok := idxItm.property.(int); ok {
+					return sl, idx, true
+				}
+			}
+		}
+		return itm.value, -1, true
+	}
+	return nil, -1, false
 }
 
 // ValuesAncestry returns the values ancestry (where the first item is parent, second is grandparent etc.)

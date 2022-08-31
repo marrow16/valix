@@ -109,6 +109,17 @@ func TestValidator_MarshalJSON(t *testing.T) {
 					},
 				},
 			},
+			"arr": {
+				Type: JsonString,
+				Constraints: Constraints{
+					&ArrayConditionalConstraint{
+						When: "%2",
+						Constraint: &StringGreaterThanOther{
+							PropertyName: "foo",
+						},
+					},
+				},
+			},
 		},
 	}
 
@@ -180,7 +191,7 @@ func TestValidator_MarshalJSON(t *testing.T) {
 	require.True(t, sub[ptyNameOasDeprecated].(bool))
 
 	sub = obj[ptyNameProperties].(map[string]interface{})
-	require.Equal(t, 3, len(sub))
+	require.Equal(t, 4, len(sub))
 
 	pty := sub["foo"].(map[string]interface{})
 	require.Equal(t, 13, len(pty))
@@ -458,6 +469,18 @@ func TestConstraint_StringValidUnicodeNormalization_MarshalJSON(t *testing.T) {
 	require.Nil(t, err)
 	require.NotNil(t, obj)
 	require.Equal(t, "NFKD", obj["Form"])
+}
+
+func TestConstraint_ArrayConditionalConstraint_MarshalJSONFails(t *testing.T) {
+	c := &ArrayConditionalConstraint{
+		Constraint: &CustomConstraint{
+			CheckFunc: func(value interface{}, vcx *ValidatorContext, this *CustomConstraint) (passed bool, message string) {
+				return true, ""
+			},
+		},
+	}
+	_, err := json.Marshal(c)
+	require.NotNil(t, err)
 }
 
 func TestAllConstraintsCanBeMarshalledAndUnmarshalled(t *testing.T) {

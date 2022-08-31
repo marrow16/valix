@@ -103,6 +103,32 @@ const (
 		},
 		"orderedPropertyChecks": true,
 		"properties": {
+			"arr": {
+				"constraints": [
+					{
+						"fields": {
+							"Ancestry": 16,
+							"Constraint": {
+								"fields": {
+									"CaseInsensitive": false,
+									"Message": "",
+									"PropertyName": "foo",
+									"Stop": false
+								},
+								"name": "StringGreaterThanOther"
+							},
+							"When": "%2"
+						},
+						"name": "ArrayConditionalConstraint"
+					}
+				],
+				"mandatory": false,
+				"notNull": false,
+				"order": 0,
+				"requiredWithMessage": "",
+				"type": "string",
+				"unwantedWithMessage": ""
+			},
 			"bar": {
 				"mandatory": true,
 				"notNull": true,
@@ -263,7 +289,7 @@ func TestValidatorUnmarshal(t *testing.T) {
 	require.Equal(t, 1, len(cv.WhenConditions))
 	require.Equal(t, "cv_foo", cv.WhenConditions[0])
 
-	require.Equal(t, 3, len(v.Properties))
+	require.Equal(t, 4, len(v.Properties))
 	foo := v.Properties["foo"]
 	require.Equal(t, 1, foo.Order)
 	require.True(t, foo.Mandatory)
@@ -313,6 +339,14 @@ func TestValidatorUnmarshal(t *testing.T) {
 	require.Equal(t, 1, len(constraint4.NameConstraints))
 	require.True(t, constraint4.ObjectValidator.StopOnFirst)
 	require.Equal(t, 1, len(constraint4.ObjectValidator.Properties))
+
+	arr := v.Properties["arr"]
+	require.Equal(t, 1, len(arr.Constraints))
+	constraint5 := arr.Constraints[0].(*ArrayConditionalConstraint)
+	require.Equal(t, uint(16), constraint5.Ancestry)
+	require.Equal(t, "%2", constraint5.When)
+	constraint6 := constraint5.Constraint.(*StringGreaterThanOther)
+	require.Equal(t, "foo", constraint6.PropertyName)
 }
 
 func TestValidatorValidation(t *testing.T) {
@@ -953,6 +987,67 @@ func TestStringValidUnicodeNormalizationUnmarshalJSON(t *testing.T) {
 	constraint = &StringValidUnicodeNormalization{}
 	err = json.Unmarshal([]byte(js), constraint)
 	require.NotNil(t, err)
+}
+
+func TestArrayConditionalConstraintUnmarshalJSON(t *testing.T) {
+	js := `{}`
+	constraint := &ArrayConditionalConstraint{}
+	err := json.Unmarshal([]byte(js), constraint)
+	require.NotNil(t, err)
+
+	js = `{
+		"Constraint": nil
+	}`
+	err = json.Unmarshal([]byte(js), constraint)
+	require.NotNil(t, err)
+	js = `{
+		"Constraint": 1
+	}`
+	err = json.Unmarshal([]byte(js), constraint)
+	require.NotNil(t, err)
+
+	js = `{
+		"When": 1,
+		"Constraint": {
+			"name": "StringNotEmpty"
+		}
+	}`
+	err = json.Unmarshal([]byte(js), constraint)
+	require.NotNil(t, err)
+
+	js = `{
+		"Ancestry": "xxx",
+		"Constraint": {
+			"name": "StringNotEmpty"
+		}
+	}`
+	err = json.Unmarshal([]byte(js), constraint)
+	require.NotNil(t, err)
+
+	js = `{
+		"When": "%2",
+		"Ancestry": 16,
+		"Constraint": {
+			"name": "bad name"
+		}
+	}`
+	err = json.Unmarshal([]byte(js), constraint)
+	require.NotNil(t, err)
+
+	js = `{
+		"When": "%2",
+		"Ancestry": 16,
+		"Constraint": {
+			"name": "StringGreaterThanOther",
+			"fields": {
+				"PropertyName": "foo"
+			}
+		}
+	}`
+	err = json.Unmarshal([]byte(js), constraint)
+	require.Nil(t, err)
+	wrapped := constraint.Constraint.(*StringGreaterThanOther)
+	require.Equal(t, "foo", wrapped.PropertyName)
 }
 
 func TestValidateUnmarshallingConstraintWithNonStructConstraint(t *testing.T) {

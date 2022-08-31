@@ -569,6 +569,13 @@ var defaultInternalTranslator = &internalTranslator{
 			langIt: "Il valore della stringa non deve essere una stringa vuota",
 			langDe: "String-Wert darf kein leerer String sein",
 		},
+		msgNotEmpty: {
+			langEn: msgNotEmpty,
+			langFr: "La valeur ne doit pas être vide",
+			langEs: "El valor no debe estar vacío",
+			langIt: "Il valore non deve essere vuoto",
+			langDe: "Wert darf nicht leer sein",
+		},
 		msgNotEmptyString: {
 			langEn: msgNotEmptyString,
 			langFr: "La valeur de la chaîne ne doit pas être une chaîne vide",

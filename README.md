@@ -382,6 +382,59 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
 <table>
     <tr>
         <td>
+            <code>ArrayConditionalConstraint</code>
+        </td>
+        <td>
+            Is a special constraint that wraps another constraint - but the wrapped
+            constraint is only checked when the specified array condition is met
+            <details>
+                <summary>Fields</summary>
+                <table>
+                    <tr>
+                        <td>
+                            <code>When</code> <em>string</em>
+                        </td>
+                        <td>
+                            is the special token denoting the array condition on which the wrapped constraint is to be checked<br>
+                            One of:
+                            <ul>
+                              <li><code>"first"</code> array item is the first</li>
+                              <li><code>"!first"</code> array item is not the first</li>
+                              <li><code>"last"</code> array item is the last</li>
+                              <li><code>"!last"</code> array item is not the last</li>
+                              <li><code>"%n"</code> modulus of the array index is <em>n</em></li>
+                              <li><code>"&gt;n"</code> array index is greater than <em>n</em></li>
+                              <li><code>"&lt;n"</code> array index is less than <em>n</em></li>
+                              <li><code>"n"</code> array index is <em>n</em></li>
+                            </ul>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Constraint</code> <em>Constraint</em>
+                        </td>
+                        <td>
+                            is the wrapped constraint
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Ancestry</code> <em>uint</em>
+                        </td>
+                        <td>
+                            is ancestry depth at which to obtain the current array index information<br><br>
+                            <em>Note: the ancestry level is only for arrays in the object tree (and does not need to include other levels).
+	                        Therefore, by default the value is 0 (zero) - which means the last encountered array</em>
+                        </td>
+                    </tr>
+                </table>
+            </details>
+            <em>Note: This constraint does not (currently) have a <code>v8n</code> tag abbreviation and cannot be used directly in a <code>v8n</code> tags on struct fields.</em>
+        </td>
+    </tr>
+    <tr></tr>
+    <tr>
+        <td>
             <code>ArrayOf</code><br>&nbsp;&nbsp;<code>aof</code>&nbsp;<em>(i18n tag abbr.)</em>
         </td>
         <td>
@@ -425,6 +478,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>ArrayUnique</code><br>&nbsp;&nbsp;<code>aunique</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -470,12 +524,13 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>ConditionalConstraint</code>
         </td>
         <td>
-            is a special constraint that wraps another constraint - but the wrapped constraint is only checked when the specified when conditions are met
+            Is a special constraint that wraps another constraint - but the wrapped constraint is only checked when the specified when conditions are met
             <details>
                 <summary>Fields</summary>
                 <table>
@@ -508,6 +563,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>DatetimeGreaterThan</code><br>&nbsp;&nbsp;<code>dtgt</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -554,6 +610,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>DatetimeGreaterThanOther</code><br>&nbsp;&nbsp;<code>dtgto</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -603,6 +660,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>DatetimeGreaterThanOrEqual</code><br>&nbsp;&nbsp;<code>dtgte</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -649,6 +707,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>DatetimeGreaterThanOrEqualOther</code><br>&nbsp;&nbsp;<code>dtgteo</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -698,6 +757,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>DatetimeLessThan</code><br>&nbsp;&nbsp;<code>dtlt</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -744,6 +804,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>DatetimeLessThanOther</code><br>&nbsp;&nbsp;<code>dtlto</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -793,6 +854,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>DatetimeLessThanOrEqual</code><br>&nbsp;&nbsp;<code>dtlte</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -839,6 +901,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>DatetimeLessThanOrEqualOther</code><br>&nbsp;&nbsp;<code>dtlteo</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -888,6 +951,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>DatetimeFuture</code><br>&nbsp;&nbsp;<code>dtfuture</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -926,6 +990,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>DatetimeFutureOrPresent</code><br>&nbsp;&nbsp;<code>dtfuturep</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -964,6 +1029,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>DatetimePast</code><br>&nbsp;&nbsp;<code>dtpast</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -1002,6 +1068,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>DatetimePastOrPresent</code><br>&nbsp;&nbsp;<code>dtpastp</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -1040,6 +1107,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>DatetimeTolerance</code><br>&nbsp;&nbsp;<code>dttol</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -1134,6 +1202,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>DatetimeToleranceToNow</code><br>&nbsp;&nbsp;<code>dttolnow</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -1220,6 +1289,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>DatetimeToleranceToOther</code><br>&nbsp;&nbsp;<code>dttolother</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -1317,6 +1387,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>EqualsOther</code><br>&nbsp;&nbsp;<code>eqo</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -1357,6 +1428,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>FailingConstraint</code><br>&nbsp;&nbsp;<code>fail</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -1394,6 +1466,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>FailWhen</code><br>&nbsp;&nbsp;<code>failw</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -1439,6 +1512,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>GreaterThan</code><br>&nbsp;&nbsp;<code>gt</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -1476,6 +1550,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>GreaterThanOrEqual</code><br>&nbsp;&nbsp;<code>gte</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -1513,6 +1588,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>GreaterThanOther</code><br>&nbsp;&nbsp;<code>gto</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -1553,6 +1629,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>GreaterThanOrEqualOther</code><br>&nbsp;&nbsp;<code>gteo</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -1593,6 +1670,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>Length</code><br>&nbsp;&nbsp;<code>len</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -1655,6 +1733,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>LengthExact</code><br>&nbsp;&nbsp;<code>lenx</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -1693,6 +1772,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>LessThan</code><br>&nbsp;&nbsp;<code>lt</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -1730,6 +1810,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>LessThanOrEqual</code><br>&nbsp;&nbsp;<code>lte</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -1767,6 +1848,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>LessThanOther</code><br>&nbsp;&nbsp;<code>lto</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -1807,6 +1889,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>LessThanOrEqualOther</code><br>&nbsp;&nbsp;<code>lteo</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -1847,6 +1930,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>Maximum</code><br>&nbsp;&nbsp;<code>max</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -1892,6 +1976,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>MaximumInt</code><br>&nbsp;&nbsp;<code>maxi</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -1937,6 +2022,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>Minimum</code><br>&nbsp;&nbsp;<code>min</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -1982,6 +2068,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>MinimumInt</code><br>&nbsp;&nbsp;<code>mini</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -2027,6 +2114,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>MultipleOf</code><br>&nbsp;&nbsp;<code>xof</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -2064,6 +2152,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>Negative</code><br>&nbsp;&nbsp;<code>neg</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -2093,6 +2182,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>NegativeOrZero</code><br>&nbsp;&nbsp;<code>negz</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -2122,6 +2212,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>NetIsCIDR</code><br>&nbsp;&nbsp;<code>isCIDR</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -2183,6 +2274,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>NetIsHostname</code><br>&nbsp;&nbsp;<code>isHostname</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -2348,6 +2440,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>NetIsIP</code><br>&nbsp;&nbsp;<code>isIP</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -2425,6 +2518,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>NetIsMac</code><br>&nbsp;&nbsp;<code>isMAC</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -2454,6 +2548,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>NetIsTCP</code><br>&nbsp;&nbsp;<code>isTCP</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -2515,6 +2610,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>NetIsTld</code><br>&nbsp;&nbsp;<code>isTld</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -2616,6 +2712,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>NetIsUDP</code><br>&nbsp;&nbsp;<code>isUDP</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -2677,6 +2774,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>NetIsURI</code><br>&nbsp;&nbsp;<code>isURI</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -2850,6 +2948,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>NetIsURL</code><br>&nbsp;&nbsp;<code>isURL</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -3023,6 +3122,37 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
+    <tr>
+        <td>
+            <code>NotEmpty</code><br>&nbsp;&nbsp;<code>notempty</code>&nbsp;<em>(i18n tag abbr.)</em>
+        </td>
+        <td>
+            Check that a map or slice property value is not empty (has properties or array elements)
+            <details>
+                <summary>Fields</summary>
+                <table>
+                    <tr>
+                        <td>
+                            <code>Message</code> <em>string</em>
+                        </td>
+                        <td>
+                            the violation message to be used if the constraint fails (if empty, the default violation message is used)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Stop</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set to true, prevents further validation checks on the property if this constraint fails
+                        </td>
+                    </tr>
+                </table>
+            </details>
+        </td>
+    </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>NotEqualsOther</code><br>&nbsp;&nbsp;<code>neqo</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -3063,6 +3193,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>Positive</code><br>&nbsp;&nbsp;<code>pos</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -3092,6 +3223,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>PositiveOrZero</code><br>&nbsp;&nbsp;<code>posz</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -3121,6 +3253,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>Range</code><br>&nbsp;&nbsp;<code>range</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -3182,6 +3315,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>RangeInt</code><br>&nbsp;&nbsp;<code>rangei</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -3243,6 +3377,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>SetConditionFrom</code><br>&nbsp;&nbsp;<code>cfrom</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -3307,6 +3442,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>SetConditionOnType</code><br>&nbsp;&nbsp;<code>ctype</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -3320,6 +3456,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>SetConditionProperty</code><br>&nbsp;&nbsp;<code>cpty</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -3385,6 +3522,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>StringCharacters</code><br>&nbsp;&nbsp;<code>strchars</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -3430,6 +3568,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>StringContains</code><br>&nbsp;&nbsp;<code>contains</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -3491,6 +3630,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>StringEndsWith</code><br>&nbsp;&nbsp;<code>ends</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -3552,6 +3692,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>StringLength</code><br>&nbsp;&nbsp;<code>strlen</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -3621,6 +3762,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>StringExactLength</code><br>&nbsp;&nbsp;<code>strxlen</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -3666,6 +3808,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>StringGreaterThan</code><br>&nbsp;&nbsp;<code>strgt</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -3711,6 +3854,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>StringGreaterThanOrEqual</code><br>&nbsp;&nbsp;<code>strgte</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -3756,6 +3900,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>StringGreaterThanOther</code><br>&nbsp;&nbsp;<code>strgto</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -3804,6 +3949,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>StringGreaterThanOrEqualOther</code><br>&nbsp;&nbsp;<code>strgteo</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -3852,6 +3998,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>StringLessThan</code><br>&nbsp;&nbsp;<code>strlt</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -3897,6 +4044,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>StringLessThanOrEqual</code><br>&nbsp;&nbsp;<code>strlte</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -3942,6 +4090,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>StringLessThanOther</code><br>&nbsp;&nbsp;<code>strlto</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -3990,6 +4139,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>StringLessThanOrEqualOther</code><br>&nbsp;&nbsp;<code>strlteo</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -4038,6 +4188,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>StringLowercase</code><br>&nbsp;&nbsp;<code>strlower</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -4067,6 +4218,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>StringMaxLength</code><br>&nbsp;&nbsp;<code>strmax</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -4120,6 +4272,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>StringMinLength</code><br>&nbsp;&nbsp;<code>strmin</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -4173,6 +4326,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>StringNotBlank</code><br>&nbsp;&nbsp;<code>strnb</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -4203,6 +4357,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>StringNotEmpty</code><br>&nbsp;&nbsp;<code>strne</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -4232,6 +4387,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>StringNoControlCharacters</code><br>&nbsp;&nbsp;<code>strnocc</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -4261,6 +4417,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>StringPattern</code><br>&nbsp;&nbsp;<code>strpatt</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -4298,6 +4455,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>StringPresetPattern</code><br>&nbsp;&nbsp;<code>strpreset</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -4617,6 +4775,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>StringStartsWith</code><br>&nbsp;&nbsp;<code>starts</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -4678,6 +4837,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>StringUppercase</code><br>&nbsp;&nbsp;<code>strupper</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -4707,6 +4867,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>StringValidCardNumber</code><br>&nbsp;&nbsp;<code>strvcn</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -4744,6 +4905,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>StringValidCountryCode</code><br>&nbsp;&nbsp;<code>strcountry</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -4846,6 +5008,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>StringValidCurrencyCode</code><br>&nbsp;&nbsp;<code>strccy</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -4931,6 +5094,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>StringValidEmail</code><br>&nbsp;&nbsp;<code>stremail</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -4960,6 +5124,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>StringValidISODate</code><br>&nbsp;&nbsp;<code>strisod</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -4989,6 +5154,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>StringValidISODatetime</code><br>&nbsp;&nbsp;<code>strisodt</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -5034,6 +5200,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>StringValidJson</code><br>&nbsp;&nbsp;<code>strjson</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -5095,6 +5262,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>StringValidLanguageCode</code><br>&nbsp;&nbsp;<code>strlang</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -5124,6 +5292,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>StringValidToken</code><br>&nbsp;&nbsp;<code>strtoken</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -5169,6 +5338,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>StringValidTimezone</code><br>&nbsp;&nbsp;<code>strtz</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -5222,6 +5392,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>StringValidUnicodeNormalization</code><br>&nbsp;&nbsp;<code>struninorm</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -5259,6 +5430,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             </details>
         </td>
     </tr>
+    <tr></tr>
     <tr>
         <td>
             <code>StringValidUuid</code><br>&nbsp;&nbsp;<code>struuid</code>&nbsp;<em>(i18n tag abbr.)</em>
@@ -5618,6 +5790,7 @@ Where the tokens correspond to various property validation options - as listed h
         </details>
       </td>
     </tr>
+    <tr></tr>
     <tr>
       <td>
         <code>mandatory:&lt;condition&gt;</code><br>
@@ -5634,6 +5807,7 @@ Where the tokens correspond to various property validation options - as listed h
         </details>
       </td>
     </tr>
+    <tr></tr>
     <tr>
       <td>
         <code>required_with:&lt;expr&gt;</code><br>
@@ -5655,6 +5829,7 @@ Where the tokens correspond to various property validation options - as listed h
         <br><em>(see also <a href="#requiredunwanted_properties">Required/Unwanted Properties</a> for further notes and examples on expressions)</em>
       </td>
     </tr>
+    <tr></tr>
     <tr>
       <td>
         <code>unwanted_with:&lt;expr&gt;</code><br>
@@ -5676,6 +5851,7 @@ Where the tokens correspond to various property validation options - as listed h
         <br><em>(see also <a href="#requiredunwanted_properties">Required/Unwanted Properties</a> for further notes and examples on expressions)</em>
       </td>
     </tr>
+    <tr></tr>
     <tr>
       <td><code>notNull</code></td>
       <td>
@@ -5688,6 +5864,7 @@ Where the tokens correspond to various property validation options - as listed h
         </details>
       </td>
     </tr>
+    <tr></tr>
     <tr>
       <td><code>nullable</code></td>
       <td>
@@ -5700,6 +5877,7 @@ Where the tokens correspond to various property validation options - as listed h
         </details>
       </td>
     </tr>
+    <tr></tr>
     <tr>
       <td><code>optional</code></td>
       <td>
@@ -5712,6 +5890,7 @@ Where the tokens correspond to various property validation options - as listed h
         </details>
       </td>
     </tr>
+    <tr></tr>
     <tr>
       <td><code>order:&lt;n&gt;</code></td>
       <td>
@@ -5725,6 +5904,7 @@ Where the tokens correspond to various property validation options - as listed h
         </details>
       </td>
     </tr>
+    <tr></tr>
     <tr>
       <td><code>required</code></td>
       <td>
@@ -5737,6 +5917,7 @@ Where the tokens correspond to various property validation options - as listed h
         </details>
       </td>
     </tr>
+    <tr></tr>
     <tr>
       <td>
         <code>required:&lt;condition&gt;</code><br>
@@ -5753,6 +5934,7 @@ Where the tokens correspond to various property validation options - as listed h
         </details>
       </td>
     </tr>
+    <tr></tr>
     <tr>
       <td><code>type:&lt;type&gt;</code>
       </td>
@@ -5768,6 +5950,7 @@ Where the tokens correspond to various property validation options - as listed h
         </details>
       </td>
     </tr>
+    <tr></tr>
     <tr>
       <td><code>constraint:&lt;name&gt;{fields}</code></td>
       <td>
@@ -5782,6 +5965,7 @@ Where the tokens correspond to various property validation options - as listed h
         </details>
       </td>
     </tr>
+    <tr></tr>
     <tr>
       <td><code>&amp;&lt;constraint-name&gt;{fields}</code></td>
       <td>
@@ -5798,6 +5982,7 @@ Where the tokens correspond to various property validation options - as listed h
         </details>
       </td>
     </tr>
+    <tr></tr>
     <tr>
       <td><code>constraints:[&lt;name&gt;{},...]</code></td>
       <td>
@@ -5810,6 +5995,7 @@ Where the tokens correspond to various property validation options - as listed h
         </details>
       </td>
     </tr>
+    <tr></tr>
     <tr>
       <td>
         <code>when:&lt;condition&gt;</code><br>
@@ -5827,6 +6013,7 @@ Where the tokens correspond to various property validation options - as listed h
         </details>
       </td>
     </tr>
+    <tr></tr>
     <tr>
       <td>
         <code>unwanted:&lt;condition&gt;</code><br>
@@ -5844,6 +6031,7 @@ Where the tokens correspond to various property validation options - as listed h
         </details>
       </td>
     </tr>
+    <tr></tr>
     <tr>
       <td><code>obj.ignoreUnknownProperties</code></td>
       <td>
@@ -5858,6 +6046,7 @@ Where the tokens correspond to various property validation options - as listed h
         </details>
       </td>
     </tr>
+    <tr></tr>
     <tr>
       <td><code>obj.unknownProperties:true|false</code></td>
       <td>
@@ -5872,6 +6061,7 @@ Where the tokens correspond to various property validation options - as listed h
         </details>
       </td>
     </tr>
+    <tr></tr>
     <tr>
       <td><code>obj.constraint:&lt;name&gt;{}</code></td>
       <td>
@@ -5886,6 +6076,7 @@ Where the tokens correspond to various property validation options - as listed h
         </details>
       </td>
     </tr>
+    <tr></tr>
     <tr>
       <td><code>obj.ordered</code></td>
       <td>
@@ -5909,6 +6100,7 @@ the above will check the properties in order specified by their <code>order:</co
         </details>
       </td>
     </tr>
+    <tr></tr>
     <tr>
       <td>
         <code>obj.when:&lt;token&gt;</code><br>
@@ -5928,6 +6120,7 @@ the above will check the properties in order specified by their <code>order:</co
         </details>
       </td>
     </tr>
+    <tr></tr>
     <tr>
       <td>
         <code>arr.allowNulls</code><br>

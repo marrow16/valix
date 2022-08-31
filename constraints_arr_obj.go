@@ -106,26 +106,16 @@ type Length struct {
 
 // Check implements Constraint.Check
 func (c *Length) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
-	if str, okS := v.(string); okS {
-		l := len(str)
-		if l < c.Minimum || (c.ExclusiveMin && l == c.Minimum) {
-			vcx.CeaseFurtherIf(c.Stop)
-			return false, c.GetMessage(vcx)
-		} else if c.Maximum > 0 && (l > c.Maximum || (c.ExclusiveMax && l == c.Maximum)) {
-			vcx.CeaseFurtherIf(c.Stop)
-			return false, c.GetMessage(vcx)
-		}
-	} else if m, okM := v.(map[string]interface{}); okM {
-		l := len(m)
-		if l < c.Minimum || (c.ExclusiveMin && l == c.Minimum) {
-			vcx.CeaseFurtherIf(c.Stop)
-			return false, c.GetMessage(vcx)
-		} else if c.Maximum > 0 && (l > c.Maximum || (c.ExclusiveMax && l == c.Maximum)) {
-			vcx.CeaseFurtherIf(c.Stop)
-			return false, c.GetMessage(vcx)
-		}
-	} else if a, okA := v.([]interface{}); okA {
-		l := len(a)
+	l := -1
+	switch tv := v.(type) {
+	case string:
+		l = len(tv)
+	case map[string]interface{}:
+		l = len(tv)
+	case []interface{}:
+		l = len(tv)
+	}
+	if l != -1 {
 		if l < c.Minimum || (c.ExclusiveMin && l == c.Minimum) {
 			vcx.CeaseFurtherIf(c.Stop)
 			return false, c.GetMessage(vcx)
@@ -170,24 +160,18 @@ type LengthExact struct {
 
 // Check implements Constraint.Check
 func (c *LengthExact) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
-	if str, okS := v.(string); okS {
-		l := len(str)
-		if l != c.Value {
-			vcx.CeaseFurtherIf(c.Stop)
-			return false, c.GetMessage(vcx)
-		}
-	} else if m, okM := v.(map[string]interface{}); okM {
-		l := len(m)
-		if l != c.Value {
-			vcx.CeaseFurtherIf(c.Stop)
-			return false, c.GetMessage(vcx)
-		}
-	} else if a, okA := v.([]interface{}); okA {
-		l := len(a)
-		if l != c.Value {
-			vcx.CeaseFurtherIf(c.Stop)
-			return false, c.GetMessage(vcx)
-		}
+	l := -1
+	switch tv := v.(type) {
+	case string:
+		l = len(tv)
+	case map[string]interface{}:
+		l = len(tv)
+	case []interface{}:
+		l = len(tv)
+	}
+	if l != -1 && l != c.Value {
+		vcx.CeaseFurtherIf(c.Stop)
+		return false, c.GetMessage(vcx)
 	}
 	return true, ""
 }
@@ -195,4 +179,39 @@ func (c *LengthExact) Check(v interface{}, vcx *ValidatorContext) (bool, string)
 // GetMessage implements the Constraint.GetMessage
 func (c *LengthExact) GetMessage(tcx I18nContext) string {
 	return defaultMessage(tcx, c.Message, fmtMsgExactLen, c.Value)
+}
+
+// NotEmpty constraint to check that a map or slice property value is not empty (has properties or array elements)
+//
+// Note: can also be used with string properties (and will check the string is not empty - same as StringNotEmpty)
+type NotEmpty struct {
+	// the violation message to be used if the constraint fails (see Violation.Message)
+	//
+	// (if the Message is an empty string then the default violation message is used)
+	Message string
+	// when set to true, Stop prevents further validation checks on the property if this constraint fails
+	Stop bool
+}
+
+// Check implements Constraint.Check
+func (c *NotEmpty) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
+	l := -1
+	switch tv := v.(type) {
+	case string:
+		l = len(tv)
+	case map[string]interface{}:
+		l = len(tv)
+	case []interface{}:
+		l = len(tv)
+	}
+	if l == 0 {
+		vcx.CeaseFurtherIf(c.Stop)
+		return false, c.GetMessage(vcx)
+	}
+	return true, ""
+}
+
+// GetMessage implements the Constraint.GetMessage
+func (c *NotEmpty) GetMessage(tcx I18nContext) string {
+	return defaultMessage(tcx, c.Message, msgNotEmpty)
 }
