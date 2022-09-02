@@ -6,6 +6,8 @@ type ArrayOf struct {
 	Type string `v8n:"default"`
 	// whether to allow null items in the array
 	AllowNullElement bool
+	// is an optional list of constraints that each array element must satisfy
+	Constraints Constraints
 	// the violation message to be used if the constraint fails (see Violation.Message)
 	//
 	// (if the Message is an empty string then the default violation message is used)
@@ -18,7 +20,7 @@ type ArrayOf struct {
 func (c *ArrayOf) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
 	if a, ok := v.([]interface{}); ok {
 		if chkType, tOk := JsonTypeFromString(c.Type); tOk {
-			for _, elem := range a {
+			for i, elem := range a {
 				if elem == nil {
 					if !c.AllowNullElement {
 						vcx.CeaseFurtherIf(c.Stop)
@@ -27,6 +29,28 @@ func (c *ArrayOf) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
 				} else if !checkValueType(elem, chkType) {
 					vcx.CeaseFurtherIf(c.Stop)
 					return false, c.GetMessage(vcx)
+				}
+				if elem != nil {
+					for _, cstr := range c.Constraints {
+						vcx.pushPathIndex(i, elem, nil)
+						cOk, msg := cstr.Check(elem, vcx)
+						if !cOk {
+							vcx.CeaseFurtherIf(c.Stop)
+							if c.Stop {
+								vcx.popPath()
+								return false, msg
+							} else {
+								vcx.AddViolationForCurrent(msg, false)
+							}
+						}
+						vcx.popPath()
+						if !vcx.continueAll || !vcx.continuePty() {
+							break
+						}
+					}
+				}
+				if !vcx.continueAll || !vcx.continuePty() {
+					break
 				}
 			}
 		}

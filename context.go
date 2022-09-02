@@ -249,7 +249,7 @@ func (vc *ValidatorContext) AncestorValue(level uint) (interface{}, bool) {
 // ancestorValueAndIndex returns an ancestor value
 func (vc *ValidatorContext) ancestorValueAndIndex(level uint) (interface{}, int, bool) {
 	if itm, ok := vc.ancestorStackItem(level); ok {
-		if sl, ok := itm.value.([]interface{}); ok && level > 0 {
+		if sl, ok := itm.value.([]interface{}); ok {
 			// if the value is a slice(array) - then also figure out current index in that array...
 			if idxItm, ok := vc.ancestorStackItem(level - 1); ok {
 				if idx, ok := idxItm.property.(int); ok {

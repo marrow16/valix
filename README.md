@@ -382,7 +382,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
 <table>
     <tr>
         <td>
-            <code>ArrayConditionalConstraint</code>
+            <code>ArrayConditionalConstraint</code><br>&nbsp;&nbsp;<code>acond</code>&nbsp;<em>(i18n tag abbr.)</em>
         </td>
         <td>
             Is a special constraint that wraps another constraint - but the wrapped
@@ -429,7 +429,6 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
                     </tr>
                 </table>
             </details>
-            <em>Note: This constraint does not (currently) have a <code>v8n</code> tag abbreviation and cannot be used directly in a <code>v8n</code> tags on struct fields.</em>
         </td>
     </tr>
     <tr></tr>
@@ -456,6 +455,14 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
                         </td>
                         <td>
                             whether to allow null items in the array
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Constraints</code> <em>[]Constraint</em>
+                        </td>
+                        <td>
+                            is an optional slice of constraints tha each array element must satisfy
                         </td>
                     </tr>
                     <tr>
