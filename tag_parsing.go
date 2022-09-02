@@ -66,9 +66,21 @@ const (
 
 var (
 	// grab some type information (for types used in common constraints)
-	rx         = regexp.MustCompile("([a])")
-	regexpKind = reflect.TypeOf(rx).Elem().Kind()
+	rx             = regexp.MustCompile("([a])")
+	regexpKind     = reflect.TypeOf(rx).Elem().Kind()
+	constraintKind reflect.Kind
 )
+
+func init() {
+	type dummyConstraint struct {
+		Constraint  Constraint
+		Constraints Constraints
+	}
+	dmy := dummyConstraint{}
+	v := reflect.ValueOf(dmy)
+	f := v.FieldByName("Constraint")
+	constraintKind = f.Kind()
+}
 
 func (pv *PropertyValidator) processV8nTag(fieldName string, propertyName string, fld reflect.StructField) error {
 	if tag, ok := fld.Tag.Lookup(tagNameV8n); ok {
@@ -442,9 +454,6 @@ func buildConstraintFromTagValue(tagValue string) (Constraint, error) {
 		argsStr = strings.Trim(useValue[curlyOpenAt+1:len(useValue)-1], " ")
 		constraintName = useValue[0:curlyOpenAt]
 	}
-	//	if strings.HasPrefix(constraintName, "&") {
-	//		constraintName = constraintName[1:]
-	//	}
 	if constraintName == constraintSetName {
 		return buildConstraintSetWithArgs(argsStr)
 	}
@@ -637,8 +646,15 @@ func safeSet(fv reflect.Value, valueStr string) (result bool) {
 		break
 	case regexpKind:
 		if isQuotedStr(valueStr, true) {
-			rxv := reflect.ValueOf(regexp.MustCompile(valueStr[1 : len(valueStr)-1])).Elem()
-			fv.Set(rxv)
+			if rx, err := regexp.Compile(valueStr[1 : len(valueStr)-1]); err == nil {
+				rxv := reflect.ValueOf(rx).Elem()
+				fv.Set(rxv)
+				result = true
+			}
+		}
+	case constraintKind:
+		if c, err := buildConstraintFromTagValue(valueStr); err == nil {
+			fv.Set(reflect.ValueOf(c))
 			result = true
 		}
 	}
@@ -662,7 +678,6 @@ func itemsToSlice(itemType reflect.Type, arrayStr string) (result reflect.Value,
 					break
 				}
 			}
-			break
 		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 			ok = true
 			for i, vu := range strItems {
@@ -674,7 +689,6 @@ func itemsToSlice(itemType reflect.Type, arrayStr string) (result reflect.Value,
 					break
 				}
 			}
-			break
 		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 			ok = true
 			for i, vu := range strItems {
@@ -686,7 +700,6 @@ func itemsToSlice(itemType reflect.Type, arrayStr string) (result reflect.Value,
 					break
 				}
 			}
-			break
 		case reflect.Float64, reflect.Float32:
 			ok = true
 			for i, vu := range strItems {
@@ -698,7 +711,6 @@ func itemsToSlice(itemType reflect.Type, arrayStr string) (result reflect.Value,
 					break
 				}
 			}
-			break
 		case reflect.Bool:
 			ok = true
 			for i, vu := range strItems {
@@ -710,7 +722,18 @@ func itemsToSlice(itemType reflect.Type, arrayStr string) (result reflect.Value,
 					break
 				}
 			}
-			break
+		case constraintKind:
+			ok = true
+			for i, vu := range strItems {
+				v := strings.Trim(vu, " ")
+				if c, err := buildConstraintFromTagValue(v); err == nil {
+					result.Index(i).Set(reflect.ValueOf(c))
+				} else {
+					ok = false
+					break
+				}
+
+			}
 		}
 	}
 	return

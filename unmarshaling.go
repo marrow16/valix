@@ -732,7 +732,7 @@ func (c *ArrayConditionalConstraint) UnmarshalJSON(data []byte) error {
 			return fmt.Errorf(errMsgFieldExpectedType, "Ancestry", "int")
 		}
 	}
-	if raw, ok := obj["Constraint"]; ok {
+	if raw, ok := obj["Constraint"]; ok && raw != nil {
 		if v, ok := raw.(map[string]interface{}); ok {
 			if wrapped, err := unmarshalConstraint(v); err == nil {
 				c.Constraint = wrapped
@@ -742,8 +742,6 @@ func (c *ArrayConditionalConstraint) UnmarshalJSON(data []byte) error {
 		} else {
 			return fmt.Errorf(errMsgFieldExpectedType, "Constraint", "object")
 		}
-	} else {
-		return fmt.Errorf(errMsgFieldExpectedType, "Constraint", "object")
 	}
 	return nil
 }

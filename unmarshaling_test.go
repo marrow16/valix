@@ -993,7 +993,7 @@ func TestArrayConditionalConstraintUnmarshalJSON(t *testing.T) {
 	js := `{}`
 	constraint := &ArrayConditionalConstraint{}
 	err := json.Unmarshal([]byte(js), constraint)
-	require.NotNil(t, err)
+	require.Nil(t, err)
 
 	js = `{
 		"Constraint": nil

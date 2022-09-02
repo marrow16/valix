@@ -278,13 +278,16 @@ func (c *StringValidUnicodeNormalization) MarshalJSON() ([]byte, error) {
 
 func (c *ArrayConditionalConstraint) MarshalJSON() ([]byte, error) {
 	j := map[string]interface{}{
-		"When":     c.When,
-		"Ancestry": c.Ancestry,
+		"When":       c.When,
+		"Ancestry":   c.Ancestry,
+		"Constraint": nil,
 	}
-	if cj, err := constraintToJson(c.Constraint); err == nil {
-		j["Constraint"] = cj
-	} else {
-		return nil, err
+	if c.Constraint != nil {
+		if cj, err := constraintToJson(c.Constraint); err == nil {
+			j["Constraint"] = cj
+		} else {
+			return nil, err
+		}
 	}
 	return json.Marshal(j)
 }

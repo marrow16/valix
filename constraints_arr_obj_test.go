@@ -50,6 +50,38 @@ func TestArrayOf(t *testing.T) {
 	require.True(t, ok)
 }
 
+func TestArrayOfWithConstraints(t *testing.T) {
+	c := &ArrayOf{Type: "string", Constraints: Constraints{
+		&StringNotBlank{},
+		&ArrayConditionalConstraint{
+			When: "!first",
+			Constraint: &StringGreaterThanOther{
+				PropertyName: "[-1]",
+			},
+		},
+	}}
+	validator := buildFooValidator(JsonArray, c, false)
+	obj := jsonObject(`{
+		"foo": ["ok", "no ok", " ", "", "ok"]
+	}`)
+
+	ok, violations := validator.Validate(obj)
+	require.False(t, ok)
+	// expect 5 violations... (2 x blank string) + (3 x not greater than previous)
+	require.Equal(t, 5, len(violations))
+
+	c.Stop = true
+	ok, violations = validator.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+
+	c.Stop = false
+	validator.StopOnFirst = true
+	ok, violations = validator.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+}
+
 func TestArrayUnique(t *testing.T) {
 	constraint := &ArrayUnique{}
 	validator := buildFooValidator(JsonArray, constraint, false)

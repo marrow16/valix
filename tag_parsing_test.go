@@ -1086,3 +1086,35 @@ func TestDelimStack(t *testing.T) {
 	stk.pop()
 	require.Nil(t, stk.current)
 }
+
+func TestWrappedConstraint(t *testing.T) {
+	type myStruct struct {
+		Foo []string `json:"foo" v8n:"&ArrayConditionalConstraint{When:'!first', Constraint:StringNotEmpty{}}"`
+	}
+	v, err := ValidatorFor(myStruct{}, nil)
+	require.Nil(t, err)
+	require.NotNil(t, v)
+
+	// and with bad constraint...
+	type myStruct2 struct {
+		Foo []string `json:"foo" v8n:"&ArrayConditionalConstraint{When:'!first', Constraint:unknownConstraint{}}"`
+	}
+	_, err = ValidatorFor(myStruct2{}, nil)
+	require.NotNil(t, err)
+}
+
+func TestWrappedConstraints(t *testing.T) {
+	type myStruct struct {
+		Foo []string `json:"foo" v8n:"&ArrayOf{Type:'string', Constraints:[&StringNotEmpty{}]}"`
+	}
+	v, err := ValidatorFor(myStruct{}, nil)
+	require.Nil(t, err)
+	require.NotNil(t, v)
+
+	// and with bad constraint...
+	type myStruct2 struct {
+		Foo []string `json:"foo" v8n:"&ArrayOf{Type:'string', Constraints:[&unknownConstraint{}]}"`
+	}
+	_, err = ValidatorFor(myStruct2{}, nil)
+	require.NotNil(t, err)
+}

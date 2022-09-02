@@ -26,6 +26,7 @@ func init() {
 
 func defaultConstraints() map[string]Constraint {
 	return map[string]Constraint{
+		"ArrayConditionalConstraint":      &ArrayConditionalConstraint{},
 		"ArrayOf":                         &ArrayOf{},
 		"ArrayUnique":                     &ArrayUnique{},
 		"DatetimeGreaterThan":             &DatetimeGreaterThan{},
@@ -118,6 +119,7 @@ func defaultConstraints() map[string]Constraint {
 		"StringValidUuid":                 &StringValidUuid{},
 		// abbreviations...
 		"aof":        &ArrayOf{},
+		"acond":      &ArrayConditionalConstraint{},
 		"aunique":    &ArrayUnique{},
 		"contains":   &StringContains{},
 		"dtgt":       &DatetimeGreaterThan{},
