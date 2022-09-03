@@ -266,6 +266,7 @@ var internalMessages = map[string]string{
 	msgValidTld:                       msgValidTld,
 	msgValidURI:                       msgValidURI,
 	msgValidURL:                       msgValidURL,
+	msgQueryParamMultiNotAllowed:      msgQueryParamMultiNotAllowed,
 }
 
 // used by defaultI18nContext.MarshalJSON - to allow listing of translation reference
@@ -331,6 +332,8 @@ var internalFormats = map[string]string{
 	// constraint set...
 	fmtMsgConstraintSetDefaultAllOf: fmtMsgConstraintSetDefaultAllOf,
 	fmtMsgConstraintSetDefaultOneOf: fmtMsgConstraintSetDefaultOneOf,
+	// request query validate...
+	fmtMsgQueryParamType: fmtMsgQueryParamType,
 }
 
 // used by defaultI18nContext.MarshalJSON - to allow listing of translation reference
