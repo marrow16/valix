@@ -1284,6 +1284,13 @@ var defaultInternalTranslator = &internalTranslator{
 			langIt: "La stringa deve essere un URL valido",
 			langDe: "String muss eine gültige URL sein",
 		},
+		msgQueryParamMultiNotAllowed: {
+			langEn: msgQueryParamMultiNotAllowed,
+			langFr: "Le paramètre de requête ne peut pas être spécifié plus d'une fois",
+			langEs: "El parámetro de consulta no se puede especificar más de una vez",
+			langIt: "Il parametro di query non può essere specificato più di una volta",
+			langDe: "Abfrageparameter dürfen nicht mehrfach angegeben werden",
+		},
 	},
 	Formats: map[string]map[string]string{
 		fmtMsgArrayElementType: {
@@ -1677,6 +1684,13 @@ var defaultInternalTranslator = &internalTranslator{
 			langEs: "El valor de cadena no debe terminar con %[1]s",
 			langIt: "Il valore della stringa non deve terminare con %[1]s",
 			langDe: "Zeichenfolgenwert darf nicht mit %[1]s enden",
+		},
+		fmtMsgQueryParamType: {
+			langEn: fmtMsgQueryParamType,
+			langFr: "Le paramètre de requête doit être de type %[1]s",
+			langEs: "El parámetro de consulta debe ser del tipo %[1]s",
+			langIt: "Il parametro della query deve essere di tipo %[1]s",
+			langDe: "Der Abfrageparameter muss vom Typ %[1]s sein",
 		},
 	},
 }
