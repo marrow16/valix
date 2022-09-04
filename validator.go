@@ -2,7 +2,6 @@ package valix
 
 import (
 	"bytes"
-	"encoding/json"
 	"io"
 	"io/ioutil"
 	"math/rand"
@@ -118,24 +117,6 @@ const (
 	CodeValidatorConstraintFail       = 42298
 )
 
-// DefaultDecoderProvider is the decoder provider used by Validator - replace with your own if necessary
-var DefaultDecoderProvider DecoderProvider = &defaultDecoderProvider{}
-
-// DecoderProvider is the interface needed for replacing the DefaultDecoderProvider
-type DecoderProvider interface {
-	NewDecoder(r io.Reader, useNumber bool) *json.Decoder
-}
-
-type defaultDecoderProvider struct{}
-
-func (ddp *defaultDecoderProvider) NewDecoder(r io.Reader, useNumber bool) *json.Decoder {
-	d := json.NewDecoder(r)
-	if useNumber {
-		d.UseNumber()
-	}
-	return d
-}
-
 // Properties type used by Validator.Properties
 type Properties map[string]*PropertyValidator
 
@@ -183,7 +164,7 @@ func (v *Validator) decodeRequestBody(r io.Reader, vcx *ValidatorContext) (bool,
 		vcx.AddViolation(newBadRequestViolation(vcx, msgRequestBodyEmpty, CodeRequestBodyEmpty, nil))
 		return false, nil
 	}
-	decoder := DefaultDecoderProvider.NewDecoder(r, v.UseNumber)
+	decoder := getDefaultDecoderProvider().NewDecoder(r, v.UseNumber)
 	var obj interface{} = reflect.Interface
 	if err := decoder.Decode(&obj); err != nil {
 		vcx.AddViolation(newBadRequestViolation(vcx, msgUnableToDecodeRequest, CodeUnableToDecodeRequest, err))
@@ -218,7 +199,7 @@ func (v *Validator) ValidateArrayOf(arr []interface{}, initialConditions ...stri
 
 // ValidateReader performs validation on the supplied reader (representing JSON)
 func (v *Validator) ValidateReader(r io.Reader, initialConditions ...string) (bool, []*Violation, interface{}) {
-	decoder := DefaultDecoderProvider.NewDecoder(r, v.UseNumber)
+	decoder := getDefaultDecoderProvider().NewDecoder(r, v.UseNumber)
 	var obj interface{} = reflect.Interface
 	if err := decoder.Decode(&obj); err != nil {
 		vcx := newEmptyValidatorContext(obtainI18nProvider().DefaultContext())
@@ -321,7 +302,7 @@ func (v *Validator) ValidateReaderInto(r io.Reader, value interface{}, initialCo
 		return false, errVcx.violations, nil
 	}
 	initialReader := bytes.NewReader(buffer)
-	decoder := DefaultDecoderProvider.NewDecoder(initialReader, v.UseNumber)
+	decoder := getDefaultDecoderProvider().NewDecoder(initialReader, v.UseNumber)
 	var obj interface{} = reflect.Interface
 	if dErr := decoder.Decode(&obj); dErr != nil {
 		errVcx := newEmptyValidatorContext(nil)
@@ -336,10 +317,7 @@ func (v *Validator) ValidateReaderInto(r io.Reader, value interface{}, initialCo
 	}
 	// now read into the provided value...
 	intoReader := bytes.NewReader(buffer)
-	decoder = DefaultDecoderProvider.NewDecoder(intoReader, v.UseNumber)
-	if !v.IgnoreUnknownProperties {
-		decoder.DisallowUnknownFields()
-	}
+	decoder = getDefaultDecoderProvider().NewDecoderFor(intoReader, v)
 	err = decoder.Decode(value)
 	if err != nil {
 		vcx.AddViolation(newBadRequestViolation(vcx, msgErrorUnmarshall, CodeErrorUnmarshall, err))
@@ -389,10 +367,7 @@ func (v *Validator) RequestValidateInto(req *http.Request, value interface{}, in
 	}
 	// now read into the provided value...
 	intoReader := bytes.NewReader(buffer)
-	decoder := DefaultDecoderProvider.NewDecoder(intoReader, v.UseNumber)
-	if !v.IgnoreUnknownProperties {
-		decoder.DisallowUnknownFields()
-	}
+	decoder := getDefaultDecoderProvider().NewDecoderFor(intoReader, v)
 	err = decoder.Decode(value)
 	if err != nil {
 		vcx.AddViolation(newBadRequestViolation(vcx, msgErrorUnmarshall, CodeErrorUnmarshall, err))

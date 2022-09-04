@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
-	"strings"
 	"time"
 )
 
@@ -243,12 +242,8 @@ func initialPropertyValidator(fld reflect.StructField, name string) (*PropertyVa
 
 func getFieldName(fld reflect.StructField) string {
 	result := fld.Name
-	if tag, ok := fld.Tag.Lookup(tagNameJson); ok {
-		if cAt := strings.Index(tag, ","); cAt != -1 {
-			result = tag[0:cAt]
-		} else {
-			result = tag
-		}
+	if rn, ok := getDefaultPropertyNameProvider().NameFor(fld); ok {
+		result = rn
 	}
 	return result
 }
