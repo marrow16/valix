@@ -48,10 +48,7 @@ func (v *Validator) RequestQueryValidateInto(req *http.Request, value interface{
 		// now read into the provided value...
 		buffer, _ := json.Marshal(obj)
 		intoReader := bytes.NewReader(buffer)
-		decoder := DefaultDecoderProvider.NewDecoder(intoReader, v.UseNumber)
-		if !v.IgnoreUnknownProperties {
-			decoder.DisallowUnknownFields()
-		}
+		decoder := getDefaultDecoderProvider().NewDecoderFor(intoReader, v)
 		err := decoder.Decode(value)
 		if err != nil {
 			vcx.AddViolation(newBadRequestViolation(vcx, msgErrorUnmarshall, CodeErrorUnmarshall, err))
