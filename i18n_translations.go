@@ -765,6 +765,13 @@ var defaultInternalTranslator = &internalTranslator{
 			langIt: "Proprietà sconosciuta",
 			langDe: "Unbekanntes Eigentum",
 		},
+		msgOnlyProperty: {
+			langEn: msgOnlyProperty,
+			langFr: "La propriété ne peut pas être présente avec d'autres propriétés",
+			langEs: "La propiedad no puede estar presente con otras propiedades",
+			langIt: "L'immobile non può essere presente con altri immobili",
+			langDe: "Eigenschaft kann nicht mit anderen Eigenschaften vorhanden sein",
+		},
 		msgUnwantedProperty: {
 			langEn: msgUnwantedProperty,
 			langFr: "La propriété ne doit pas être présente",

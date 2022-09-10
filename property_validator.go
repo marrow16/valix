@@ -162,8 +162,60 @@ type PropertyValidator struct {
 	// UnwantedWithMessage is the violation message to use when the UnwantedWith fails (if this string is empty, then
 	// the default message is used)
 	UnwantedWithMessage string
+	// Only when set to true, indicates that this should be the only property present
+	//
+	// When the property is specified alone - all other properties (including their constraints and even their mandatory status) are ignored
+	Only bool
+	// OnlyConditions is the condition tokens that dictate when the property should be the only property (see also Only)
+	OnlyConditions Conditions
+	// OnlyMessage is the violation message to use when the Only or OnlyConditions fails (i.e. the property is not the only property)
+	OnlyMessage string
 	// OasInfo is additional information (for OpenAPI Specification)
 	OasInfo *OasInfo
+}
+
+// NewPropertyValidator creates a new PropertyValidator with the v8n tags supplied
+//
+// NB. Each v8nTag can be an individual tag or a comma delimited list of tags
+func NewPropertyValidator(v8nTags ...string) (*PropertyValidator, error) {
+	pv := &PropertyValidator{}
+	for _, v8nTag := range v8nTags {
+		if strings.Trim(v8nTag, " ") != "" {
+			if strings.Contains(v8nTag, ",") {
+				subTags, err := parseCommas(v8nTag)
+				if err != nil {
+					return nil, err
+				}
+				for _, subV8nTag := range subTags {
+					if subV8nTag != "" {
+						if err := pv.addTagItem("", "", subV8nTag); err != nil {
+							return nil, err
+						}
+					}
+				}
+			} else if err := pv.addTagItem("", "", v8nTag); err != nil {
+				return nil, err
+			}
+		}
+	}
+	return pv, nil
+}
+
+// CreatePropertyValidator is the same as NewPropertyValidator - except that it panics if an error is encountered
+func CreatePropertyValidator(v8nTags ...string) *PropertyValidator {
+	pv, err := NewPropertyValidator(v8nTags...)
+	if err != nil {
+		panic(err)
+	}
+	return pv
+}
+
+// Validate validates a value
+func (pv *PropertyValidator) Validate(value interface{}, initialConditions ...string) (bool, []*Violation) {
+	vcx := newValidatorContext(value, nil, false, obtainI18nProvider().DefaultContext())
+	vcx.setInitialConditions(initialConditions...)
+	pv.validate(value, vcx)
+	return vcx.ok, vcx.violations
 }
 
 func (pv *PropertyValidator) validate(value interface{}, vcx *ValidatorContext) {
@@ -171,7 +223,6 @@ func (pv *PropertyValidator) validate(value interface{}, vcx *ValidatorContext) 
 		vcx.addUnTranslatedViolationForCurrent(msgValueCannotBeNull, CodeValueCannotBeNull)
 		return
 	}
-	// only check the type if non-nil...
 	if value == nil || pv.checkType(value, vcx) {
 		pv.checkConstraints(vcx)
 		if vcx.continueAll && vcx.continuePty() {

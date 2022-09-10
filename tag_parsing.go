@@ -14,6 +14,8 @@ const (
 	tagTokenMandatory          = "mandatory"
 	tagTokenRequired           = "required"
 	tagTokenOptional           = "optional"
+	tagTokenOnly               = "only"
+	tagTokenOnlyMsg            = "only_msg"
 	tagTokenType               = "type"
 	tagTokenConstraint         = "constraint"
 	tagTokenConstraints        = "constraints"
@@ -36,6 +38,7 @@ const (
 	tagTokenObjConstraint              = tagTokenObjPrefix + tagTokenConstraint
 	tagTokenObjOrdered                 = tagTokenObjPrefix + "ordered"
 	tagTokenObjWhen                    = tagTokenObjPrefix + tagTokenWhen
+	tagTokenObjNo                      = tagTokenObjPrefix + "no"
 	// array level tag items...
 	tagTokenArrPrefix         = "arr."
 	tagTokenArrAllowNullItems = tagTokenArrPrefix + "allowNulls"
@@ -167,6 +170,20 @@ func (pv *PropertyValidator) addTagItem(fieldName string, propertyName string, t
 	case tagTokenOptional:
 		colonErr = hasColon
 		pv.Mandatory = false
+	case tagTokenOnly:
+		if hasColon {
+			result = pv.setTagOnlyConditions(tagValue)
+		}
+		pv.Only = true
+	case tagTokenOnlyMsg:
+		noColonErr = !hasColon
+		if !noColonErr {
+			if isQuotedStr(tagValue, true) {
+				pv.OnlyMessage = tagValue[1 : len(tagValue)-1]
+			} else {
+				pv.OnlyMessage = tagValue
+			}
+		}
 	case tagTokenType:
 		noColonErr = !hasColon
 		if !noColonErr {
@@ -253,6 +270,9 @@ func (pv *PropertyValidator) addTagItem(fieldName string, propertyName string, t
 		if !noColonErr {
 			result = pv.setTagObjWhen(tagValue)
 		}
+	case tagTokenObjNo:
+		colonErr = hasColon
+		pv.ObjectValidator = nil
 	case tagTokenArrAllowNullItems:
 		colonErr = hasColon
 		if !colonErr {
@@ -325,6 +345,10 @@ func addConditions(conditions *Conditions, tagValue string, allowCurly bool) err
 
 func (pv *PropertyValidator) setTagMandatoryWhen(tagValue string) error {
 	return addConditions(&pv.MandatoryWhen, tagValue, true)
+}
+
+func (pv *PropertyValidator) setTagOnlyConditions(tagValue string) error {
+	return addConditions(&pv.OnlyConditions, tagValue, true)
 }
 
 func (pv *PropertyValidator) setTagObjConstraint(tagValue string) error {

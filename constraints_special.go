@@ -331,7 +331,7 @@ const (
 )
 
 // ConditionalConstraint is a special constraint that wraps another constraint - but the wrapped
-// constraint is only checked when the specified when conditions are met
+// constraint is only checked when the specified when condition is met
 type ConditionalConstraint struct {
 	// When is the condition tokens that determine when the wrapped constraint is checked
 	When Conditions
@@ -365,7 +365,7 @@ type ArrayConditionalConstraint struct {
 	//
 	// * "!last" - when the array item is not the last
 	//
-	// * "%n" - when the modulus of the array index is n
+	// * "%n" - when the modulus n of the array index is zero
 	//
 	// * ">n" - when the array index is greater than n
 	//

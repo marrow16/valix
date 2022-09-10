@@ -114,6 +114,8 @@ const (
 	CodePropertyUnwantedWhen          = 42220
 	msgArrayElementMustNotBeNull      = "JSON array element must not be null"
 	CodeArrayElementMustNotBeNull     = 42221
+	msgOnlyProperty                   = "Property cannot be present with other properties"
+	CodeOnlyProperty                  = 42222
 	CodeValidatorConstraintFail       = 42298
 )
 
@@ -383,15 +385,26 @@ func (v *Validator) validate(obj map[string]interface{}, vcx *ValidatorContext) 
 		v.variantValidate(obj, vcx, *variant, v.ConditionalVariants, v.Properties.Clone(), v.Properties.Clone())
 		return
 	}
-	if checkUnknownProperties(obj, vcx, v.IgnoreUnknownProperties, v.Properties, nil) {
+	useProperties := v.Properties
+	if found, stops, onlyPtys := checkOnlyProperties(obj, vcx, v.IgnoreUnknownProperties, useProperties); found {
+		if stops {
+			return
+		}
+		useProperties = onlyPtys
+	}
+	if checkUnknownProperties(obj, vcx, v.IgnoreUnknownProperties, useProperties, nil) {
 		return
 	}
-	v.checkProperties(obj, vcx, v.Properties)
+	v.checkProperties(obj, vcx, useProperties)
 }
 
 func (v *Validator) variantValidate(obj map[string]interface{}, vcx *ValidatorContext, variant ConditionalVariant, variants ConditionalVariants, properties Properties, others Properties) {
 	if checkConstraints(obj, vcx, variant.Constraints) {
 		return
+	}
+	useOthers := others
+	if useOthers == nil {
+		useOthers = Properties{}
 	}
 	if has, subVariant := getMatchingVariant(vcx, variant.ConditionalVariants); has {
 		// add all properties for the current variant...
@@ -401,28 +414,37 @@ func (v *Validator) variantValidate(obj map[string]interface{}, vcx *ValidatorCo
 		// collect properties from other variants (need to know if they are known when doing unknown property checks)...
 		for _, other := range variant.ConditionalVariants {
 			for k, pv := range other.Properties {
-				others[k] = pv
+				useOthers[k] = pv
 			}
 		}
-		v.variantValidate(obj, vcx, *subVariant, variant.ConditionalVariants, properties, others)
+		v.variantValidate(obj, vcx, *subVariant, variant.ConditionalVariants, properties, useOthers)
 		return
 	}
+	useProperties := properties
+	if useProperties == nil {
+		useProperties = Properties{}
+	}
 	for k, pv := range variant.Properties {
-		properties[k] = pv
+		useProperties[k] = pv
 	}
 	for _, other := range variants {
 		for k, pv := range other.Properties {
-			others[k] = pv
+			useOthers[k] = pv
 		}
 	}
-	if checkUnknownProperties(obj, vcx, v.IgnoreUnknownProperties, properties, others) {
+	if found, stops, onlyPtys := checkOnlyProperties(obj, vcx, v.IgnoreUnknownProperties, useProperties); found {
+		if stops {
+			return
+		}
+		useProperties = onlyPtys
+	}
+	if checkUnknownProperties(obj, vcx, v.IgnoreUnknownProperties, useProperties, useOthers) {
 		return
 	}
-	v.checkProperties(obj, vcx, properties)
+	v.checkProperties(obj, vcx, useProperties)
 }
 
 func (v *Validator) checkProperties(obj map[string]interface{}, vcx *ValidatorContext, properties Properties) {
-	//func (v *Validator) checkProperties(obj map[string]interface{}, vcx *ValidatorContext, properties Properties) (stops bool) {
 	names, pvs := v.orderedProperties(properties)
 	// before we check the property values, we need to check property required/not required...
 	names, pvs, cont := checkPropertiesRequiredWithWithout(obj, vcx, names, pvs)
@@ -576,6 +598,54 @@ func checkUnknownProperties(obj map[string]interface{}, vcx *ValidatorContext, i
 		}
 	}
 	return false
+}
+
+func checkOnlyProperties(obj map[string]interface{}, vcx *ValidatorContext, ignoreUnknowns bool, properties Properties) (found bool, stops bool, useProperties Properties) {
+	found = false
+	stops = false
+	useProperties = Properties{}
+	onlyName := ""
+	for propertyName, pv := range properties {
+		if _, present := obj[propertyName]; present && pv != nil {
+			if (pv.Only && len(pv.OnlyConditions) == 0) || (len(pv.OnlyConditions) > 0 && vcx.meetsWhenConditions(pv.OnlyConditions)) {
+				useProperties[propertyName] = pv
+				onlyName = propertyName
+			}
+		}
+	}
+	if len(useProperties) == 1 && len(obj) == 1 {
+		// one only found and there's nothing else...
+		found = true
+	} else if len(useProperties) == 1 {
+		// need to check if there are any other known/unknown properties...
+		unknowns := 0
+		knowns := 0
+		for propertyName, _ := range obj {
+			if propertyName != onlyName {
+				if _, known := properties[propertyName]; known {
+					knowns++
+				} else if !ignoreUnknowns {
+					unknowns++
+				}
+			}
+		}
+		found = true
+		stops = knowns > 0 || unknowns > 0
+	} else if len(useProperties) > 1 {
+		// there are multiple only ptys - apply errors...
+		found = true
+		stops = true
+	}
+	if stops {
+		for propertyName, pv := range useProperties {
+			if pv.OnlyMessage != "" {
+				vcx.addViolationPropertyForCurrent(propertyName, pv.OnlyMessage, CodeOnlyProperty)
+			} else {
+				vcx.addViolationPropertyForCurrent(propertyName, msgOnlyProperty, CodeOnlyProperty)
+			}
+		}
+	}
+	return
 }
 
 func checkConstraints(obj map[string]interface{}, vcx *ValidatorContext, constraints Constraints) (stops bool) {

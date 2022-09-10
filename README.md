@@ -402,7 +402,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
                               <li><code>"!first"</code> array item is not the first</li>
                               <li><code>"last"</code> array item is the last</li>
                               <li><code>"!last"</code> array item is not the last</li>
-                              <li><code>"%n"</code> modulus of the array index is <em>n</em></li>
+                              <li><code>"%n"</code> modulus <em>n</em> of the array index is zero</li>
                               <li><code>"&gt;n"</code> array index is greater than <em>n</em></li>
                               <li><code>"&lt;n"</code> array index is less than <em>n</em></li>
                               <li><code>"n"</code> array index is <em>n</em></li>
@@ -5831,7 +5831,8 @@ Where the tokens correspond to various property validation options - as listed h
   Bar string `json:"bar"`
   Baz string `json:"baz"`
 }</pre>
-          <em>Means the property <code>foo</code> is required when both <code>bar</code> and <code>baz</code> properties are present</em>
+          <em>Means the property <code>foo</code> is required when both <code>bar</code> and <code>baz</code> properties are present</em><br>
+          <em>Use <code>+msg</code> or <code>required_with_msg</code> to alter the message used when this constraint fails</em>
         </details>
         <br><em>(see also <a href="#requiredunwanted_properties">Required/Unwanted Properties</a> for further notes and examples on expressions)</em>
       </td>
@@ -5853,7 +5854,8 @@ Where the tokens correspond to various property validation options - as listed h
   Bar string `json:"bar"`
   Baz string `json:"baz"`
 }</pre>
-          <em>Means the property <code>foo</code> is unwanted when either the <code>bar</code> or <code>baz</code> properties are present</em>
+          <em>Means the property <code>foo</code> is unwanted when either the <code>bar</code> or <code>baz</code> properties are present</em><br>
+          <em>Use <code>-msg</code> or <code>unwanted_with_msg</code> to alter the message used when this constraint fails</em>
         </details>
         <br><em>(see also <a href="#requiredunwanted_properties">Required/Unwanted Properties</a> for further notes and examples on expressions)</em>
       </td>
@@ -5908,6 +5910,29 @@ Where the tokens correspond to various property validation options - as listed h
   Foo string `v8n:"order:0"`
   Bar string `v8n:"order:1"`
 }</pre>
+        </details>
+      </td>
+    </tr>
+    <tr></tr>
+    <tr>
+      <td><code>only</code><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<em>or</em><br>
+        <code>only:&lt;condition&gt;</code><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<em>or</em><br>
+        <code>only:[&lt;condition&gt;,...]</code>
+      </td>
+      <td>
+        Specifies that the property must not be present with other properties 
+        <details>
+          <summary>Example</summary>
+          <pre>type Example struct {
+  Foo string `v8n:"only,mandatory"`
+  Bar string `v8n:"only,mandatory"`
+  Baz string `v8n:"only,mandatory"`
+}</pre>
+          In the above example, a request with only one of the <code>Foo</code>, <code>Bar</code> or <code>Baz</code> will be valid - specifying more than one of those properties would cause a violation.<br>
+          <em>Note that even though all three properties are mandatory - if only one of the properties is present, then the other mandatories are ignored.</em><br>
+          <em>Use <code>only_msg</code> to alter the message used when this constraint fails</em>   
         </details>
       </td>
     </tr>

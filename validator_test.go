@@ -2146,6 +2146,161 @@ func TestValidatorWithPropertyUnwantedWith(t *testing.T) {
 	require.Equal(t, "Always fails", violations[0].Message)
 }
 
+func TestValidatorWithOnlyProperties(t *testing.T) {
+	validator := &Validator{
+		Properties: Properties{
+			"foo": {
+				Mandatory:   true,
+				Only:        true,
+				OnlyMessage: "Foo must be alone!",
+			},
+			"bar": {
+				Mandatory: true,
+				Only:      true,
+			},
+			"baz": {
+				Mandatory: true,
+				Only:      true,
+			},
+		},
+	}
+
+	obj := jsonObject(`{}`)
+	ok, violations := validator.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 3, len(violations))
+	require.Equal(t, CodeMissingProperty, violations[0].Codes[0])
+	require.Equal(t, CodeMissingProperty, violations[1].Codes[0])
+	require.Equal(t, CodeMissingProperty, violations[2].Codes[0])
+
+	obj = jsonObject(`{"foo": "x"}`)
+	ok, violations = validator.Validate(obj)
+	require.True(t, ok)
+	require.Equal(t, 0, len(violations))
+
+	obj = jsonObject(`{"foo": "x", "bar": "y"}`)
+	ok, violations = validator.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 2, len(violations))
+	require.Equal(t, CodeOnlyProperty, violations[0].Codes[0])
+	require.Equal(t, CodeOnlyProperty, violations[1].Codes[0])
+	for _, v := range violations {
+		if v.Property == "foo" {
+			require.Equal(t, "Foo must be alone!", v.Message)
+		} else {
+			require.Equal(t, msgOnlyProperty, v.Message)
+		}
+	}
+
+	obj = jsonObject(`{"foo": "x", "unknown": "y"}`)
+	ok, violations = validator.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, CodeOnlyProperty, violations[0].Codes[0])
+	validator.IgnoreUnknownProperties = true
+	ok, violations = validator.Validate(obj)
+	require.True(t, ok)
+	require.Equal(t, 0, len(violations))
+}
+
+func TestValidatorWithOnlyConditionalProperties(t *testing.T) {
+	validator := &Validator{
+		Properties: Properties{
+			"foo": {
+				Mandatory:      true,
+				OnlyConditions: Conditions{"METHOD_PATCH"},
+			},
+			"bar": {
+				Mandatory:      true,
+				OnlyConditions: Conditions{"METHOD_PATCH"},
+			},
+			"baz": {
+				Mandatory:      true,
+				MandatoryWhen:  Conditions{"METHOD_POST"},
+				OnlyConditions: Conditions{"METHOD_POST"},
+			},
+		},
+	}
+
+	obj := jsonObject(`{}`)
+	ok, violations := validator.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 2, len(violations))
+	require.Equal(t, CodeMissingProperty, violations[0].Codes[0])
+	require.Equal(t, CodeMissingProperty, violations[1].Codes[0])
+
+	obj = jsonObject(`{"foo": "x"}`)
+	ok, violations = validator.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, CodeMissingProperty, violations[0].Codes[0])
+	ok, violations = validator.Validate(obj, "METHOD_PATCH")
+	require.True(t, ok)
+	require.Equal(t, 0, len(violations))
+
+	obj = jsonObject(`{"foo": "x", "baz": "x"}`)
+	ok, violations = validator.Validate(obj, "METHOD_POST")
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, CodeOnlyProperty, violations[0].Codes[0])
+	require.Equal(t, "baz", violations[0].Property)
+
+	obj = jsonObject(`{"baz": "x"}`)
+	ok, violations = validator.Validate(obj, "METHOD_POST")
+	require.True(t, ok)
+	require.Equal(t, 0, len(violations))
+}
+
+func TestValidatorWithOnlyPropertiesOnVariants(t *testing.T) {
+	validator := &Validator{
+		ConditionalVariants: ConditionalVariants{
+			{
+				WhenConditions: Conditions{"METHOD_POST"},
+				Properties: Properties{
+					"foo": {
+						Type:      JsonString,
+						Mandatory: true,
+					},
+					"bar": {
+						Type:      JsonString,
+						Mandatory: true,
+					},
+				},
+			},
+			{
+				WhenConditions: Conditions{"METHOD_PATCH"},
+				Properties: Properties{
+					"foo": {
+						Type:      JsonString,
+						Mandatory: true,
+						Only:      true,
+					},
+					"bar": {
+						Type:      JsonString,
+						Mandatory: true,
+						Only:      true,
+					},
+				},
+			},
+		},
+	}
+	obj := jsonObject(`{"foo": "x", "bar": "y"}`)
+	ok, violations := validator.Validate(obj, "METHOD_POST")
+	require.True(t, ok)
+	require.Equal(t, 0, len(violations))
+
+	ok, violations = validator.Validate(obj, "METHOD_PATCH")
+	require.False(t, ok)
+	require.Equal(t, 2, len(violations))
+	require.Equal(t, CodeOnlyProperty, violations[0].Codes[0])
+	require.Equal(t, CodeOnlyProperty, violations[1].Codes[0])
+
+	obj = jsonObject(`{"foo": "x"}`)
+	ok, violations = validator.Validate(obj, "METHOD_PATCH")
+	require.True(t, ok)
+	require.Equal(t, 0, len(violations))
+}
+
 /* Utility structs & functions */
 type myCustomConstraint struct {
 	expectedPath string

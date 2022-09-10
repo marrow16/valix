@@ -544,3 +544,95 @@ func TestPropertyValidator_SetUnwantedWithMessage(t *testing.T) {
 	pv.SetUnwantedWithMessage("fooey")
 	require.Equal(t, "fooey", pv.UnwantedWithMessage)
 }
+
+func TestPropertyValidator_Validate(t *testing.T) {
+	pv := &PropertyValidator{}
+
+	ok, violations := pv.Validate(nil)
+	require.True(t, ok)
+	require.Equal(t, 0, len(violations))
+
+	pv = &PropertyValidator{
+		Type:      JsonString,
+		Mandatory: true,
+		NotNull:   true,
+		Constraints: Constraints{
+			&StringNotBlank{},
+		},
+	}
+	ok, violations = pv.Validate(nil)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, msgValueCannotBeNull, violations[0].Message)
+	require.Equal(t, "", violations[0].Property)
+
+	ok, violations = pv.Validate("")
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, msgNotBlankString, violations[0].Message)
+	require.Equal(t, "", violations[0].Property)
+
+	ok, violations = pv.Validate(1)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, fmt.Sprintf(fmtMsgValueExpectedType, "string"), violations[0].Message)
+	require.Equal(t, "", violations[0].Property)
+}
+
+func TestNewPropertyValidator(t *testing.T) {
+	pv, err := NewPropertyValidator()
+	require.Nil(t, err)
+	require.NotNil(t, pv)
+
+	pv, err = NewPropertyValidator("")
+	require.Nil(t, err)
+	require.NotNil(t, pv)
+
+	pv, err = NewPropertyValidator("]),'])")
+	require.NotNil(t, err)
+	require.Equal(t, "unopened parenthesis at position 0", err.Error())
+
+	_, err = NewPropertyValidator("blah")
+	require.NotNil(t, err)
+	require.Equal(t, fmt.Sprintf(msgUnknownTokenInTag, "blah"), err.Error())
+
+	_, err = NewPropertyValidator("blah,blah")
+	require.NotNil(t, err)
+	require.Equal(t, fmt.Sprintf(msgUnknownTokenInTag, "blah"), err.Error())
+
+	pv, err = NewPropertyValidator("mandatory,notNull", "type:"+jsonTypeTokenString, "&StringNotEmpty{Message:'fooey'},&StringNotBlank{Message:'fooey2',Stop:true}", "only")
+	require.Nil(t, err)
+	require.True(t, pv.Mandatory)
+	require.True(t, pv.NotNull)
+	require.Equal(t, JsonString, pv.Type)
+	require.True(t, pv.Only)
+	require.Equal(t, 2, len(pv.Constraints))
+	c1, ok := pv.Constraints[0].(*StringNotEmpty)
+	require.True(t, ok)
+	require.Equal(t, "fooey", c1.Message)
+	c2, ok := pv.Constraints[1].(*StringNotBlank)
+	require.True(t, ok)
+	require.Equal(t, "fooey2", c2.Message)
+	require.True(t, c2.Stop)
+}
+
+func TestCreatePropertyValidator(t *testing.T) {
+	require.Panics(t, func() {
+		_ = CreatePropertyValidator("]),'])")
+
+	})
+
+	pv := CreatePropertyValidator("mandatory,notNull", "type:"+jsonTypeTokenString, "&StringNotEmpty{Message:'fooey'},&StringNotBlank{Message:'fooey2',Stop:true}", "only")
+	require.True(t, pv.Mandatory)
+	require.True(t, pv.NotNull)
+	require.Equal(t, JsonString, pv.Type)
+	require.True(t, pv.Only)
+	require.Equal(t, 2, len(pv.Constraints))
+	c1, ok := pv.Constraints[0].(*StringNotEmpty)
+	require.True(t, ok)
+	require.Equal(t, "fooey", c1.Message)
+	c2, ok := pv.Constraints[1].(*StringNotBlank)
+	require.True(t, ok)
+	require.Equal(t, "fooey2", c2.Message)
+	require.True(t, c2.Stop)
+}

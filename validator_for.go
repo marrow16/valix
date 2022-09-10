@@ -151,43 +151,43 @@ func propertyValidatorFromField(fld reflect.StructField) (*PropertyValidator, st
 	objValidatorUsed := false
 	if result.Type == JsonObject {
 		if fKind == reflect.Struct {
-			ptys, err := buildPropertyValidators(fld.Type)
-			if err != nil {
+			if ptys, err := buildPropertyValidators(fld.Type); err != nil {
 				return nil, name, err
+			} else if len(ptys) > 0 && result.ObjectValidator != nil {
+				result.ObjectValidator.DisallowObject = false
+				result.ObjectValidator.AllowArray = false
+				result.ObjectValidator.Properties = ptys
+				objValidatorUsed = true
 			}
-			result.ObjectValidator.DisallowObject = false
-			result.ObjectValidator.AllowArray = false
-			result.ObjectValidator.Properties = ptys
-			objValidatorUsed = true
 		} else if fKind == reflect.Ptr && fld.Type.Elem().Kind() == reflect.Struct {
-			ptys, err := buildPropertyValidators(fld.Type.Elem())
-			if err != nil {
+			if ptys, err := buildPropertyValidators(fld.Type.Elem()); err != nil {
 				return nil, name, err
+			} else if len(ptys) > 0 && result.ObjectValidator != nil {
+				result.ObjectValidator.DisallowObject = false
+				result.ObjectValidator.AllowArray = false
+				result.ObjectValidator.Properties = ptys
+				objValidatorUsed = true
 			}
-			result.ObjectValidator.DisallowObject = false
-			result.ObjectValidator.AllowArray = false
-			result.ObjectValidator.Properties = ptys
-			objValidatorUsed = true
 		}
 	} else if result.Type == JsonArray && fKind == reflect.Slice {
 		if fld.Type.Elem().Kind() == reflect.Struct {
-			ptys, err := buildPropertyValidators(fld.Type.Elem())
-			if err != nil {
+			if ptys, err := buildPropertyValidators(fld.Type.Elem()); err != nil {
 				return nil, name, err
+			} else if len(ptys) > 0 && result.ObjectValidator != nil {
+				result.ObjectValidator.DisallowObject = true
+				result.ObjectValidator.AllowArray = true
+				result.ObjectValidator.Properties = ptys
+				objValidatorUsed = true
 			}
-			result.ObjectValidator.DisallowObject = true
-			result.ObjectValidator.AllowArray = true
-			result.ObjectValidator.Properties = ptys
-			objValidatorUsed = true
 		} else if fld.Type.Elem().Kind() == reflect.Ptr && fld.Type.Elem().Elem().Kind() == reflect.Struct {
-			ptys, err := buildPropertyValidators(fld.Type.Elem().Elem())
-			if err != nil {
+			if ptys, err := buildPropertyValidators(fld.Type.Elem().Elem()); err != nil {
 				return nil, name, err
+			} else if len(ptys) > 0 && result.ObjectValidator != nil {
+				result.ObjectValidator.DisallowObject = true
+				result.ObjectValidator.AllowArray = true
+				result.ObjectValidator.Properties = ptys
+				objValidatorUsed = true
 			}
-			result.ObjectValidator.DisallowObject = true
-			result.ObjectValidator.AllowArray = true
-			result.ObjectValidator.Properties = ptys
-			objValidatorUsed = true
 		}
 	}
 	if !objValidatorUsed {
