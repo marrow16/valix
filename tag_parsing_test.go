@@ -368,6 +368,52 @@ func TestPropertyValidator_AddTagItemMandatoryWhen(t *testing.T) {
 	require.Equal(t, "TEST6", pv.MandatoryWhen[5])
 }
 
+func TestPropertyValidator_AddTagItemOnly(t *testing.T) {
+	pv := &PropertyValidator{}
+	require.False(t, pv.Only)
+	require.Equal(t, 0, len(pv.OnlyConditions))
+
+	err := pv.addTagItem("", "", tagTokenOnly)
+	require.Nil(t, err)
+	require.True(t, pv.Only)
+	require.Equal(t, 0, len(pv.OnlyConditions))
+
+	err = pv.addTagItem("", "", tagTokenOnly+":TEST1")
+	require.Nil(t, err)
+	require.Equal(t, 1, len(pv.OnlyConditions))
+	require.Equal(t, "TEST1", pv.OnlyConditions[0])
+
+	err = pv.addTagItem("", "", tagTokenOnly+":[TEST2,TEST3]")
+	require.Nil(t, err)
+	require.Equal(t, 3, len(pv.OnlyConditions))
+	require.Equal(t, "TEST2", pv.OnlyConditions[1])
+	require.Equal(t, "TEST3", pv.OnlyConditions[2])
+
+	err = pv.addTagItem("", "", tagTokenOnly+":[{]")
+	require.NotNil(t, err)
+	require.Equal(t, fmt.Sprintf(msgUnclosed, 0), err.Error())
+
+	err = pv.addTagItem("", "", tagTokenOnly+":\"TEST4\"")
+	require.Nil(t, err)
+	require.Equal(t, 4, len(pv.OnlyConditions))
+	require.Equal(t, "TEST4", pv.OnlyConditions[3])
+
+	err = pv.addTagItem("", "", tagTokenOnly+":['TEST5','TEST6']")
+	require.Nil(t, err)
+	require.Equal(t, 6, len(pv.OnlyConditions))
+	require.Equal(t, "TEST5", pv.OnlyConditions[4])
+	require.Equal(t, "TEST6", pv.OnlyConditions[5])
+
+	err = pv.addTagItem("", "", tagTokenOnlyMsg)
+	require.NotNil(t, err)
+	err = pv.addTagItem("", "", tagTokenOnlyMsg+":foo bar")
+	require.Nil(t, err)
+	require.Equal(t, "foo bar", pv.OnlyMessage)
+	err = pv.addTagItem("", "", tagTokenOnlyMsg+":'foo bar'")
+	require.Nil(t, err)
+	require.Equal(t, "foo bar", pv.OnlyMessage)
+}
+
 func TestPropertyValidator_AddConditionalConstraint(t *testing.T) {
 	pv := &PropertyValidator{}
 	require.Equal(t, 0, len(pv.Constraints))

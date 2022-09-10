@@ -722,3 +722,33 @@ func TestValidatorForWithPropertiesFromRepo(t *testing.T) {
 	require.Equal(t, "oh fooey", v.Properties["fooey"].RequiredWithMessage)
 	require.Nil(t, v.Properties["fooey"].ObjectValidator)
 }
+
+func TestPropertyObjectDifferentiation(t *testing.T) {
+	type DatesRequest struct {
+		Dates []*time.Time `json:"dates"`
+	}
+	type ObjsRequest struct {
+		Objs []struct {
+			Foo string `json:"foo"`
+		} `json:"objs"`
+	}
+	type Objs2Request struct {
+		Objs []struct {
+			Foo string `json:"foo"`
+		} `json:"objs" v8n:"obj.no"`
+	}
+
+	dv, err := ValidatorFor(DatesRequest{}, nil)
+	require.Nil(t, err)
+	require.NotNil(t, dv)
+	ov, err := ValidatorFor(ObjsRequest{}, nil)
+	require.Nil(t, err)
+	require.NotNil(t, ov)
+	ov2, err := ValidatorFor(Objs2Request{}, nil)
+	require.Nil(t, err)
+	require.NotNil(t, ov2)
+
+	require.Nil(t, dv.Properties["dates"].ObjectValidator)
+	require.NotNil(t, ov.Properties["objs"].ObjectValidator)
+	require.Nil(t, ov2.Properties["objs"].ObjectValidator)
+}
