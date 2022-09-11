@@ -1489,6 +1489,20 @@ var defaultInternalTranslator = &internalTranslator{
 			langIt: "Il valore deve essere maggiore o uguale a %[1]v",
 			langDe: "Wert muss größer oder gleich %[1]v sein",
 		},
+		fmtMsgStrGt: {
+			langEn: fmtMsgStrGt,
+			langFr: "La valeur doit être supérieure à '%[1]s'",
+			langEs: "El valor debe ser mayor que '%[1]s'",
+			langIt: "Il valore deve essere maggiore di '%[1]s'",
+			langDe: "Wert muss größer als '%[1]s' sein",
+		},
+		fmtMsgStrGte: {
+			langEn: fmtMsgStrGte,
+			langFr: "La valeur doit être supérieure ou égale à '%[1]s'",
+			langEs: "El valor debe ser mayor o igual que '%[1]s'",
+			langIt: "Il valore deve essere maggiore o uguale a '%[1]s'",
+			langDe: "Wert muss größer oder gleich '%[1]s' sein",
+		},
 		fmtMsgGtOther: {
 			langEn: fmtMsgGtOther,
 			langFr: "La valeur doit être supérieure à la valeur de la propriété '%[1]s'",
@@ -1516,6 +1530,20 @@ var defaultInternalTranslator = &internalTranslator{
 			langEs: "El valor debe ser menor o igual que %[1]v",
 			langIt: "Il valore deve essere inferiore o uguale a %[1]v",
 			langDe: "Wert muss kleiner oder gleich %[1]v sein",
+		},
+		fmtMsgStrLt: {
+			langEn: fmtMsgStrLt,
+			langFr: "La valeur doit être inférieure à '%[1]s'",
+			langEs: "El valor debe ser menor que '%[1]s'",
+			langIt: "Il valore deve essere inferiore a '%[1]s'",
+			langDe: "Wert muss kleiner als '%[1]s' sein",
+		},
+		fmtMsgStrLte: {
+			langEn: fmtMsgStrLte,
+			langFr: "La valeur doit être inférieure ou égale à '%[1]s'",
+			langEs: "El valor debe ser menor o igual que '%[1]s'",
+			langIt: "Il valore deve essere inferiore o uguale a '%[1]s'",
+			langDe: "Wert muss kleiner oder gleich '%[1]s' sein",
 		},
 		fmtMsgLtOther: {
 			langEn: fmtMsgLtOther,

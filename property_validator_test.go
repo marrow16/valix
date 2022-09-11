@@ -636,3 +636,53 @@ func TestCreatePropertyValidator(t *testing.T) {
 	require.Equal(t, "fooey2", c2.Message)
 	require.True(t, c2.Stop)
 }
+
+func TestPropertyValidatorStopOnFirst(t *testing.T) {
+	pv := &PropertyValidator{
+		Type:    JsonAny,
+		NotNull: true,
+		Constraints: Constraints{
+			&StringNotEmpty{},
+			&StringNotBlank{},
+			&StringGreaterThan{Value: ""},
+			&FailingConstraint{Message: "forced fail"},
+		},
+	}
+
+	ok, violations := pv.Validate(nil)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, msgValueCannotBeNull, violations[0].Message)
+
+	ok, violations = pv.Validate(1)
+	require.False(t, ok)
+	require.Equal(t, 2, len(violations))
+	require.Equal(t, fmt.Sprintf(fmtMsgStrGt, ""), violations[0].Message)
+	require.Equal(t, "forced fail", violations[1].Message)
+
+	ok, violations = pv.Validate("")
+	require.False(t, ok)
+	require.Equal(t, 4, len(violations))
+	require.Equal(t, msgNotEmptyString, violations[0].Message)
+	require.Equal(t, msgNotBlankString, violations[1].Message)
+	require.Equal(t, fmt.Sprintf(fmtMsgStrGt, ""), violations[2].Message)
+	require.Equal(t, "forced fail", violations[3].Message)
+
+	// and again with StopOnFirst...
+	pv.StopOnFirst = true
+
+	ok, violations = pv.Validate(nil)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, msgValueCannotBeNull, violations[0].Message)
+
+	ok, violations = pv.Validate(1)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, fmt.Sprintf(fmtMsgStrGt, ""), violations[0].Message)
+
+	ok, violations = pv.Validate("")
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, msgNotEmptyString, violations[0].Message)
+}

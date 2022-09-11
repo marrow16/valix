@@ -139,6 +139,10 @@ type PropertyValidator struct {
 	// Note: setting any property with Order other than 0 (zero) will force the validator to use ordered property checks
 	// (i.e. as if Validator.OrderedPropertyChecks had been set to true)
 	Order int
+	// StopOnFirst if set, instructs the property validator to stop at the first constraint violation found
+	//
+	// This would be the equivalent of setting `Stop` on each constraint
+	StopOnFirst bool
 	// WhenConditions is the condition tokens that dictate under which conditions this validator is to be checked
 	//
 	// Condition tokens can be set and unset during validation to allow polymorphism of validation
@@ -331,8 +335,11 @@ func (pv *PropertyValidator) checkConstraints(vcx *ValidatorContext) {
 		v := vcx.CurrentValue()
 		for i, constraint := range pv.Constraints {
 			if ok, msg := constraint.Check(v, vcx); !ok {
+				if vcx.continuePty() {
+					vcx.CeaseFurtherIf(pv.StopOnFirst)
+				}
 				// the message is already translated by the constraint!...
-				vcx.addTranslatedViolationForCurrent(msg, CodePropertyConstraintFail, i)
+				vcx.addTranslatedViolationForCurrent(msg, CodePropertyConstraintFail, i, constraint)
 			}
 			if !vcx.continueAll || !vcx.continuePty() {
 				return

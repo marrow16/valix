@@ -2086,7 +2086,7 @@ func TestStringGreaterThan(t *testing.T) {
 	ok, violations := validator.Validate(obj)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(fmtMsgGt, "B"), violations[0].Message)
+	require.Equal(t, fmt.Sprintf(fmtMsgStrGt, "B"), violations[0].Message)
 
 	obj["foo"] = "C"
 	ok, _ = validator.Validate(obj)
@@ -2118,7 +2118,7 @@ func TestStringGreaterThanOrEqual(t *testing.T) {
 	ok, violations := validator.Validate(obj)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(fmtMsgGte, "B"), violations[0].Message)
+	require.Equal(t, fmt.Sprintf(fmtMsgStrGte, "B"), violations[0].Message)
 
 	obj["foo"] = "B"
 	ok, _ = validator.Validate(obj)
@@ -2155,7 +2155,7 @@ func TestStringLessThan(t *testing.T) {
 	ok, violations := validator.Validate(obj)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(fmtMsgLt, "B"), violations[0].Message)
+	require.Equal(t, fmt.Sprintf(fmtMsgStrLt, "B"), violations[0].Message)
 
 	obj["foo"] = "A"
 	ok, _ = validator.Validate(obj)
@@ -2187,7 +2187,7 @@ func TestStringLessThanOrEqual(t *testing.T) {
 	ok, violations := validator.Validate(obj)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
-	require.Equal(t, fmt.Sprintf(fmtMsgLte, "B"), violations[0].Message)
+	require.Equal(t, fmt.Sprintf(fmtMsgStrLte, "B"), violations[0].Message)
 
 	obj["foo"] = "B"
 	ok, _ = validator.Validate(obj)

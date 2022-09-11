@@ -31,6 +31,8 @@ const (
 	tagTokenUnwantedWithAlt    = "-"
 	tagTokenUnwantedWithMsg    = "unwanted_with_msg"
 	tagTokenUnwantedWithAltMsg = "-msg"
+	tagTokenStopOnFirst        = "stop_on_first"
+	tagTokenStopOnFirstAlt     = "stop1st"
 	// object level tag items...
 	tagTokenObjPrefix                  = "obj."
 	tagTokenObjIgnoreUnknownProperties = tagTokenObjPrefix + "ignoreUnknownProperties"
@@ -170,6 +172,9 @@ func (pv *PropertyValidator) addTagItem(fieldName string, propertyName string, t
 	case tagTokenOptional:
 		colonErr = hasColon
 		pv.Mandatory = false
+	case tagTokenStopOnFirst, tagTokenStopOnFirstAlt:
+		colonErr = hasColon
+		pv.StopOnFirst = true
 	case tagTokenOnly:
 		if hasColon {
 			result = pv.setTagOnlyConditions(tagValue)
@@ -580,11 +585,13 @@ func rebuildConstraintWithArgs(cName string, c Constraint, argsStr string) (Cons
 	// clone the original constraint fields into new constraint...
 	orgV := reflect.ValueOf(c)
 	count := ty.NumField()
+	fields := make(map[string]reflect.Value, count)
 	for f := 0; f < count; f++ {
 		fn := ty.Field(f).Name
 		fv := orgV.Elem().FieldByName(fn)
 		fld := newC.Elem().FieldByName(fn)
 		if fld.Kind() != reflect.Invalid && fld.CanSet() {
+			fields[fn] = fld
 			fld.Set(fv)
 		} else {
 			return nil, fmt.Errorf(msgConstraintFieldNotExported, cName, fn)
@@ -599,8 +606,7 @@ func rebuildConstraintWithArgs(cName string, c Constraint, argsStr string) (Cons
 				argName = defName
 			}
 		}
-		fld := newC.Elem().FieldByName(argName)
-		if fld.Kind() != reflect.Invalid && fld.CanSet() {
+		if fld, ok := secondGuessField(argName, fields); ok {
 			if !safeSet(fld, argVal) {
 				return nil, fmt.Errorf(msgConstraintFieldInvalidValue, cName, argName)
 			}
@@ -609,6 +615,104 @@ func rebuildConstraintWithArgs(cName string, c Constraint, argsStr string) (Cons
 		}
 	}
 	return result, nil
+}
+
+func secondGuessField(name string, fields map[string]reflect.Value) (reflect.Value, bool) {
+	if fld, ok := fields[name]; ok {
+		return fld, true
+	}
+	candidates := 0
+	fld := reflect.Value{}
+	singleCandidates := 0
+	singleFld := reflect.Value{}
+	lcName := strings.ToLower(name)
+	wds := camelToWords(name)
+	for n, f := range fields {
+		ln := strings.ToLower(n)
+		if ln == lcName {
+			fld = f
+			candidates = 1
+			break
+		} else if strings.HasPrefix(ln, lcName) && len(wds) == 1 {
+			singleFld = f
+			singleCandidates++
+			candidates++
+		} else if strings.Contains(ln, lcName) {
+			fld = f
+			candidates++
+		}
+	}
+	if singleCandidates == 1 {
+		return singleFld, true
+	}
+	if candidates == 0 {
+		for n, f := range fields {
+			if abbreviateName(strings.ToLower(n)) == lcName {
+				fld = f
+				candidates = 1
+				break
+			}
+			if len(wds) > 1 {
+				fwds := camelToWords(n)
+				if len(wds) == len(fwds) {
+					matches := 0
+					for i, w := range fwds {
+						if w == wds[i] || strings.HasPrefix(w, wds[i]) || abbreviateName(w) == wds[i] {
+							matches++
+						}
+					}
+					if matches == len(wds) {
+						fld = f
+						candidates = 1
+						break
+					}
+				}
+			}
+		}
+	}
+	return fld, candidates == 1
+}
+
+var vowelReplacer = strings.NewReplacer("a", "", "e", "", "i", "", "o", "", "u", "")
+
+func abbreviateName(name string) string {
+	result := name[:1] + vowelReplacer.Replace(name[1:])
+	shift := 0
+	buf := []byte(result)
+	end := len(buf)
+	for i := 1; i < (end - 1); i++ {
+		if buf[i-1] == buf[i] {
+			buf[i-shift] = buf[i+1]
+			shift++
+		}
+	}
+	return string(buf[:end-shift])
+}
+
+func camelToWords(str string) []string {
+	if str == strings.ToUpper(str) {
+		return []string{strings.ToLower(str)}
+	}
+	buf := []byte(str)
+	lastCap := 0
+	onCap := true
+	result := make([]string, 0, len(str)/3)
+	for i := 1; i < len(buf); i++ {
+		ch := buf[i]
+		if ch < 'A' || ch > 'Z' {
+			// not cap
+			onCap = false
+		} else if !onCap {
+			// new cap start
+			result = append(result, strings.ToLower(string(buf[lastCap:i])))
+			onCap = true
+			lastCap = i
+		}
+	}
+	if lastCap < len(buf) {
+		result = append(result, strings.ToLower(string(buf[lastCap:])))
+	}
+	return result
 }
 
 func getConstraintDefaultValueField(cName string, ty reflect.Type) (string, error) {
