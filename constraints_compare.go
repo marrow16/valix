@@ -353,7 +353,7 @@ func (c *StringGreaterThan) Check(v interface{}, vcx *ValidatorContext) (bool, s
 
 // GetMessage implements the Constraint.GetMessage
 func (c *StringGreaterThan) GetMessage(tcx I18nContext) string {
-	return defaultMessage(tcx, c.Message, fmtMsgGt, c.Value)
+	return defaultMessage(tcx, c.Message, fmtMsgStrGt, c.Value)
 }
 
 // StringGreaterThanOrEqual constraint to check that a string value is greater than or equal to a specified value
@@ -383,7 +383,7 @@ func (c *StringGreaterThanOrEqual) Check(v interface{}, vcx *ValidatorContext) (
 
 // GetMessage implements the Constraint.GetMessage
 func (c *StringGreaterThanOrEqual) GetMessage(tcx I18nContext) string {
-	return defaultMessage(tcx, c.Message, fmtMsgGte, c.Value)
+	return defaultMessage(tcx, c.Message, fmtMsgStrGte, c.Value)
 }
 
 // StringLessThan constraint to check that a string value is less than a specified value
@@ -413,7 +413,7 @@ func (c *StringLessThan) Check(v interface{}, vcx *ValidatorContext) (bool, stri
 
 // GetMessage implements the Constraint.GetMessage
 func (c *StringLessThan) GetMessage(tcx I18nContext) string {
-	return defaultMessage(tcx, c.Message, fmtMsgLt, c.Value)
+	return defaultMessage(tcx, c.Message, fmtMsgStrLt, c.Value)
 }
 
 // StringLessThanOrEqual constraint to check that a string value is less than or equal to a specified value
@@ -443,7 +443,7 @@ func (c *StringLessThanOrEqual) Check(v interface{}, vcx *ValidatorContext) (boo
 
 // GetMessage implements the Constraint.GetMessage
 func (c *StringLessThanOrEqual) GetMessage(tcx I18nContext) string {
-	return defaultMessage(tcx, c.Message, fmtMsgLte, c.Value)
+	return defaultMessage(tcx, c.Message, fmtMsgStrLte, c.Value)
 }
 
 // StringGreaterThanOther constraint to check that a string value is greater than another named property value

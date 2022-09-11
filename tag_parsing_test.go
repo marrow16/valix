@@ -414,6 +414,23 @@ func TestPropertyValidator_AddTagItemOnly(t *testing.T) {
 	require.Equal(t, "foo bar", pv.OnlyMessage)
 }
 
+func TestPropertyValidator_AddTagItemStopOnFirst(t *testing.T) {
+	pv := &PropertyValidator{}
+	require.False(t, pv.StopOnFirst)
+
+	err := pv.addTagItem("", "", tagTokenStopOnFirst)
+	require.Nil(t, err)
+	require.True(t, pv.StopOnFirst)
+
+	pv.StopOnFirst = false
+	err = pv.addTagItem("", "", tagTokenStopOnFirstAlt)
+	require.Nil(t, err)
+	require.True(t, pv.StopOnFirst)
+
+	err = pv.addTagItem("", "", tagTokenStopOnFirst+":foo")
+	require.NotNil(t, err)
+}
+
 func TestPropertyValidator_AddConditionalConstraint(t *testing.T) {
 	pv := &PropertyValidator{}
 	require.Equal(t, 0, len(pv.Constraints))
@@ -1163,4 +1180,104 @@ func TestWrappedConstraints(t *testing.T) {
 	}
 	_, err = ValidatorFor(myStruct2{}, nil)
 	require.NotNil(t, err)
+}
+
+func TestConstraintFieldAbbreviation(t *testing.T) {
+	pv := PropertyValidator{}
+	err := pv.addTagItem("", "", "&StringValidEmail{}")
+	require.Nil(t, err)
+	require.Equal(t, 1, len(pv.Constraints))
+
+	// 'allow' matches more than one field...
+	err = pv.addTagItem("", "", "&StringValidEmail{allow:true}")
+	require.NotNil(t, err)
+	require.Equal(t, fmt.Sprintf(msgConstraintFieldUnknown, "StringValidEmail", "allow"), err.Error())
+
+	// case-insensitive...
+	pv = PropertyValidator{}
+	err = pv.addTagItem("", "", "&StringValidEmail{allowIpv6:true}")
+	require.Nil(t, err)
+	require.Equal(t, 1, len(pv.Constraints))
+	c := pv.Constraints[0].(*StringValidEmail)
+	require.True(t, c.AllowIPV6)
+
+	// only matches one...
+	pv = PropertyValidator{}
+	err = pv.addTagItem("", "", "&StringValidEmail{v6:true}")
+	require.Nil(t, err)
+	require.Equal(t, 1, len(pv.Constraints))
+	c = pv.Constraints[0].(*StringValidEmail)
+	require.True(t, c.AllowIPV6)
+
+	// abbreviated...
+	pv = PropertyValidator{}
+	err = pv.addTagItem("", "", "&StringValidEmail{Msg:'fooey'}")
+	require.Nil(t, err)
+	require.Equal(t, 1, len(pv.Constraints))
+	c = pv.Constraints[0].(*StringValidEmail)
+	require.Equal(t, "fooey", c.Message)
+}
+
+func TestReadmeShortening(t *testing.T) {
+	pv, err := NewPropertyValidator("&strnocc,&strupper{'Upper only'},&strlen{min:10,max:20,excMin:true}")
+	require.Nil(t, err)
+	require.Equal(t, 3, len(pv.Constraints))
+	_, ok := pv.Constraints[0].(*StringNoControlCharacters)
+	require.True(t, ok)
+	c1, ok := pv.Constraints[1].(*StringUppercase)
+	require.True(t, ok)
+	require.Equal(t, "Upper only", c1.Message)
+	c2, ok := pv.Constraints[2].(*StringLength)
+	require.True(t, ok)
+	require.Equal(t, 10, c2.Minimum)
+	require.Equal(t, 20, c2.Maximum)
+	require.True(t, c2.ExclusiveMin)
+}
+
+func TestAbbreviateName(t *testing.T) {
+	abbr := abbreviateName("messsssssssage")
+	require.Equal(t, "msg", abbr)
+
+	abbr = abbreviateName("message")
+	require.Equal(t, "msg", abbr)
+
+	abbr = abbreviateName("stop")
+	require.Equal(t, "stp", abbr)
+
+	abbr = abbreviateName("allow")
+	require.Equal(t, "alw", abbr)
+}
+
+func TestCamelToWords(t *testing.T) {
+	w := camelToWords("EMI")
+	require.Equal(t, 1, len(w))
+	require.Equal(t, "emi", w[0])
+
+	w = camelToWords("Emi")
+	require.Equal(t, 1, len(w))
+	require.Equal(t, "emi", w[0])
+
+	w = camelToWords("EmiEmi")
+	require.Equal(t, 2, len(w))
+	require.Equal(t, "emi", w[0])
+	require.Equal(t, "emi", w[1])
+
+	w = camelToWords("E1aE2bE3cE")
+	require.Equal(t, 4, len(w))
+	require.Equal(t, "e1a", w[0])
+	require.Equal(t, "e2b", w[1])
+	require.Equal(t, "e3c", w[2])
+	require.Equal(t, "e", w[3])
+
+	w = camelToWords("AllowIPV6")
+	require.Equal(t, 2, len(w))
+	require.Equal(t, "allow", w[0])
+	require.Equal(t, "ipv6", w[1])
+
+	w = camelToWords("AddCountryCodeTlds")
+	require.Equal(t, 4, len(w))
+	require.Equal(t, "add", w[0])
+	require.Equal(t, "country", w[1])
+	require.Equal(t, "code", w[2])
+	require.Equal(t, "tlds", w[3])
 }

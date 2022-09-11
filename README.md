@@ -5968,6 +5968,25 @@ Where the tokens correspond to various property validation options - as listed h
     </tr>
     <tr></tr>
     <tr>
+      <td>
+        <code>stop_on_first</code><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<em>or</em><br>
+        <code>stop1st</code>
+      </td>
+      <td>
+        Specifies that property validation to stop at the first constraint violation found<br>
+        <em>Note: This would be the equivalent of setting <code>Stop</code> on each constraint</em>
+        <details>
+          <summary>Example</summary>
+          <pre>type Example struct {
+  Foo string `v8n:"stop_on_first,&StringNotBlank{},&StringNotEmpty{}"`
+}</pre>
+          <em>In the above example, only one of the specified constraints would fail</em>
+        </details>
+      </td>
+    </tr>
+    <tr></tr>
+    <tr>
       <td><code>type:&lt;type&gt;</code>
       </td>
       <td>
@@ -6190,7 +6209,7 @@ An example of how this is used can be found in [examples/tag_aliases_test.go](ht
 When specifying constraints in tags, especially with constraint args, the struct tags can become a little verbose.  For example:
 ```go
 type MyStruct struct {
-    Foo string `json:"foo" v8n:"&StringNoControlCharacters{},&StringMinLength{Value:10}"`
+    Foo string `json:"foo" v8n:"&StringNoControlCharacters{},&StringUppercase{Message:'Upper only'},&StringLength{Minimum:10,Maximum:20}"`
 }
 ```
 
@@ -6198,11 +6217,14 @@ To overcome this, there are several things you can do:
 1. Where there are no args for the constraint, the `{}` at the end can be dropped
 2. Where the constraint struct has only one field or has a default field (tagged with <code>&#96;v8n:"default"&#96;</code>) then the arg name can be dropped
 3. The constraints registry has pre-defined abbreviated forms
+4. Constraint arg names can be abbreviated or shortened to closest matching name, e.g.
+   1. `Message` can be abbreviated to `Msg` or `msg` (case-insensitive, remove vowels, replace double-characters with single)
+   2. `Minimum` can be shortened to `Min` or `min` (or any other variation that matches only one target field name)
 
 After those steps, the constraint tags would be:
 ```go
 type MyStruct struct {
-    Foo string `json:"foo" v8n:"&strnocc,&strmin{10}"`
+    Foo string `json:"foo" v8n:"&strnocc,&strupper{'Upper only'},&strlen{min:10,max:20}"`
 }
 ```
 
