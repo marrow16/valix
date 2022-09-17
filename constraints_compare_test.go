@@ -1826,120 +1826,114 @@ func TestShiftDatetimeBy(t *testing.T) {
 }
 
 func TestCheckDatetimeToleranceSames(t *testing.T) {
-	dt := time.Date(2022, 3, 31, 12, 13, 14, 15, time.UTC)
-	other := time.Date(2922, 1, 1, 12, 13, 14, 15, time.UTC)
-	ok := checkDatetimeTolerance(&dt, &other, 0, "millennium", false)
-	require.True(t, ok)
-	other = time.Date(1922, 1, 1, 12, 13, 14, 15, time.UTC)
-	ok = checkDatetimeTolerance(&dt, &other, 0, "millennium", false)
-	require.False(t, ok)
-
-	dt = time.Date(2022, 3, 31, 12, 13, 14, 15, time.UTC)
-	other = time.Date(2000, 1, 1, 12, 13, 14, 15, time.UTC)
-	ok = checkDatetimeTolerance(&dt, &other, 0, "century", false)
-	require.True(t, ok)
-	other = time.Date(2122, 1, 1, 12, 13, 14, 15, time.UTC)
-	ok = checkDatetimeTolerance(&dt, &other, 0, "century", false)
-	require.False(t, ok)
-
-	dt = time.Date(2020, 3, 31, 12, 13, 14, 15, time.UTC)
-	other = time.Date(2029, 1, 1, 12, 13, 14, 15, time.UTC)
-	ok = checkDatetimeTolerance(&dt, &other, 0, "decade", false)
-	require.True(t, ok)
-	other = time.Date(2031, 1, 1, 12, 13, 14, 15, time.UTC)
-	ok = checkDatetimeTolerance(&dt, &other, 0, "decade", false)
-	require.False(t, ok)
-
-	dt = time.Date(2022, 3, 31, 12, 13, 14, 15, time.UTC)
-	other = time.Date(2022, 1, 1, 12, 13, 14, 15, time.UTC)
-	ok = checkDatetimeTolerance(&dt, &other, 0, "year", false)
-	require.True(t, ok)
-	other = time.Date(2023, 1, 1, 12, 13, 14, 15, time.UTC)
-	ok = checkDatetimeTolerance(&dt, &other, 0, "year", false)
-	require.False(t, ok)
-
-	dt = time.Date(2022, 3, 31, 12, 13, 14, 15, time.UTC)
-	other = time.Date(2022, 3, 1, 12, 13, 14, 15, time.UTC)
-	ok = checkDatetimeTolerance(&dt, &other, 0, "month", false)
-	require.True(t, ok)
-	other = time.Date(2022, 4, 1, 12, 13, 14, 15, time.UTC)
-	ok = checkDatetimeTolerance(&dt, &other, 0, "month", false)
-	require.False(t, ok)
-
-	dt = time.Date(2022, 3, 31, 12, 13, 14, 15, time.UTC)
-	other = time.Date(2022, 3, 28, 12, 13, 14, 15, time.UTC)
-	ok = checkDatetimeTolerance(&dt, &other, 0, "week", false)
-	require.True(t, ok)
-	other = time.Date(2022, 3, 27, 12, 13, 14, 15, time.UTC)
-	ok = checkDatetimeTolerance(&dt, &other, 0, "week", false)
-	require.False(t, ok)
-	other = time.Date(2022, 4, 3, 12, 13, 14, 15, time.UTC)
-	ok = checkDatetimeTolerance(&dt, &other, 0, "week", false)
-	require.True(t, ok)
-	other = time.Date(2022, 4, 4, 12, 13, 14, 15, time.UTC)
-	ok = checkDatetimeTolerance(&dt, &other, 0, "week", false)
-	require.False(t, ok)
-
-	dt = time.Date(2022, 3, 31, 12, 13, 14, 15, time.UTC)
-	other = time.Date(2022, 3, 31, 12, 13, 14, 15, time.UTC)
-	ok = checkDatetimeTolerance(&dt, &other, 0, "day", false)
-	require.True(t, ok)
-	other = time.Date(2022, 3, 30, 12, 13, 14, 15, time.UTC)
-	ok = checkDatetimeTolerance(&dt, &other, 0, "day", false)
-	require.False(t, ok)
-	other = time.Date(2022, 4, 1, 12, 13, 14, 15, time.UTC)
-	ok = checkDatetimeTolerance(&dt, &other, 0, "day", false)
-	require.False(t, ok)
-
-	dt = time.Date(2022, 3, 31, 12, 0, 14, 15, time.UTC)
-	other = time.Date(2022, 3, 31, 12, 30, 14, 15, time.UTC)
-	ok = checkDatetimeTolerance(&dt, &other, 0, "hour", false)
-	require.True(t, ok)
-	other = time.Date(2022, 3, 31, 13, 30, 14, 15, time.UTC)
-	ok = checkDatetimeTolerance(&dt, &other, 0, "hour", false)
-	require.False(t, ok)
-
-	dt = time.Date(2022, 3, 31, 12, 13, 0, 15, time.UTC)
-	other = time.Date(2022, 3, 31, 12, 13, 30, 15, time.UTC)
-	ok = checkDatetimeTolerance(&dt, &other, 0, "minute", false)
-	require.True(t, ok)
-	other = time.Date(2022, 3, 31, 12, 14, 15, 15, time.UTC)
-	ok = checkDatetimeTolerance(&dt, &other, 0, "minute", false)
-	require.False(t, ok)
-
-	dt = time.Date(2022, 3, 31, 12, 13, 14, 0, time.UTC)
-	other = time.Date(2022, 3, 31, 12, 13, 14, 1000, time.UTC)
-	ok = checkDatetimeTolerance(&dt, &other, 0, "second", false)
-	require.True(t, ok)
-	other = time.Date(2022, 3, 31, 12, 13, 15, 1000, time.UTC)
-	ok = checkDatetimeTolerance(&dt, &other, 0, "second", false)
-	require.False(t, ok)
-
-	dt = time.Date(2022, 3, 31, 12, 13, 14, 111000000, time.UTC)
-	other = time.Date(2022, 3, 31, 12, 13, 14, 111222333, time.UTC)
-	ok = checkDatetimeTolerance(&dt, &other, 0, "milli", false)
-	require.True(t, ok)
-	other = time.Date(2022, 3, 31, 12, 13, 14, 112000000, time.UTC)
-	ok = checkDatetimeTolerance(&dt, &other, 0, "milli", false)
-	require.False(t, ok)
-
-	dt = time.Date(2022, 3, 31, 12, 13, 14, 111222000, time.UTC)
-	other = time.Date(2022, 3, 31, 12, 13, 14, 111222333, time.UTC)
-	ok = checkDatetimeTolerance(&dt, &other, 0, "micro", false)
-	require.True(t, ok)
-	other = time.Date(2022, 3, 31, 12, 13, 14, 111223000, time.UTC)
-	ok = checkDatetimeTolerance(&dt, &other, 0, "micro", false)
-	require.False(t, ok)
-
-	dt = time.Date(2022, 3, 31, 12, 13, 14, 111222333, time.UTC)
-	other = time.Date(2022, 3, 31, 12, 13, 14, 111222333, time.UTC)
-	ok = checkDatetimeTolerance(&dt, &other, 0, "nano", false)
-	require.True(t, ok)
-	other = time.Date(2022, 3, 31, 12, 13, 14, 111222331, time.UTC)
-	ok = checkDatetimeTolerance(&dt, &other, 0, "nano", false)
-	require.False(t, ok)
-
-	ok = checkDatetimeTolerance(&dt, &dt, 0, "UNKNOWN", false)
+	testCases := []struct {
+		dt   time.Time
+		same time.Time
+		diff time.Time
+		unit string
+	}{
+		{
+			dt:   time.Date(2022, 3, 31, 12, 13, 14, 15, time.UTC),
+			same: time.Date(2922, 1, 1, 12, 13, 14, 15, time.UTC),
+			diff: time.Date(1922, 1, 1, 12, 13, 14, 15, time.UTC),
+			unit: "millennium",
+		},
+		{
+			dt:   time.Date(2022, 3, 31, 12, 13, 14, 15, time.UTC),
+			same: time.Date(2000, 1, 1, 12, 13, 14, 15, time.UTC),
+			diff: time.Date(2122, 1, 1, 12, 13, 14, 15, time.UTC),
+			unit: "century",
+		},
+		{
+			dt:   time.Date(2020, 3, 31, 12, 13, 14, 15, time.UTC),
+			same: time.Date(2029, 1, 1, 12, 13, 14, 15, time.UTC),
+			diff: time.Date(2031, 1, 1, 12, 13, 14, 15, time.UTC),
+			unit: "decade",
+		},
+		{
+			dt:   time.Date(2022, 3, 31, 12, 13, 14, 15, time.UTC),
+			same: time.Date(2022, 1, 1, 12, 13, 14, 15, time.UTC),
+			diff: time.Date(2023, 1, 1, 12, 13, 14, 15, time.UTC),
+			unit: "year",
+		},
+		{
+			dt:   time.Date(2022, 3, 31, 12, 13, 14, 15, time.UTC),
+			same: time.Date(2022, 3, 1, 12, 13, 14, 15, time.UTC),
+			diff: time.Date(2022, 4, 1, 12, 13, 14, 15, time.UTC),
+			unit: "month",
+		},
+		{
+			dt:   time.Date(2022, 3, 31, 12, 13, 14, 15, time.UTC),
+			same: time.Date(2022, 3, 28, 12, 13, 14, 15, time.UTC),
+			diff: time.Date(2022, 3, 27, 12, 13, 14, 15, time.UTC),
+			unit: "week",
+		},
+		{
+			dt:   time.Date(2022, 3, 31, 12, 13, 14, 15, time.UTC),
+			same: time.Date(2022, 4, 3, 12, 13, 14, 15, time.UTC),
+			diff: time.Date(2022, 4, 4, 12, 13, 14, 15, time.UTC),
+			unit: "week",
+		},
+		{
+			dt:   time.Date(2022, 3, 31, 12, 13, 14, 15, time.UTC),
+			same: time.Date(2022, 3, 31, 12, 13, 14, 15, time.UTC),
+			diff: time.Date(2022, 3, 30, 12, 13, 14, 15, time.UTC),
+			unit: "day",
+		},
+		{
+			dt:   time.Date(2022, 3, 31, 12, 13, 14, 15, time.UTC),
+			same: time.Date(2022, 3, 31, 12, 13, 14, 15, time.UTC),
+			diff: time.Date(2022, 4, 1, 12, 13, 14, 15, time.UTC),
+			unit: "day",
+		},
+		{
+			dt:   time.Date(2022, 3, 31, 12, 0, 14, 15, time.UTC),
+			same: time.Date(2022, 3, 31, 12, 30, 14, 15, time.UTC),
+			diff: time.Date(2022, 3, 31, 13, 30, 14, 15, time.UTC),
+			unit: "hour",
+		},
+		{
+			dt:   time.Date(2022, 3, 31, 12, 13, 0, 15, time.UTC),
+			same: time.Date(2022, 3, 31, 12, 13, 30, 15, time.UTC),
+			diff: time.Date(2022, 3, 31, 12, 14, 15, 15, time.UTC),
+			unit: "minute",
+		},
+		{
+			dt:   time.Date(2022, 3, 31, 12, 13, 14, 0, time.UTC),
+			same: time.Date(2022, 3, 31, 12, 13, 14, 1000, time.UTC),
+			diff: time.Date(2022, 3, 31, 12, 13, 15, 1000, time.UTC),
+			unit: "second",
+		},
+		{
+			dt:   time.Date(2022, 3, 31, 12, 13, 14, 111000000, time.UTC),
+			same: time.Date(2022, 3, 31, 12, 13, 14, 111222333, time.UTC),
+			diff: time.Date(2022, 3, 31, 12, 13, 14, 112000000, time.UTC),
+			unit: "milli",
+		},
+		{
+			dt:   time.Date(2022, 3, 31, 12, 13, 14, 111222000, time.UTC),
+			same: time.Date(2022, 3, 31, 12, 13, 14, 111222333, time.UTC),
+			diff: time.Date(2022, 3, 31, 12, 13, 14, 111223000, time.UTC),
+			unit: "micro",
+		},
+		{
+			dt:   time.Date(2022, 3, 31, 12, 13, 14, 111222333, time.UTC),
+			same: time.Date(2022, 3, 31, 12, 13, 14, 111222333, time.UTC),
+			diff: time.Date(2022, 3, 31, 12, 13, 14, 111222331, time.UTC),
+			unit: "nano",
+		},
+	}
+	for i, tc := range testCases {
+		t.Run(fmt.Sprintf("%d", i+1), func(t *testing.T) {
+			ok := checkDatetimeTolerance(&tc.dt, &tc.same, 0, tc.unit, false)
+			require.True(t, ok)
+			ok = checkDatetimeTolerance(&tc.dt, &tc.diff, 0, tc.unit, false)
+			require.False(t, ok)
+		})
+	}
+	dt := time.Date(2022, 3, 31, 12, 13, 14, 111222333, time.UTC)
+	other := dt
+	ok := checkDatetimeTolerance(&dt, &other, 0, "UNKNOWN", false)
 	require.False(t, ok)
 }
 

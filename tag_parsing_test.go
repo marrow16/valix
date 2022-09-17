@@ -38,10 +38,14 @@ func TestArgsStringToArgs(t *testing.T) {
 	require.Nil(t, err)
 	require.NotNil(t, args)
 	require.Equal(t, 4, len(args))
-	require.Equal(t, "\"(foo)\"", args["str"])
-	require.Equal(t, "true", args["bool"])
-	require.Equal(t, "0", args["int"])
-	require.Equal(t, "1.1", args["float"])
+	require.Equal(t, "str", args[0].name)
+	require.Equal(t, `"(foo)"`, args[0].value)
+	require.Equal(t, "bool", args[1].name)
+	require.Equal(t, "true", args[1].value)
+	require.Equal(t, "int", args[2].name)
+	require.Equal(t, "0", args[2].value)
+	require.Equal(t, "float", args[3].name)
+	require.Equal(t, "1.1", args[3].value)
 
 	_, err = argsStringToArgs(constraintName, "str: (,bool:true")
 	require.NotNil(t, err)
@@ -54,11 +58,18 @@ func TestArgsStringToArgs(t *testing.T) {
 	args, err = argsStringToArgs(constraintName, "xxx")
 	require.Nil(t, err)
 	require.Equal(t, 1, len(args))
-	require.Equal(t, "xxx", args[""])
+	require.Equal(t, "xxx", args[0].name)
 
-	// arg without name - there can only be one arg...
-	_, err = argsStringToArgs(constraintName, "xxx:'',yyy")
-	require.NotNil(t, err)
+	// arg without value...
+	args, err = argsStringToArgs(constraintName, "xxx:'',yyy")
+	require.Nil(t, err)
+	require.Equal(t, 2, len(args))
+	require.Equal(t, "xxx", args[0].name)
+	require.Equal(t, "''", args[0].value)
+	require.True(t, args[0].hasValue)
+	require.Equal(t, "yyy", args[1].name)
+	require.Equal(t, "", args[1].value)
+	require.False(t, args[1].hasValue)
 }
 
 func TestPropertyValidator_ProcessTagItems(t *testing.T) {
@@ -213,7 +224,7 @@ func TestPropertyValidator_AddTagItemConstraintWithSingleValue(t *testing.T) {
 	// and a constraint that doesn't have a default or 'Value' field...
 	err = pv.addTagItem("", "", "&StringLength{1}")
 	require.NotNil(t, err)
-	require.Equal(t, fmt.Sprintf(msgConstraintNoDefaultValue, "StringLength"), err.Error())
+	require.Equal(t, fmt.Sprintf(msgConstraintFieldUnknown, "StringLength", "1"), err.Error())
 }
 
 type constraintWithOneField struct {
@@ -728,40 +739,6 @@ func TestParseConstraintSet(t *testing.T) {
 	require.True(t, constraintSet.OneOf)
 }
 
-func TestBuildConstraintSetWithBadArgs(t *testing.T) {
-	_, err := buildConstraintSetWithArgs("][")
-	require.NotNil(t, err)
-	require.Equal(t, fmt.Sprintf(msgUnopened, 0), err.Error())
-
-	_, err = buildConstraintSetWithArgs("xxx")
-	require.NotNil(t, err)
-	require.Equal(t, fmt.Sprintf(msgTagFldMissingColon, constraintSetName), err.Error())
-
-	_, err = buildConstraintSetWithArgs("Message:this needs quotes")
-	require.NotNil(t, err)
-	require.Equal(t, fmt.Sprintf(msgConstraintFieldInvalidValue, constraintSetName, constraintSetFieldMessage), err.Error())
-
-	_, err = buildConstraintSetWithArgs("Constraints:this needs to be slice")
-	require.NotNil(t, err)
-	require.Equal(t, fmt.Sprintf(msgConstraintFieldInvalidValue, constraintSetName, constraintSetFieldConstraints), err.Error())
-
-	_, err = buildConstraintSetWithArgs("Stop:this needs to be bool")
-	require.NotNil(t, err)
-	require.Equal(t, fmt.Sprintf(msgConstraintFieldInvalidValue, constraintSetName, constraintSetFieldStop), err.Error())
-
-	_, err = buildConstraintSetWithArgs("OneOf:this needs to be bool")
-	require.NotNil(t, err)
-	require.Equal(t, fmt.Sprintf(msgConstraintFieldInvalidValue, constraintSetName, constraintSetFieldOneOf), err.Error())
-
-	_, err = buildConstraintSetWithArgs("UnknownField:foo")
-	require.NotNil(t, err)
-	require.Equal(t, fmt.Sprintf(msgConstraintFieldUnknown, constraintSetName, "UnknownField"), err.Error())
-
-	_, err = buildConstraintSetWithArgs("Constraints:[&UnknownConstraint{}]")
-	require.NotNil(t, err)
-	require.Equal(t, fmt.Sprintf(msgUnknownConstraint, "UnknownConstraint"), err.Error())
-}
-
 func TestRebuildConstraintWithArgs(t *testing.T) {
 	const constraintName = "TEST_CONSTRAINT"
 	var orgConstraint = &StringNotEmpty{}
@@ -773,6 +750,30 @@ func TestRebuildConstraintWithArgs(t *testing.T) {
 	c, err = rebuildConstraintWithArgs(constraintName, orgConstraint, ")(")
 	require.NotNil(t, err)
 	require.Equal(t, fmt.Sprintf(msgConstraintArgsParseError, constraintName, fmt.Sprintf(msgUnopened, 0)), err.Error())
+}
+
+func TestRebuildConstraintWithOneArg(t *testing.T) {
+	const constraintName = "TEST_CONSTRAINT"
+	var orgConstraint = &StringExactLength{Message: "foo"}
+
+	c, err := rebuildConstraintWithArgs(constraintName, orgConstraint, "16")
+	require.Nil(t, err)
+	ac := c.(*StringExactLength)
+	require.Equal(t, 16, ac.Value)
+
+	_, err = rebuildConstraintWithArgs(constraintName, orgConstraint, "'foo'")
+	require.NotNil(t, err)
+	require.Equal(t, fmt.Sprintf(msgConstraintFieldInvalidValue, constraintName, "Value"), err.Error())
+
+	_, err = rebuildConstraintWithArgs(constraintName, orgConstraint, "msg")
+	require.NotNil(t, err)
+	require.Equal(t, fmt.Sprintf(msgConstraintFieldInvalidValue, constraintName, "msg"), err.Error())
+
+	// bools don't need a value...
+	c, err = rebuildConstraintWithArgs(constraintName, orgConstraint, "stp")
+	require.Nil(t, err)
+	ac = c.(*StringExactLength)
+	require.True(t, ac.Stop)
 }
 
 type dummyNonStructConstraint map[string]struct{}
@@ -900,12 +901,12 @@ func TestSafeSet_String(t *testing.T) {
 	fld, newStruct := getTestFieldValue("AString")
 	require.Equal(t, "", newStruct.AString)
 
-	ok := safeSet(fld, "\"baz\"")
+	ok := safeSet(fld, "\"baz\"", true)
 	require.True(t, ok)
 	require.Equal(t, "baz", fld.String())
 	require.Equal(t, "baz", newStruct.AString)
 
-	ok = safeSet(fld, "0")
+	ok = safeSet(fld, "0", true)
 	require.False(t, ok)
 }
 
@@ -913,16 +914,16 @@ func TestSafeSet_Int(t *testing.T) {
 	fld, newStruct := getTestFieldValue("AInt")
 	require.Equal(t, 0, newStruct.AInt)
 
-	ok := safeSet(fld, "1")
+	ok := safeSet(fld, "1", true)
 	require.True(t, ok)
 	require.Equal(t, int64(1), fld.Int())
 	require.Equal(t, 1, newStruct.AInt)
 
-	ok = safeSet(fld, "\"1\"")
+	ok = safeSet(fld, "\"1\"", true)
 	require.False(t, ok)
-	ok = safeSet(fld, "true")
+	ok = safeSet(fld, "true", true)
 	require.False(t, ok)
-	ok = safeSet(fld, "1.1")
+	ok = safeSet(fld, "1.1", true)
 	require.False(t, ok)
 }
 
@@ -930,16 +931,16 @@ func TestSafeSet_UInt(t *testing.T) {
 	fld, newStruct := getTestFieldValue("AUInt")
 	require.Equal(t, uint(0), newStruct.AUInt)
 
-	ok := safeSet(fld, "1")
+	ok := safeSet(fld, "1", true)
 	require.True(t, ok)
 	require.Equal(t, uint64(1), fld.Uint())
 	require.Equal(t, uint(1), newStruct.AUInt)
 
-	ok = safeSet(fld, "\"1\"")
+	ok = safeSet(fld, "\"1\"", true)
 	require.False(t, ok)
-	ok = safeSet(fld, "true")
+	ok = safeSet(fld, "true", true)
 	require.False(t, ok)
-	ok = safeSet(fld, "1.1")
+	ok = safeSet(fld, "1.1", true)
 	require.False(t, ok)
 }
 
@@ -947,14 +948,14 @@ func TestSafeSet_Float(t *testing.T) {
 	fld, newStruct := getTestFieldValue("AFloat")
 	require.Equal(t, float64(0), newStruct.AFloat)
 
-	ok := safeSet(fld, "1")
+	ok := safeSet(fld, "1", true)
 	require.True(t, ok)
 	require.Equal(t, float64(1), fld.Float())
 	require.Equal(t, float64(1), newStruct.AFloat)
 
-	ok = safeSet(fld, "\"1\"")
+	ok = safeSet(fld, "\"1\"", true)
 	require.False(t, ok)
-	ok = safeSet(fld, "true")
+	ok = safeSet(fld, "true", true)
 	require.False(t, ok)
 }
 
@@ -962,14 +963,21 @@ func TestSafeSet_Bool(t *testing.T) {
 	fld, newStruct := getTestFieldValue("ABool")
 	require.Equal(t, false, newStruct.ABool)
 
-	ok := safeSet(fld, "true")
+	ok := safeSet(fld, "true", true)
 	require.True(t, ok)
 	require.Equal(t, true, fld.Bool())
 	require.Equal(t, true, newStruct.ABool)
 
-	ok = safeSet(fld, "\"1\"")
+	fld, newStruct = getTestFieldValue("ABool")
+	require.Equal(t, false, newStruct.ABool)
+	ok = safeSet(fld, "", false)
+	require.True(t, ok)
+	require.Equal(t, true, fld.Bool())
+	require.Equal(t, true, newStruct.ABool)
+
+	ok = safeSet(fld, "\"1\"", true)
 	require.False(t, ok)
-	ok = safeSet(fld, "1.1")
+	ok = safeSet(fld, "1.1", true)
 	require.False(t, ok)
 }
 
@@ -977,7 +985,7 @@ func TestSafeSet_Slice(t *testing.T) {
 	fld, newStruct := getTestFieldValue("ASlice")
 	require.Equal(t, 0, len(newStruct.ASlice))
 
-	ok := safeSet(fld, "[\"foo\", \"bar\"]")
+	ok := safeSet(fld, "[\"foo\", \"bar\"]", true)
 	require.True(t, ok)
 	arr := fld.Interface().([]string)
 	require.Equal(t, 2, len(arr))
@@ -985,9 +993,9 @@ func TestSafeSet_Slice(t *testing.T) {
 	require.Equal(t, "foo", arr[0])
 	require.Equal(t, "bar", arr[1])
 
-	ok = safeSet(fld, "\"foo\"")
+	ok = safeSet(fld, "\"foo\"", true)
 	require.False(t, ok)
-	ok = safeSet(fld, "0")
+	ok = safeSet(fld, "0", true)
 	require.False(t, ok)
 }
 
@@ -996,24 +1004,24 @@ func TestSafeSet_Regexp(t *testing.T) {
 	require.NotNil(t, newStruct.ARegexp)
 
 	const pattern = "^([a-fA-F0-9]{8})$"
-	ok := safeSet(fld, "\""+pattern+"\"")
+	ok := safeSet(fld, "\""+pattern+"\"", true)
 	require.True(t, ok)
 	rx := fld.Interface().(regexp.Regexp)
 	require.Equal(t, pattern, rx.String())
 	require.Equal(t, pattern, newStruct.ARegexp.String())
 
-	ok = safeSet(fld, "^^^")
+	ok = safeSet(fld, "^^^", true)
 	require.False(t, ok)
-	ok = safeSet(fld, "1.1")
+	ok = safeSet(fld, "1.1", true)
 	require.False(t, ok)
-	ok = safeSet(fld, "true")
+	ok = safeSet(fld, "true", true)
 	require.False(t, ok)
 }
 
 func TestSafeSet_OtherUnknown(t *testing.T) {
 	fld, _ := getTestFieldValue("AOther")
 
-	ok := safeSet(fld, "")
+	ok := safeSet(fld, "", true)
 	require.False(t, ok)
 }
 
@@ -1182,6 +1190,22 @@ func TestWrappedConstraints(t *testing.T) {
 	require.NotNil(t, err)
 }
 
+func TestConditionalConstraintParse(t *testing.T) {
+	pv := &PropertyValidator{}
+
+	err := pv.addTagItem("", "", "&ConditionalConstraint{When:['FOO','BAR'],Constraint:&StringNotEmpty{Stop:true}}")
+	require.Nil(t, err)
+	require.Equal(t, 1, len(pv.Constraints))
+	cc, ok := pv.Constraints[0].(*ConditionalConstraint)
+	require.True(t, ok)
+	require.Equal(t, 2, len(cc.When))
+	require.Equal(t, "FOO", cc.When[0])
+	require.Equal(t, "BAR", cc.When[1])
+	ccc, ok := cc.Constraint.(*StringNotEmpty)
+	require.True(t, ok)
+	require.True(t, ccc.Stop)
+}
+
 func TestConstraintFieldAbbreviation(t *testing.T) {
 	pv := PropertyValidator{}
 	err := pv.addTagItem("", "", "&StringValidEmail{}")
@@ -1209,6 +1233,14 @@ func TestConstraintFieldAbbreviation(t *testing.T) {
 	c = pv.Constraints[0].(*StringValidEmail)
 	require.True(t, c.AllowIPV6)
 
+	// boolean no value..
+	pv = PropertyValidator{}
+	err = pv.addTagItem("", "", "&StringValidEmail{v6}")
+	require.Nil(t, err)
+	require.Equal(t, 1, len(pv.Constraints))
+	c = pv.Constraints[0].(*StringValidEmail)
+	require.True(t, c.AllowIPV6)
+
 	// abbreviated...
 	pv = PropertyValidator{}
 	err = pv.addTagItem("", "", "&StringValidEmail{Msg:'fooey'}")
@@ -1219,7 +1251,7 @@ func TestConstraintFieldAbbreviation(t *testing.T) {
 }
 
 func TestReadmeShortening(t *testing.T) {
-	pv, err := NewPropertyValidator("&strnocc,&strupper{'Upper only'},&strlen{min:10,max:20,excMin:true}")
+	pv, err := NewPropertyValidator("&strnocc,&strupper{'Upper only'},&strlen{min:10,max:20,excMin}")
 	require.Nil(t, err)
 	require.Equal(t, 3, len(pv.Constraints))
 	_, ok := pv.Constraints[0].(*StringNoControlCharacters)
