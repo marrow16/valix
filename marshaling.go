@@ -196,7 +196,9 @@ func constraintToJson(constraint Constraint) (map[string]interface{}, error) {
 	if conditional, ok := constraint.(*ConditionalConstraint); ok {
 		isConditional = true
 		useConstraint = conditional.Constraint
-		constraintName = reflect.TypeOf(useConstraint).Elem().Name()
+		if useConstraint != nil {
+			constraintName = reflect.TypeOf(useConstraint).Elem().Name()
+		}
 		conditions = make([]string, len(conditional.When))
 		for i, s := range conditional.When {
 			conditions[i] = s
@@ -209,7 +211,6 @@ func constraintToJson(constraint Constraint) (map[string]interface{}, error) {
 	args := make(map[string]interface{})
 	_ = json.Unmarshal(by, &args)
 	result := map[string]interface{}{
-		//		ptyNameName:   ty.Elem().Name(),
 		ptyNameName:   constraintName,
 		ptyNameFields: args,
 	}

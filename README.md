@@ -534,7 +534,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
     <tr></tr>
     <tr>
         <td>
-            <code>ConditionalConstraint</code>
+            <code>ConditionalConstraint</code><br>&nbsp;&nbsp;<code>cond</code>&nbsp;<em>(i18n tag abbr.)</em>
         </td>
         <td>
             Is a special constraint that wraps another constraint - but the wrapped constraint is only checked when the specified when conditions are met
@@ -559,7 +559,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
                     </tr>
                 </table>
             </details>
-            <em>This constraint does not have a <code>v8n</code> tag abbreviation and cannot be used directly in a <code>v8n</code>.  However, all other constraints can be made conditional in <code>v8n</code> tags by prefixing them with <code>[condition,...]</code></em>
+            <em>Note: Even though this constraint has a <code>v8n</code> tag, it is better to use the conditional abbreviation by prefixing them with <code>[condition,...]</code></em>
             (see <a href="#validation-tags">Validation Tags</a> )
             <details>
               <summary>Example</summary>
@@ -567,6 +567,54 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
   Foo string `v8n:"&[bar,baz]StringNotEmpty{}"`
 }</pre>
               <em>Makes the <code>&StringNotEmpty{}</code> constraint only checked when either <code>bar</code> or <code>baz</code> condition tokens have been set</em> 
+            </details>
+        </td>
+    </tr>
+    <tr></tr>
+    <tr>
+        <td>
+            <code>ConstraintSet</code><br>&nbsp;&nbsp;<code>set</code>&nbsp;<em>(i18n tag abbr.)</em>
+        </td>
+        <td>
+            Is a special constraint that contains other constraints<br>
+            The contained constraints are checked sequentially but the overall set stops on the first failing constraint
+            <details>
+                <summary>Fields</summary>
+                <table>
+                    <tr>
+                        <td>
+                            <code>Constraints</code> <em>[]Constraint</em>
+                        </td>
+                        <td>
+                            is the slice of constraints within the set
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>OneOf</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set to true, specifies that the constraint set should pass just one of the contained constraints (rather than all of them)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Message</code> <em>string</em>
+                        </td>
+                        <td>
+                            is the violation message to be used if any of the constraints fail<br>
+                            If the message is empty, the message from the first failing contained constraint is used
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Stop</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set to true, prevents further validation checks on the property if this constraint set fails
+                        </td>
+                    </tr>
+                </table>
             </details>
         </td>
     </tr>
@@ -5845,7 +5893,7 @@ Where the tokens correspond to various property validation options - as listed h
         <code>-:&lt;expr&gt;</code>
       </td>
       <td>
-        Specifies the JSON property is required according to the presence/non-presence of other properties (as determined by the <code>&lt;expr&gt;</code>)<br>
+        Specifies the JSON property is unwanted according to the presence/non-presence of other properties (as determined by the <code>&lt;expr&gt;</code>)<br>
         You can also control the violation message used when the property is present but unwanted using a <code>unwanted_with_msg:</code> or <code>-msg:</code> tag token
         <details>
           <summary>Example</summary>
@@ -6209,7 +6257,7 @@ An example of how this is used can be found in [examples/tag_aliases_test.go](ht
 When specifying constraints in tags, especially with constraint args, the struct tags can become a little verbose.  For example:
 ```go
 type MyStruct struct {
-    Foo string `json:"foo" v8n:"&StringNoControlCharacters{},&StringUppercase{Message:'Upper only'},&StringLength{Minimum:10,Maximum:20}"`
+    Foo string `json:"foo" v8n:"&StringNoControlCharacters{},&StringUppercase{Message:'Upper only'},&StringLength{Minimum:10,Maximum:20,ExclusiveMin:true}"`
 }
 ```
 
@@ -6220,11 +6268,13 @@ To overcome this, there are several things you can do:
 4. Constraint arg names can be abbreviated or shortened to closest matching name, e.g.
    1. `Message` can be abbreviated to `Msg` or `msg` (case-insensitive, remove vowels, replace double-characters with single)
    2. `Minimum` can be shortened to `Min` or `min` (or any other variation that matches only one target field name)
+   3. `ExclusiveMin` can be shortened to `excMin`, `exMin`, `eMin` etc.
+5. Where a constraint field is a `bool` and setting it to true - the value _(`:true`)_ can be omitted 
 
 After those steps, the constraint tags would be:
 ```go
 type MyStruct struct {
-    Foo string `json:"foo" v8n:"&strnocc,&strupper{'Upper only'},&strlen{min:10,max:20}"`
+    Foo string `json:"foo" v8n:"&strnocc,&strupper{'Upper only'},&strlen{stp,min:10,max:20,excMin}"`
 }
 ```
 

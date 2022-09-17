@@ -60,8 +60,6 @@ const (
 	msgConstraintFieldInvalidValue  = msgV8nPrefix + "constraint '%s{}' field '%s' cannot be assigned with value specified"
 	msgConstraintFieldNotExported   = msgV8nPrefix + "constraint '%s{}' has unexported field '%s' - so no fields can be specified as args"
 	msgConstraintArgsParseError     = msgV8nPrefix + "constraint '%s{}' - args parsing error (%s)"
-	msgTagFldMissingColon           = msgV8nPrefix + "constraint '%s{}` field missing ':' separator"
-	msgConstraintNoDefaultValue     = msgV8nPrefix + "constraint '%s{}` does not have tagged default field"
 	msgUnknownTagValue              = msgV8nPrefix + "token '%s' expected %s value (found \"%s\")"
 	msgPropertyNotObject            = msgV8nPrefix + "token '%s' cannot be used on non object/array field"
 	msgUnclosed                     = "unclosed parenthesis or quote started at position %d"
@@ -483,9 +481,6 @@ func buildConstraintFromTagValue(tagValue string) (Constraint, error) {
 		argsStr = strings.Trim(useValue[curlyOpenAt+1:len(useValue)-1], " ")
 		constraintName = useValue[0:curlyOpenAt]
 	}
-	if constraintName == constraintSetName {
-		return buildConstraintSetWithArgs(argsStr)
-	}
 	c, ok := constraintsRegistry.get(constraintName)
 	if !ok {
 		return nil, fmt.Errorf(msgUnknownConstraint, constraintName)
@@ -514,60 +509,6 @@ func buildConstraintFromTagValue(tagValue string) (Constraint, error) {
 	return newC, nil
 }
 
-func buildConstraintSetWithArgs(argsStr string) (Constraint, error) {
-	args, err := parseCommas(argsStr)
-	if err != nil {
-		return nil, err
-	}
-	result := &ConstraintSet{
-		Message:     "",
-		Constraints: Constraints{},
-	}
-	for _, arg := range args {
-		colonAt := firstValidColonAt(arg)
-		if colonAt == -1 {
-			return nil, fmt.Errorf(msgTagFldMissingColon, constraintSetName)
-		}
-		fieldName := strings.Trim(arg[0:colonAt], " ")
-		value := strings.Trim(arg[colonAt+1:], " ")
-		if fieldName == constraintSetFieldMessage {
-			if isQuotedStr(value, true) {
-				result.Message = value[1 : len(value)-1]
-			} else {
-				return nil, fmt.Errorf(msgConstraintFieldInvalidValue, constraintSetName, constraintSetFieldMessage)
-			}
-		} else if fieldName == constraintSetFieldConstraints {
-			if isBracedStr(value, true) {
-				tagValues, _ := parseCommas(value[1 : len(value)-1])
-				for _, tagValue := range tagValues {
-					if constraint, cErr := buildConstraintFromTagValue(tagValue); cErr != nil {
-						return nil, cErr
-					} else {
-						result.Constraints = append(result.Constraints, constraint)
-					}
-				}
-			} else {
-				return nil, fmt.Errorf(msgConstraintFieldInvalidValue, constraintSetName, constraintSetFieldConstraints)
-			}
-		} else if fieldName == constraintSetFieldStop {
-			if b, pErr := strconv.ParseBool(value); pErr == nil {
-				result.Stop = b
-			} else {
-				return nil, fmt.Errorf(msgConstraintFieldInvalidValue, constraintSetName, constraintSetFieldStop)
-			}
-		} else if fieldName == constraintSetFieldOneOf {
-			if b, pErr := strconv.ParseBool(value); pErr == nil {
-				result.OneOf = b
-			} else {
-				return nil, fmt.Errorf(msgConstraintFieldInvalidValue, constraintSetName, constraintSetFieldOneOf)
-			}
-		} else {
-			return nil, fmt.Errorf(msgConstraintFieldUnknown, constraintSetName, fieldName)
-		}
-	}
-	return result, nil
-}
-
 func rebuildConstraintWithArgs(cName string, c Constraint, argsStr string) (Constraint, error) {
 	args, err := argsStringToArgs(cName, argsStr)
 	if err != nil {
@@ -586,32 +527,55 @@ func rebuildConstraintWithArgs(cName string, c Constraint, argsStr string) (Cons
 	orgV := reflect.ValueOf(c)
 	count := ty.NumField()
 	fields := make(map[string]reflect.Value, count)
+	var defaultField *reflect.Value = nil
+	defaultFieldName := ""
+	var firstField *reflect.Value = nil
+	firstFieldName := ""
 	for f := 0; f < count; f++ {
-		fn := ty.Field(f).Name
+		afld := ty.Field(f)
+		fn := afld.Name
 		fv := orgV.Elem().FieldByName(fn)
 		fld := newC.Elem().FieldByName(fn)
 		if fld.Kind() != reflect.Invalid && fld.CanSet() {
 			fields[fn] = fld
+			if defaultField == nil && afld.Tag.Get(tagNameV8n) == "default" {
+				defaultField = &fld
+				defaultFieldName = fn
+			}
+			if firstField == nil {
+				firstField = &fld
+				firstFieldName = fn
+			}
 			fld.Set(fv)
 		} else {
 			return nil, fmt.Errorf(msgConstraintFieldNotExported, cName, fn)
 		}
 	}
+	if defaultField == nil && firstField != nil && len(fields) == 1 {
+		defaultField = firstField
+		defaultFieldName = firstFieldName
+	}
 	// now overwrite any specified args into the constraint fields...
-	for argName, argVal := range args {
-		if argName == "" && len(args) == 1 {
-			if defName, err := getConstraintDefaultValueField(cName, ty); err != nil {
-				return nil, err
-			} else {
-				argName = defName
-			}
-		}
-		if fld, ok := secondGuessField(argName, fields); ok {
-			if !safeSet(fld, argVal) {
-				return nil, fmt.Errorf(msgConstraintFieldInvalidValue, cName, argName)
+	if len(args) == 1 && !args[0].hasValue && defaultField != nil {
+		// only one arg, it has no value and we have a default field...
+		if fld, ok := secondGuessField(args[0].name, fields); ok {
+			if !safeSet(fld, "", false) {
+				return nil, fmt.Errorf(msgConstraintFieldInvalidValue, cName, args[0].name)
 			}
 		} else {
-			return nil, fmt.Errorf(msgConstraintFieldUnknown, cName, argName)
+			if !safeSet(*defaultField, args[0].name, false) {
+				return nil, fmt.Errorf(msgConstraintFieldInvalidValue, cName, defaultFieldName)
+			}
+		}
+	} else {
+		for _, arg := range args {
+			if fld, ok := secondGuessField(arg.name, fields); ok {
+				if !safeSet(fld, arg.value, arg.hasValue) {
+					return nil, fmt.Errorf(msgConstraintFieldInvalidValue, cName, arg.name)
+				}
+			} else {
+				return nil, fmt.Errorf(msgConstraintFieldUnknown, cName, arg.name)
+			}
 		}
 	}
 	return result, nil
@@ -715,23 +679,7 @@ func camelToWords(str string) []string {
 	return result
 }
 
-func getConstraintDefaultValueField(cName string, ty reflect.Type) (string, error) {
-	// scan fields to see if any are tagged as `v8n:"default"`...
-	count := ty.NumField()
-	if count == 1 {
-		// only has one field, so that must be the default field...
-		return ty.Field(0).Name, nil
-	}
-	for f := 0; f < count; f++ {
-		sf := ty.Field(f)
-		if sf.Tag.Get(tagNameV8n) == "default" {
-			return sf.Name, nil
-		}
-	}
-	return "", fmt.Errorf(msgConstraintNoDefaultValue, cName)
-}
-
-func safeSet(fv reflect.Value, valueStr string) (result bool) {
+func safeSet(fv reflect.Value, valueStr string, hasValue bool) (result bool) {
 	result = false
 	switch fv.Kind() {
 	case reflect.String:
@@ -739,31 +687,29 @@ func safeSet(fv reflect.Value, valueStr string) (result bool) {
 			fv.SetString(valueStr[1 : len(valueStr)-1])
 			result = true
 		}
-		break
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		if i, err := strconv.ParseInt(valueStr, 10, 64); err == nil {
 			fv.SetInt(i)
 			result = true
 		}
-		break
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 		if i, err := strconv.ParseUint(valueStr, 10, 64); err == nil {
 			fv.SetUint(i)
 			result = true
 		}
-		break
 	case reflect.Float64, reflect.Float32:
 		if f, err := strconv.ParseFloat(valueStr, 64); err == nil {
 			fv.SetFloat(f)
 			result = true
 		}
-		break
 	case reflect.Bool:
-		if b, err := strconv.ParseBool(valueStr); err == nil {
+		if !hasValue {
+			fv.SetBool(true)
+			result = true
+		} else if b, err := strconv.ParseBool(valueStr); err == nil {
 			fv.SetBool(b)
 			result = true
 		}
-		break
 	case reflect.Slice:
 		if isBracedStr(valueStr, true) {
 			if items, ok := itemsToSlice(fv.Type(), valueStr); ok {
@@ -771,7 +717,6 @@ func safeSet(fv reflect.Value, valueStr string) (result bool) {
 				result = true
 			}
 		}
-		break
 	case regexpKind:
 		if isQuotedStr(valueStr, true) {
 			if rx, err := regexp.Compile(valueStr[1 : len(valueStr)-1]); err == nil {
@@ -867,25 +812,32 @@ func itemsToSlice(itemType reflect.Type, arrayStr string) (result reflect.Value,
 	return
 }
 
-func argsStringToArgs(cName string, str string) (map[string]string, error) {
+type argHolder struct {
+	name     string
+	value    string
+	hasValue bool
+}
+
+func argsStringToArgs(cName string, str string) ([]argHolder, error) {
 	rawArgs, err := parseCommas(str)
 	if err != nil {
 		return nil, fmt.Errorf(msgConstraintArgsParseError, cName, err)
 	}
-	result := map[string]string{}
+	result := make([]argHolder, 0, len(rawArgs))
 	for _, arg := range rawArgs {
 		argName := strings.Trim(arg, " ")
-		cAt := firstValidColonAt(argName)
-		if cAt == -1 {
-			if len(rawArgs) == 1 {
-				result[""] = argName
-				break
-			}
-			return nil, fmt.Errorf(msgTagFldMissingColon, cName)
+		if cAt := firstValidColonAt(argName); cAt == -1 {
+			result = append(result, argHolder{
+				name:     argName,
+				hasValue: false,
+			})
+		} else {
+			result = append(result, argHolder{
+				name:     strings.Trim(argName[:cAt], " "),
+				value:    strings.Trim(argName[cAt+1:], " "),
+				hasValue: true,
+			})
 		}
-		argValue := strings.Trim(argName[cAt+1:], " ")
-		argName = strings.Trim(argName[:cAt], " ")
-		result[argName] = argValue
 	}
 	return result, nil
 }

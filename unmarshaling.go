@@ -605,7 +605,7 @@ func unmarshalConstraint(c map[string]interface{}) (Constraint, error) {
 				return nil, fmt.Errorf(errMsgFieldExpectedType, ptyNameWhenConditions, "array")
 			}
 		}
-		if fs, ok := c[ptyNameFields]; ok {
+		if fs, ok := c[ptyNameFields]; ok && fs != nil {
 			if fields, fOk := fs.(map[string]interface{}); fOk {
 				return validateUnmarshallingConstraint(constraint, fields, whens)
 			} else {
