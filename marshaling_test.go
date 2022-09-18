@@ -81,6 +81,7 @@ func TestValidator_MarshalJSON(t *testing.T) {
 				Constraints: Constraints{
 					&ConditionalConstraint{
 						When:       Conditions{"check_bar"},
+						Others:     MustParseExpression("foo && bar"),
 						Constraint: &Length{Minimum: 1},
 					},
 				},
@@ -242,7 +243,8 @@ func TestValidator_MarshalJSON(t *testing.T) {
 	require.Equal(t, true, subSub[ptyNameDisallowObject])
 	constraints = pty[ptyNameConstraints].([]interface{})
 	require.Equal(t, 1, len(constraints))
-
+	c0 := constraints[0].(map[string]interface{})
+	require.Equal(t, "foo && bar", c0[ptyNameOthersExpr])
 }
 
 func TestValidator_MarshalJSON_FailsWithCustomConstraints(t *testing.T) {

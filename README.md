@@ -5834,6 +5834,77 @@ Where the tokens correspond to various property validation options - as listed h
   </thead>
   <tbody>
     <tr>
+      <td><code>constraint:constraint-name{fields...}</code></td>
+      <td>
+        Adds a constraint to the property (this token can be specified multiple times within the <code>v8n</code> tag.
+        The <code>constraint-name</code> must be a Valix common constraint or a previously registered constraint.
+        The constraint `fields` can optionally be set.
+        <details>
+          <summary>Example</summary>
+          <pre>type Example struct {
+  Foo string `v8n:"constraint:StringMaxLength{Value:255}"`
+}</pre>
+        </details>
+      </td>
+    </tr>
+    <tr></tr>
+    <tr>
+      <td><code>constraints:[constraint-name{},...]</code></td>
+      <td>
+        Adds multiple constraints to the property
+        <details>
+          <summary>Example</summary>
+          <pre>type Example struct {
+  Foo string `v8n:"constraints:[StringNotEmpty{},StringNoControlCharacters{}]"`
+}</pre>
+        </details>
+      </td>
+    </tr>
+    <tr></tr>
+    <tr>
+      <td><code>&amp;constraint-name{fields...}</code></td>
+      <td>
+        Adds a constraint to the property (shorthand way of specifying constraint without <code>constraint:</code> or <code>constraints:[]</code> prefix)
+        <details>
+          <summary>Example</summary>
+          <pre>type Example struct {
+  Foo string `v8n:"&amp;StringMaxLength{Value:255}"`
+}</pre>
+        </details>
+      </td>
+    </tr>
+    <tr></tr>
+    <tr>
+      <td><code>&amp;[condition,...]constraint-name{fields...}</code></td>
+      <td>
+        Adds a conditional constraint to the property - the constraint is only checked when the condition(s) are met
+        <details>
+          <summary>Example</summary>
+          <pre>type Example struct {
+  Foo string `v8n:"&amp;[METHOD_POST]StringNotEmpty{}"`
+}</pre>
+          The <code>StringNotEmpty</code> constraint is only checked when the <code>METHOD_POST</code> condition token has been set
+        </details>
+      </td>
+    </tr>
+    <tr></tr>
+    <tr>
+      <td><code>&amp;&lt;expr&gt;constraint-name{fields...}</code></td>
+      <td>
+        Adds a conditional constraint to the property - the constraint is only checked when the <code>expr</code> evaluates to true
+        <details>
+          <summary>Example</summary>
+          <pre>type Example struct {
+  Foo string `json:"foo" v8n:"&amp;&lt;(bar && !baz) || (!bar && baz)&gt;StringNotEmpty{}"`
+  Bar string `json:"bar" v8n:"optional"`
+  Baz string `json:"baz" v8n:"optional"`
+}</pre>
+          The <code>StringNotEmpty</code> constraint is only checked when only one of the <code>bar</code> or <code>baz</code> properties are present
+        </details>
+      </td>
+    </tr>
+    <tr></tr>
+    <tr>
       <td><code>mandatory</code></td>
       <td>
         Specifies the JSON property must be present
@@ -5848,9 +5919,9 @@ Where the tokens correspond to various property validation options - as listed h
     <tr></tr>
     <tr>
       <td>
-        <code>mandatory:&lt;condition&gt;</code><br>
+        <code>mandatory:condition</code><br>
         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<em>or</em><br>
-        <code>mandatory:[&lt;condition&gt;,...]</code>
+        <code>mandatory:[condition,...]</code>
       </td>
       <td>
         Specifies the JSON property must be present under specified conditions
@@ -5865,12 +5936,12 @@ Where the tokens correspond to various property validation options - as listed h
     <tr></tr>
     <tr>
       <td>
-        <code>required_with:&lt;expr&gt;</code><br>
+        <code>required_with:expr</code><br>
         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<em>or</em><br>
-        <code>+:&lt;expr&gt;</code>
+        <code>+:expr</code>
       </td>
       <td>
-        Specifies the JSON property is required according to the presence/non-presence of other properties (as determined by the <code>&lt;expr&gt;</code>)<br>
+        Specifies the JSON property is required according to the presence/non-presence of other properties (as determined by the <code>expr</code>)<br>
         You can also control the violation message used when the property is required but missing using a <code>required_with_msg:</code> or <code>+msg:</code> tag token
         <details>
           <summary>Example</summary>
@@ -5888,12 +5959,12 @@ Where the tokens correspond to various property validation options - as listed h
     <tr></tr>
     <tr>
       <td>
-        <code>unwanted_with:&lt;expr&gt;</code><br>
+        <code>unwanted_with:expr</code><br>
         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<em>or</em><br>
-        <code>-:&lt;expr&gt;</code>
+        <code>-:expr</code>
       </td>
       <td>
-        Specifies the JSON property is unwanted according to the presence/non-presence of other properties (as determined by the <code>&lt;expr&gt;</code>)<br>
+        Specifies the JSON property is unwanted according to the presence/non-presence of other properties (as determined by the <code>expr</code>)<br>
         You can also control the violation message used when the property is present but unwanted using a <code>unwanted_with_msg:</code> or <code>-msg:</code> tag token
         <details>
           <summary>Example</summary>
@@ -5949,7 +6020,7 @@ Where the tokens correspond to various property validation options - as listed h
     </tr>
     <tr></tr>
     <tr>
-      <td><code>order:&lt;n&gt;</code></td>
+      <td><code>order:n</code></td>
       <td>
         Specifies the order in which the property should be validated (only respected if parent object is tagged as <code>obj.ordered</code> or parent validator is set to <code>OrderedPropertyChecks</code>)
         <details>
@@ -5965,9 +6036,9 @@ Where the tokens correspond to various property validation options - as listed h
     <tr>
       <td><code>only</code><br>
         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<em>or</em><br>
-        <code>only:&lt;condition&gt;</code><br>
+        <code>only:condition</code><br>
         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<em>or</em><br>
-        <code>only:[&lt;condition&gt;,...]</code>
+        <code>only:[condition,...]</code>
       </td>
       <td>
         Specifies that the property must not be present with other properties 
@@ -6000,12 +6071,12 @@ Where the tokens correspond to various property validation options - as listed h
     <tr></tr>
     <tr>
       <td>
-        <code>required:&lt;condition&gt;</code><br>
+        <code>required:condition</code><br>
         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<em>or</em><br>
-        <code>required:[&lt;condition&gt;,...]</code>
+        <code>required:[condition,...]</code>
       </td>
       <td>
-        <em>same as <code>mandatory:&lt;condition&gt;</code></em>
+        <em>same as <code>mandatory:condition</code></em>
         <details>
           <summary>Example</summary>
           <pre>type Example struct {
@@ -6035,11 +6106,11 @@ Where the tokens correspond to various property validation options - as listed h
     </tr>
     <tr></tr>
     <tr>
-      <td><code>type:&lt;type&gt;</code>
+      <td><code>type:type</code>
       </td>
       <td>
         Specifies (overrides) the type expected for the JSON property value<br>
-        Where <code>&lt;type&gt;</code> must be one of (case-insensitive):<br>
+        Where <code>type</code> must be one of (case-insensitive):<br>
         &nbsp;&nbsp;&nbsp;<code>string</code>, <code>number</code>, <code>integer</code>, <code>boolean</code>, <code>object</code>, <code>array</code> or <code>any</code>
         <details>
           <summary>Example</summary>
@@ -6051,58 +6122,13 @@ Where the tokens correspond to various property validation options - as listed h
     </tr>
     <tr></tr>
     <tr>
-      <td><code>constraint:&lt;name&gt;{fields}</code></td>
       <td>
-        Adds a constraint to the property (this token can be specified multiple times within the <code>v8n</code> tag.
-        The <code>&lt;name&gt;</code> must be a Valix common constraint or a previously registered constraint.
-        The constraint `fields` can optionally be set.
-        <details>
-          <summary>Example</summary>
-          <pre>type Example struct {
-  Foo string `v8n:"constraint:StringMaxLength{Value:255}"`
-}</pre>
-        </details>
-      </td>
-    </tr>
-    <tr></tr>
-    <tr>
-      <td><code>&amp;&lt;constraint-name&gt;{fields}</code></td>
-      <td>
-        Adds a constraint to the property (shorthand way of specifying constraint without <code>constraint:</code> or <code>constraints:[]</code> prefix)
-        <details>
-          <summary>Example</summary>
-          <pre>type Example struct {
-  Foo string `v8n:"&amp;StringMaxLength{Value:255}"`
-}</pre>
-        The constraint can also be made conditional by prefixing the name with the condition tokens, e.g.
-        <pre>type Example struct {
-  Foo string `v8n:"&amp;[METHOD_POST]StringNotEmpty{}"`
-}</pre>
-        </details>
-      </td>
-    </tr>
-    <tr></tr>
-    <tr>
-      <td><code>constraints:[&lt;name&gt;{},...]</code></td>
-      <td>
-        Adds multiple constraints to the property
-        <details>
-          <summary>Example</summary>
-          <pre>type Example struct {
-  Foo string `v8n:"constraints:[StringNotEmpty{},StringNoControlCharacters{}]"`
-}</pre>
-        </details>
-      </td>
-    </tr>
-    <tr></tr>
-    <tr>
-      <td>
-        <code>when:&lt;condition&gt;</code><br>
+        <code>when:condition</code><br>
         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<em>or</em><br>
-        <code>when:[&lt;condition&gt;,...]</code>
+        <code>when:[condition,...]</code>
       </td>
       <td>
-        Adds when condition(s) for the property - where <code>&lt;condition&gt;</code> is a condition token (that may have been set during validation)<br>
+        Adds when condition(s) for the property - where <code>condition</code> is a condition token (that may have been set during validation)<br>
         The property is only validated when these conditions are met (see <a href="#conditional-constraints">Conditional Constraints</a>)
         <details>
           <summary>Example</summary>
@@ -6115,12 +6141,12 @@ Where the tokens correspond to various property validation options - as listed h
     <tr></tr>
     <tr>
       <td>
-        <code>unwanted:&lt;condition&gt;</code><br>
+        <code>unwanted:condition</code><br>
         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<em>or</em><br>
-        <code>unwanted:[&lt;condition&gt;,...]</code>
+        <code>unwanted:[condition,...]</code>
       </td>
       <td>
-        Adds unwanted condition(s) for the property - where <code>&lt;condition&gt;</code> is a condition token (that may have been set during validation)<br>
+        Adds unwanted condition(s) for the property - where <code>condition</code> is a condition token (that may have been set during validation)<br>
         If the unwanted condition(s) is met but the property is present then this is a validation violation (see <a href="#conditional-constraints">Conditional Constraints</a>)
         <details>
           <summary>Example</summary>
@@ -6162,7 +6188,7 @@ Where the tokens correspond to various property validation options - as listed h
     </tr>
     <tr></tr>
     <tr>
-      <td><code>obj.constraint:&lt;name&gt;{}</code></td>
+      <td><code>obj.constraint:constraint-name{}</code></td>
       <td>
         Sets a constraint on an entire object or array
         <details>
@@ -6202,12 +6228,12 @@ the above will check the properties in order specified by their <code>order:</co
     <tr></tr>
     <tr>
       <td>
-        <code>obj.when:&lt;token&gt;</code><br>
+        <code>obj.when:condition</code><br>
         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<em>or</em><br>
-        <code>obj.when:[&lt;token&gt;,...]</code>
+        <code>obj.when:[condition,...]</code>
       </td>
       <td>
-        Adds when condition(s) for the object or array - where <code>&lt;condition&gt;</code> is a condition token (that may have been set during validation)<br>
+        Adds when condition(s) for the object or array - where <code>condition</code> is a condition token (that may have been set during validation)<br>
         The object/array is only validated when these conditions are met (see <a href="#conditional-constraints">Conditional Constraints</a>)
         <details>
           <summary>Example</summary>

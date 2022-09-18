@@ -492,6 +492,30 @@ func TestPropertyValidator_AddConditionalConstraint(t *testing.T) {
 	require.Equal(t, "Not Blank", innerConstraint2.Message)
 }
 
+func TestPropertyValidator_AddConditionalConstraintWithExpr(t *testing.T) {
+	pv := &PropertyValidator{}
+	require.Equal(t, 0, len(pv.Constraints))
+
+	err := pv.addTagItem("", "", "&<bar && baz>StringNotEmpty{'Foo Message'}")
+	require.Nil(t, err)
+	require.Equal(t, 1, len(pv.Constraints))
+	constraint := pv.Constraints[0].(*ConditionalConstraint)
+	require.Equal(t, 0, len(constraint.When))
+	require.NotNil(t, constraint.Others)
+	require.Equal(t, "bar && baz", constraint.Others.String())
+	innerConstraint, ok := constraint.Constraint.(*StringNotEmpty)
+	require.True(t, ok)
+	require.Equal(t, "Foo Message", innerConstraint.Message)
+
+	err = pv.addTagItem("", "", "&<not a valid expr>StringNotEmpty{'Foo Message'}")
+	require.NotNil(t, err)
+	require.Equal(t, fmt.Sprintf(msgConditionalExpr, "not a valid expr", "unexpected property name start (at position 4)"), err.Error())
+
+	err = pv.addTagItem("", "", "&<no closing StringNotEmpty{'Foo Message'}")
+	require.NotNil(t, err)
+	require.Equal(t, fmt.Sprintf(msgConditionalConstraintsFormat, "&<no closing StringNotEmpty{'Foo Message'}"), err.Error())
+}
+
 func TestPropertyValidator_AddObjectTagItem_RequiredWith(t *testing.T) {
 	pv := &PropertyValidator{}
 	require.Equal(t, 0, len(pv.RequiredWith))

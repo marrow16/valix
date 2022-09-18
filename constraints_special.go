@@ -335,13 +335,23 @@ const (
 type ConditionalConstraint struct {
 	// When is the condition tokens that determine when the wrapped constraint is checked
 	When Conditions
+	// Others is the others expression to be evaluated to determine when the wrapped constraint is checked
+	Others OthersExpr
 	// Constraint is the wrapped constraint
 	Constraint Constraint
 }
 
 func (c *ConditionalConstraint) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
-	if vcx.meetsWhenConditions(c.When) && c.Constraint != nil {
-		return c.Constraint.Check(v, vcx)
+	if c.Constraint != nil && vcx.meetsWhenConditions(c.When) {
+		if c.Others != nil {
+			if curr, ancestryVals, ok := vcx.ancestorValueObject(0); ok {
+				if c.Others.Evaluate(curr, ancestryVals, vcx) {
+					return c.Constraint.Check(v, vcx)
+				}
+			}
+		} else {
+			return c.Constraint.Check(v, vcx)
+		}
 	}
 	return true, c.GetMessage(vcx)
 }

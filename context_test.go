@@ -676,3 +676,15 @@ func TestAncestryIndex(t *testing.T) {
 	require.Equal(t, 16, index)
 	require.Equal(t, -1, max)
 }
+
+func TestAncestorValueObject(t *testing.T) {
+	vcx := newValidatorContext(map[string]interface{}{"foo": "bar"}, nil, false, nil)
+	_, _, ok := vcx.ancestorValueObject(0)
+	require.False(t, ok)
+
+	vcx.pushPathProperty("foo", "", nil)
+	c, a, ok := vcx.ancestorValueObject(0)
+	require.True(t, ok)
+	require.NotEmpty(t, c)
+	require.Empty(t, a)
+}

@@ -23,6 +23,7 @@ const (
 	ptyNameUseNumber               = "useNumber"
 	ptyNameOrderedPropertyChecks   = "orderedPropertyChecks"
 	ptyNameWhenConditions          = "whenConditions"
+	ptyNameOthersExpr              = "othersExpr"
 	ptyNameMandatoryWhen           = "mandatoryWhen"
 	ptyNameConditionalVariants     = "conditionalVariants"
 	ptyNameOasInfo                 = "oasInfo"
@@ -43,6 +44,7 @@ const (
 const (
 	errMsgUnknownNamedConstraint       = "unknown constraint '%s'"
 	errMsgFieldExpectedType            = "field '%s' expected type %s"
+	errMsgCannotParseExpr              = "cannot parse other expression '%s' - %s"
 	errMsgConstraintExpectedObject     = "constraint [%d] expected to be an object"
 	msgUnknownField                    = "Unknown field '%s'"
 	msgConstraintNotStruct             = "constraint not a struct"
@@ -93,6 +95,7 @@ func init() {
 				Mandatory: true,
 				NotNull:   true,
 				Constraints: Constraints{
+					&SetConditionFrom{Parent: true, Prefix: "constraint_name:"},
 					NewCustomConstraint(constraintNameCheck, ""),
 				},
 			},
@@ -115,6 +118,23 @@ func init() {
 				NotNull:   false,
 				Constraints: Constraints{
 					&ArrayOf{Type: JsonString.String(), AllowNullElement: false},
+				},
+			},
+			ptyNameOthersExpr: {
+				Order:     3,
+				Type:      JsonString,
+				Mandatory: false,
+				NotNull:   false,
+				Constraints: Constraints{
+					NewCustomConstraint(func(value interface{}, vcx *ValidatorContext, this *CustomConstraint) (passed bool, message string) {
+						passed = false
+						if expr, ok := value.(string); ok {
+							if _, err := ParseExpression(expr); err == nil {
+								passed = true
+							}
+						}
+						return
+					}, fmt.Sprintf("Must be a valid properties expression")),
 				},
 			},
 		},
@@ -432,7 +452,7 @@ func constraintFieldsCheck(value interface{}, vcx *ValidatorContext, this *Custo
 						vcx.popPath()
 					}
 					if fieldsOk {
-						_, err := validateUnmarshallingConstraint(constraint, mv, nil)
+						_, err := validateUnmarshallingConstraint(constraint, mv, nil, nil)
 						if err != nil {
 							msg := msgFieldsUnmarshalable
 							if ute, is := err.(*json.UnmarshalTypeError); is {
@@ -448,7 +468,7 @@ func constraintFieldsCheck(value interface{}, vcx *ValidatorContext, this *Custo
 	return true, ""
 }
 
-func validateUnmarshallingConstraint(constraint Constraint, v map[string]interface{}, whens []string) (Constraint, error) {
+func validateUnmarshallingConstraint(constraint Constraint, v map[string]interface{}, whens []string, othersExpr OthersExpr) (Constraint, error) {
 	ty := reflect.TypeOf(constraint)
 	if ty.Kind() != reflect.Ptr || ty.Elem().Kind() != reflect.Struct {
 		return nil, errors.New(msgConstraintNotStruct)
@@ -461,9 +481,10 @@ func validateUnmarshallingConstraint(constraint Constraint, v map[string]interfa
 	if err != nil {
 		return nil, err
 	}
-	if whens != nil {
+	if whens != nil || othersExpr != nil {
 		return &ConditionalConstraint{
 			When:       whens,
+			Others:     othersExpr,
 			Constraint: newC.Interface().(Constraint),
 		}, nil
 	}
@@ -591,6 +612,7 @@ func unmarshalConstraint(c map[string]interface{}) (Constraint, error) {
 	}
 	if constraintFound {
 		var whens []string
+		var othersExpr OthersExpr
 		if rawWhens, ok := c[ptyNameWhenConditions]; ok {
 			if slc, ok := rawWhens.([]interface{}); ok {
 				whens = make([]string, len(slc))
@@ -605,14 +627,25 @@ func unmarshalConstraint(c map[string]interface{}) (Constraint, error) {
 				return nil, fmt.Errorf(errMsgFieldExpectedType, ptyNameWhenConditions, "array")
 			}
 		}
+		if rawExpr, ok := c[ptyNameOthersExpr]; ok {
+			if cExpr, ok := rawExpr.(string); ok {
+				if expr, err := ParseExpression(cExpr); err == nil {
+					othersExpr = expr
+				} else {
+					return nil, fmt.Errorf(errMsgCannotParseExpr, cExpr, err.Error())
+				}
+			} else {
+				return nil, fmt.Errorf(errMsgFieldExpectedType, ptyNameOthersExpr, "string")
+			}
+		}
 		if fs, ok := c[ptyNameFields]; ok && fs != nil {
 			if fields, fOk := fs.(map[string]interface{}); fOk {
-				return validateUnmarshallingConstraint(constraint, fields, whens)
+				return validateUnmarshallingConstraint(constraint, fields, whens, othersExpr)
 			} else {
 				return nil, fmt.Errorf(errMsgFieldExpectedType, ptyNameFields, "object")
 			}
 		} else {
-			return validateUnmarshallingConstraint(constraint, map[string]interface{}{}, whens)
+			return validateUnmarshallingConstraint(constraint, map[string]interface{}{}, whens, othersExpr)
 		}
 	}
 	return nil, fmt.Errorf(errMsgUnknownNamedConstraint, constraintName)
