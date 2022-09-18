@@ -967,3 +967,73 @@ func TestArrayConditionalConstraint(t *testing.T) {
 	require.True(t, ok)
 	require.Equal(t, 0, len(violations))
 }
+
+func TestConditionalConstraint_When(t *testing.T) {
+	v := &Validator{
+		IgnoreUnknownProperties: true,
+		Properties: Properties{
+			"foo": {
+				Type:      JsonString,
+				Mandatory: true,
+				Constraints: Constraints{
+					&ConditionalConstraint{
+						Constraint: &StringNotBlank{},
+						When:       Conditions{"METHOD_POST"},
+					},
+				},
+			},
+		},
+	}
+	obj := jsonObject(`{
+		"foo": ""
+	}`)
+
+	ok, violations := v.Validate(obj)
+	require.True(t, ok)
+	require.Equal(t, 0, len(violations))
+
+	ok, violations = v.Validate(obj, "METHOD_POST")
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, msgNotBlankString, violations[0].Message)
+	require.Equal(t, "foo", violations[0].Property)
+	require.Equal(t, "", violations[0].Path)
+}
+
+func TestConditionalConstraint_Others(t *testing.T) {
+	v := &Validator{
+		IgnoreUnknownProperties: true,
+		Properties: Properties{
+			"foo": {
+				Type:      JsonString,
+				Mandatory: true,
+				Constraints: Constraints{
+					&ConditionalConstraint{
+						Constraint: &StringNotBlank{},
+						Others:     MustParseExpression("bar && baz"),
+					},
+				},
+			},
+		},
+	}
+	obj := jsonObject(`{
+		"foo": ""
+	}`)
+
+	ok, violations := v.Validate(obj)
+	require.True(t, ok)
+	require.Equal(t, 0, len(violations))
+
+	obj["bar"] = ""
+	ok, violations = v.Validate(obj)
+	require.True(t, ok)
+	require.Equal(t, 0, len(violations))
+
+	obj["baz"] = ""
+	ok, violations = v.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, msgNotBlankString, violations[0].Message)
+	require.Equal(t, "foo", violations[0].Property)
+	require.Equal(t, "", violations[0].Path)
+}

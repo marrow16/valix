@@ -145,7 +145,8 @@ const (
 						"name": "Length",
 						"whenConditions": [
 							"check_bar"
-						]
+						],
+						"othersExpr": "foo && bar"
 					}
 				],
 				"objectValidator": {
@@ -316,6 +317,8 @@ func TestValidatorUnmarshal(t *testing.T) {
 	require.Equal(t, 1, len(bar.Constraints))
 	barConstraint := bar.Constraints[0].(*ConditionalConstraint)
 	require.Equal(t, 1, len(barConstraint.When))
+	require.NotNil(t, barConstraint.Others)
+	require.Equal(t, "foo && bar", barConstraint.Others.String())
 	require.True(t, bar.Mandatory)
 	require.True(t, bar.NotNull)
 	require.Equal(t, 0, bar.Order)
@@ -1052,7 +1055,7 @@ func TestArrayConditionalConstraintUnmarshalJSON(t *testing.T) {
 
 func TestValidateUnmarshallingConstraintWithNonStructConstraint(t *testing.T) {
 	var constraint nonStructConstraint = ""
-	_, err := validateUnmarshallingConstraint(&constraint, map[string]interface{}{}, nil)
+	_, err := validateUnmarshallingConstraint(&constraint, map[string]interface{}{}, nil, nil)
 	require.NotNil(t, err)
 	require.Equal(t, msgConstraintNotStruct, err.Error())
 }
@@ -1100,6 +1103,50 @@ func TestUnmarshalConstraintWithBadWhens(t *testing.T) {
 	constraint, err = unmarshalConstraint(obj)
 	require.NotNil(t, err)
 	require.Equal(t, fmt.Sprintf(errMsgFieldExpectedType, ptyNameWhenConditions, "array of strings"), err.Error())
+}
+
+func TestUnmarshalConstraintWithBadOthersExpr(t *testing.T) {
+	// check good first...
+	obj := jsonObject(`{
+		"fields": {
+			"Minimum": 1
+		},
+		"name": "Length",
+			"othersExpr": "foo && bar"
+	}`)
+	constraint, err := unmarshalConstraint(obj)
+	require.Nil(t, err)
+	condConstraint, ok := constraint.(*ConditionalConstraint)
+	require.True(t, ok)
+	require.Equal(t, 0, len(condConstraint.When))
+	require.NotNil(t, condConstraint.Others)
+	require.Equal(t, "foo && bar", condConstraint.Others.String())
+	innerConstraint, ok := condConstraint.Constraint.(*Length)
+	require.True(t, ok)
+	require.Equal(t, 1, innerConstraint.Minimum)
+
+	// now test bad exprs...
+	obj = jsonObject(`{
+		"fields": {
+			"Minimum": 1
+		},
+		"name": "Length",
+			"othersExpr": ["should be a string"]
+	}`)
+	constraint, err = unmarshalConstraint(obj)
+	require.NotNil(t, err)
+	require.Equal(t, fmt.Sprintf(errMsgFieldExpectedType, ptyNameOthersExpr, "string"), err.Error())
+
+	obj = jsonObject(`{
+		"fields": {
+			"Minimum": 1
+		},
+		"name": "Length",
+			"othersExpr": "not a valid expr"
+	}`)
+	constraint, err = unmarshalConstraint(obj)
+	require.NotNil(t, err)
+	require.Equal(t, fmt.Sprintf(errMsgCannotParseExpr, "not a valid expr", "unexpected property name start (at position 4)"), err.Error())
 }
 
 func TestUnmarshalPropertyValidatorWithBadWithExprs(t *testing.T) {

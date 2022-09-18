@@ -193,6 +193,7 @@ func constraintToJson(constraint Constraint) (map[string]interface{}, error) {
 	useConstraint := constraint
 	isConditional := false
 	var conditions []string
+	othersExpr := ""
 	if conditional, ok := constraint.(*ConditionalConstraint); ok {
 		isConditional = true
 		useConstraint = conditional.Constraint
@@ -202,6 +203,9 @@ func constraintToJson(constraint Constraint) (map[string]interface{}, error) {
 		conditions = make([]string, len(conditional.When))
 		for i, s := range conditional.When {
 			conditions[i] = s
+		}
+		if conditional.Others != nil {
+			othersExpr = conditional.Others.String()
 		}
 	}
 	by, err := json.Marshal(useConstraint)
@@ -216,6 +220,7 @@ func constraintToJson(constraint Constraint) (map[string]interface{}, error) {
 	}
 	if isConditional {
 		result[ptyNameWhenConditions] = conditions
+		result[ptyNameOthersExpr] = othersExpr
 	}
 	return result, nil
 }

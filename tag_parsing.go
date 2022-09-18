@@ -53,7 +53,8 @@ const (
 	msgUnexpectedColon              = msgV8nPrefix + "unexpected ':' colon after token '%s'"
 	msgExpectedColon                = msgV8nPrefix + "expected ':' colon after token '%s'"
 	msgConstraintsFormat            = msgV8nPrefix + "must specify constraints in the format '&name{}' (found \"%s\")"
-	msgConditionalConstraintsFormat = msgV8nPrefix + "must specify conditional constraints in the format '&[token,...]name{}' (found \"%s\")"
+	msgConditionalConstraintsFormat = msgV8nPrefix + "must specify conditional constraints in the format '&[token,...]name{}' or '&<expr>name{}' (found \"%s\")"
+	msgConditionalExpr              = msgV8nPrefix + "invalid other properties expression \"%s\" - %s"
 	msgUnknownConstraint            = msgV8nPrefix + "contains unknown constraint '%s'"
 	msgCannotCreateConstraint       = msgV8nPrefix + "cannot create constraint '%s{}' (on non-struct constraint)"
 	msgConstraintFieldUnknown       = msgV8nPrefix + "constraint '%s{}' field '%s' is unknown or not assignable"
@@ -460,6 +461,7 @@ func buildConstraintFromTagValue(tagValue string) (Constraint, error) {
 	}
 	isConditional := false
 	var conditions Conditions
+	var others OthersExpr
 	if strings.HasPrefix(useValue, "[") {
 		isConditional = true
 		closeAt := strings.Index(useValue, "]")
@@ -469,6 +471,18 @@ func buildConstraintFromTagValue(tagValue string) (Constraint, error) {
 		list := useValue[:closeAt+1]
 		if err := addConditions(&conditions, list, false); err != nil {
 			return nil, err
+		}
+		useValue = useValue[closeAt+1:]
+	} else if strings.HasPrefix(useValue, "<") {
+		isConditional = true
+		closeAt := strings.Index(useValue, ">")
+		if closeAt == -1 {
+			return nil, fmt.Errorf(msgConditionalConstraintsFormat, tagValue)
+		}
+		if expr, err := ParseExpression(useValue[1:closeAt]); err != nil {
+			return nil, fmt.Errorf(msgConditionalExpr, useValue[1:closeAt], err.Error())
+		} else {
+			others = expr
 		}
 		useValue = useValue[closeAt+1:]
 	}
@@ -492,6 +506,7 @@ func buildConstraintFromTagValue(tagValue string) (Constraint, error) {
 			return &ConditionalConstraint{
 				Constraint: c,
 				When:       conditions,
+				Others:     others,
 			}, nil
 		}
 		return c, nil
@@ -504,6 +519,7 @@ func buildConstraintFromTagValue(tagValue string) (Constraint, error) {
 		return &ConditionalConstraint{
 			Constraint: newC,
 			When:       conditions,
+			Others:     others,
 		}, nil
 	}
 	return newC, nil

@@ -246,6 +246,21 @@ func (vc *ValidatorContext) AncestorValue(level uint) (interface{}, bool) {
 	return nil, false
 }
 
+// ancestorValueObject returns an ancestor value (but only if it is an object - i.e. map[string]interface{})
+// also returns the adjusted ancestry
+func (vc *ValidatorContext) ancestorValueObject(level uint) (map[string]interface{}, []interface{}, bool) {
+	if itm, ok := vc.ancestorStackItem(level); ok {
+		if obj, ok := itm.value.(map[string]interface{}); ok {
+			ancestry := vc.ValuesAncestry()
+			if len(ancestry) > 1 {
+				ancestry = ancestry[2:]
+			}
+			return obj, ancestry, true
+		}
+	}
+	return nil, nil, false
+}
+
 // ancestorValueAndIndex returns an ancestor value
 func (vc *ValidatorContext) ancestorValueAndIndex(level uint) (interface{}, int, bool) {
 	if itm, ok := vc.ancestorStackItem(level); ok {
