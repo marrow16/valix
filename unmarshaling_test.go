@@ -1089,7 +1089,7 @@ func TestUnmarshalConstraintWithBadWhens(t *testing.T) {
 		"name": "Length",
 			"whenConditions": "should be an array"
 	}`)
-	constraint, err = unmarshalConstraint(obj)
+	_, err = unmarshalConstraint(obj)
 	require.NotNil(t, err)
 	require.Equal(t, fmt.Sprintf(errMsgFieldExpectedType, ptyNameWhenConditions, "array"), err.Error())
 
@@ -1100,7 +1100,7 @@ func TestUnmarshalConstraintWithBadWhens(t *testing.T) {
 		"name": "Length",
 			"whenConditions": [1]
 	}`)
-	constraint, err = unmarshalConstraint(obj)
+	_, err = unmarshalConstraint(obj)
 	require.NotNil(t, err)
 	require.Equal(t, fmt.Sprintf(errMsgFieldExpectedType, ptyNameWhenConditions, "array of strings"), err.Error())
 }
@@ -1133,7 +1133,7 @@ func TestUnmarshalConstraintWithBadOthersExpr(t *testing.T) {
 		"name": "Length",
 			"othersExpr": ["should be a string"]
 	}`)
-	constraint, err = unmarshalConstraint(obj)
+	_, err = unmarshalConstraint(obj)
 	require.NotNil(t, err)
 	require.Equal(t, fmt.Sprintf(errMsgFieldExpectedType, ptyNameOthersExpr, "string"), err.Error())
 
@@ -1144,7 +1144,7 @@ func TestUnmarshalConstraintWithBadOthersExpr(t *testing.T) {
 		"name": "Length",
 			"othersExpr": "not a valid expr"
 	}`)
-	constraint, err = unmarshalConstraint(obj)
+	_, err = unmarshalConstraint(obj)
 	require.NotNil(t, err)
 	require.Equal(t, fmt.Sprintf(errMsgCannotParseExpr, "not a valid expr", "unexpected property name start (at position 4)"), err.Error())
 }

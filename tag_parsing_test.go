@@ -80,6 +80,7 @@ func TestPropertyValidator_ProcessTagItems(t *testing.T) {
 	require.False(t, pv.Mandatory)
 	require.False(t, pv.NotNull)
 	err = pv.processTagItems("", "", []string{tagTokenNotNull, tagTokenMandatory})
+	require.Nil(t, err)
 	require.True(t, pv.Mandatory)
 	require.True(t, pv.NotNull)
 
@@ -1228,6 +1229,33 @@ func TestConditionalConstraintParse(t *testing.T) {
 	ccc, ok := cc.Constraint.(*StringNotEmpty)
 	require.True(t, ok)
 	require.True(t, ccc.Stop)
+}
+
+func TestConditionalConstraintParseOthers(t *testing.T) {
+	pv := &PropertyValidator{}
+	err := pv.addTagItem("", "", "&ConditionalConstraint{Others:foo && bar,Constraint:&StringNotEmpty{Stop:true}}")
+	require.Nil(t, err)
+	require.Equal(t, 1, len(pv.Constraints))
+	cc, ok := pv.Constraints[0].(*ConditionalConstraint)
+	require.True(t, ok)
+	require.NotNil(t, cc.Others)
+	require.Equal(t, "foo && bar", cc.Others.String())
+
+	ccc, ok := cc.Constraint.(*StringNotEmpty)
+	require.True(t, ok)
+	require.True(t, ccc.Stop)
+
+	pv = &PropertyValidator{}
+	err = pv.addTagItem("", "", "&ConditionalConstraint{Others:'foo && bar',Constraint:&StringNotEmpty{Stop:true}}")
+	require.Nil(t, err)
+	require.Equal(t, 1, len(pv.Constraints))
+	cc, ok = pv.Constraints[0].(*ConditionalConstraint)
+	require.True(t, ok)
+	require.NotNil(t, cc.Others)
+	require.Equal(t, "foo && bar", cc.Others.String())
+
+	err = pv.addTagItem("", "", "&ConditionalConstraint{Others:not a valid expr,Constraint:&StringNotEmpty{Stop:true}}")
+	require.NotNil(t, err)
 }
 
 func TestConstraintFieldAbbreviation(t *testing.T) {

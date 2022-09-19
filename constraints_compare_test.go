@@ -902,7 +902,7 @@ func TestDatetimeLessThanOrEqual(t *testing.T) {
 	require.True(t, ok)
 
 	obj["foo"] = time.Now()
-	ok, violations = validator.Validate(obj)
+	ok, _ = validator.Validate(obj)
 	require.False(t, ok)
 
 	obj["foo"] = time.Now().Add(0 - (time.Hour * 24 * 365 * 100))
@@ -927,7 +927,7 @@ func TestDatetimeLessThanOrEqualExcTime(t *testing.T) {
 	require.True(t, ok)
 
 	obj["foo"] = time.Now()
-	ok, violations = validator.Validate(obj)
+	ok, _ = validator.Validate(obj)
 	require.False(t, ok)
 
 	obj["foo"] = time.Now().Add(0 - (time.Hour * 24 * 365 * 100))

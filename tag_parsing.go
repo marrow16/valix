@@ -73,17 +73,21 @@ var (
 	rx             = regexp.MustCompile("([a])")
 	regexpKind     = reflect.TypeOf(rx).Elem().Kind()
 	constraintKind reflect.Kind
+	otherKind      reflect.Kind
 )
 
 func init() {
 	type dummyConstraint struct {
 		Constraint  Constraint
 		Constraints Constraints
+		Other       Other
 	}
 	dmy := dummyConstraint{}
 	v := reflect.ValueOf(dmy)
 	f := v.FieldByName("Constraint")
 	constraintKind = f.Kind()
+	f = v.FieldByName("Other")
+	otherKind = f.Kind()
 }
 
 func (pv *PropertyValidator) processV8nTag(fieldName string, propertyName string, fld reflect.StructField) error {
@@ -732,6 +736,16 @@ func safeSet(fv reflect.Value, valueStr string, hasValue bool) (result bool) {
 				fv.Set(items)
 				result = true
 			}
+		} else if fv.Type().Elem().Kind() == otherKind {
+			useValue := valueStr
+			if isQuotedStr(valueStr, true) {
+				useValue = valueStr[1 : len(valueStr)-1]
+			}
+			if expr, err := ParseExpression(useValue); err == nil {
+				vx := reflect.ValueOf(expr)
+				fv.Set(vx)
+				result = true
+			}
 		}
 	case regexpKind:
 		if isQuotedStr(valueStr, true) {
@@ -754,8 +768,7 @@ func itemsToSlice(itemType reflect.Type, arrayStr string) (result reflect.Value,
 	ok = false
 	if strItems, err := parseCommas(arrayStr[1 : len(arrayStr)-1]); err == nil {
 		result = reflect.MakeSlice(itemType, len(strItems), len(strItems))
-		ik := itemType.Elem().Kind()
-		switch ik {
+		switch itemType.Elem().Kind() {
 		case reflect.String:
 			ok = true
 			for i, vu := range strItems {

@@ -54,7 +54,6 @@ type ConstraintSet struct {
 }
 
 const (
-	// used for marshaling, unmarshalling and tag parsing of constraint set...
 	constraintSetName               = "ConstraintSet"
 	constraintSetFieldConstraints   = "Constraints"
 	constraintSetFieldOneOf         = "OneOf"

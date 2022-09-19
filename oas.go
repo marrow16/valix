@@ -31,6 +31,7 @@ const (
 	msgOasExpectedString    = msgOasPrefix + "expected string (enclosed with \"\" or '') after token '%s'"
 )
 
+// OasInfo is OAS (Open API Spec) information about an validator or property validator
 type OasInfo struct {
 	Description string
 	Title       string
