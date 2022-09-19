@@ -676,9 +676,9 @@ func TestStringMaxLengthWithRuneLength(t *testing.T) {
 		"foo": "\ud834\udd22"
 	}`)
 
-	ok, violations := vWithUnicode.Validate(obj)
+	ok, _ := vWithUnicode.Validate(obj)
 	require.True(t, ok)
-	ok, violations = vWithoutUnicode.Validate(obj)
+	ok, violations := vWithoutUnicode.Validate(obj)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
 	require.Equal(t, fmt.Sprintf(fmtMsgStringMaxLen, 1), violations[0].Message)
@@ -1186,7 +1186,7 @@ func TestStringValidUnicodeNormalization(t *testing.T) {
 	require.Equal(t, msgUnicodeNormalizationNFC, violations[0].Message)
 
 	obj["foo"] = "\u00e7" // u+00E7 is 'c' with cedilla
-	ok, violations = validator.Validate(obj)
+	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
 
 	validator = buildFooValidator(JsonString,

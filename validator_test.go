@@ -1011,13 +1011,13 @@ func TestValidateReader(t *testing.T) {
 
 	validator.IgnoreUnknownProperties = false
 	r = strings.NewReader(`{"foo": { "bar": "baz" }}`)
-	ok, violations, obj = validator.ValidateReader(r)
+	ok, violations, _ = validator.ValidateReader(r)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
 	require.False(t, violations[0].BadRequest)
 
 	r = strings.NewReader(`NOT JSON`)
-	ok, violations, obj = validator.ValidateReader(r)
+	ok, violations, _ = validator.ValidateReader(r)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
 	require.True(t, violations[0].BadRequest)
@@ -1040,21 +1040,21 @@ func TestValidateReaderCanReadObjectOrArray(t *testing.T) {
 	require.True(t, ok)
 
 	r = strings.NewReader(`false`)
-	ok, violations, obj = validator.ValidateReader(r)
+	ok, violations, _ = validator.ValidateReader(r)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
 	require.Equal(t, msgExpectedJsonObject, violations[0].Message)
 	require.Equal(t, CodeExpectedJsonObject, violations[0].Codes[0])
 
 	r = strings.NewReader(`null`)
-	ok, violations, obj = validator.ValidateReader(r)
+	ok, violations, _ = validator.ValidateReader(r)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
 	require.Equal(t, msgNotJsonNull, violations[0].Message)
 	require.Equal(t, CodeNotJsonNull, violations[0].Codes[0])
 
 	r = strings.NewReader(`[{"foo": "bar"}]`)
-	ok, violations, obj = validator.ValidateReader(r)
+	ok, violations, _ = validator.ValidateReader(r)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
 	require.Equal(t, msgNotJsonArray, violations[0].Message)
@@ -1073,7 +1073,7 @@ func TestValidateReaderCanReadObjectOrArray(t *testing.T) {
 	validator.AllowArray = true
 	validator.DisallowObject = true
 	r = strings.NewReader(`{"foo": { "bar": "baz" }}`)
-	ok, violations, obj = validator.ValidateReader(r)
+	ok, violations, _ = validator.ValidateReader(r)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
 	require.Equal(t, msgExpectedJsonArray, violations[0].Message)
@@ -1082,7 +1082,7 @@ func TestValidateReaderCanReadObjectOrArray(t *testing.T) {
 	validator.AllowArray = false
 	validator.DisallowObject = true
 	r = strings.NewReader(`{"foo": { "bar": "baz" }}`)
-	ok, violations, obj = validator.ValidateReader(r)
+	ok, violations, _ = validator.ValidateReader(r)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
 	require.Equal(t, msgNotJsonObject, violations[0].Message)
@@ -1102,13 +1102,13 @@ func TestValidateString(t *testing.T) {
 	require.NotNil(t, obj)
 
 	validator.IgnoreUnknownProperties = false
-	ok, violations, obj = validator.ValidateString(`{"foo": { "bar": "baz" }}`)
+	ok, violations, _ = validator.ValidateString(`{"foo": { "bar": "baz" }}`)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
 
 	require.False(t, violations[0].BadRequest)
 
-	ok, violations, obj = validator.ValidateString(`NOT JSON`)
+	ok, violations, _ = validator.ValidateString(`NOT JSON`)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
 	require.True(t, violations[0].BadRequest)
@@ -1537,6 +1537,7 @@ func TestValidatorMeetsUnwantedConditions(t *testing.T) {
 	testUnwanted = false
 	ok, violations = v.Validate(obj)
 	require.True(t, ok)
+	require.Equal(t, 0, len(violations))
 
 	// and again with ordered
 	v.OrderedPropertyChecks = true

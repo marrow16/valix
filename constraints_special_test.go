@@ -614,7 +614,7 @@ func TestVariablePropertyNameValidationStopOnFirst(t *testing.T) {
 			"QUX": "this should be an object",
 			"XXX": {}
 		}`)
-	ok, violations = v.Validate(obj)
+	ok, _ = v.Validate(obj)
 	require.False(t, ok)
 }
 

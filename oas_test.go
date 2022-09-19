@@ -9,7 +9,7 @@ import (
 
 func TestValidatorForWithOasTag(t *testing.T) {
 	type myStruct struct {
-		Foo string `json:"foo" oas:"description:'THIS IS DESC',title:'THIS IS TITLE',format:'THIS IS FORMAT',example:'THIS IS EXAMPLE',deprecated"`
+		Foo string `json:"foo" oas:"description:'THIS IS DESC!',title:'THIS IS TITLE',format:'THIS IS FORMAT',example:'THIS IS EXAMPLE',deprecated"`
 	}
 	v, err := ValidatorFor(myStruct{}, nil)
 	require.Nil(t, err)
@@ -18,7 +18,7 @@ func TestValidatorForWithOasTag(t *testing.T) {
 	pv, ok := v.Properties["foo"]
 	require.True(t, ok)
 	require.True(t, pv.OasInfo.Deprecated)
-	require.Equal(t, "THIS IS DESC", pv.OasInfo.Description)
+	require.Equal(t, "THIS IS DESC!", pv.OasInfo.Description)
 	require.Equal(t, "THIS IS TITLE", pv.OasInfo.Title)
 	require.Equal(t, "THIS IS FORMAT", pv.OasInfo.Format)
 	require.Equal(t, "THIS IS EXAMPLE", pv.OasInfo.Example)

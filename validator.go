@@ -532,7 +532,7 @@ func quickSortOrdersAndNames(pvs []*PropertyValidator, ns []string) {
 	ns[pivot], ns[right] = ns[right], ns[pivot]
 	pvs[pivot], pvs[right] = pvs[right], pvs[pivot]
 
-	for i, _ := range ns {
+	for i := range ns {
 		if (pvs[i].Order < pvs[right].Order) || (pvs[i].Order == pvs[right].Order && ns[i] < ns[right]) {
 			ns[left], ns[i] = ns[i], ns[left]
 			pvs[left], pvs[i] = pvs[i], pvs[left]
@@ -620,7 +620,7 @@ func checkOnlyProperties(obj map[string]interface{}, vcx *ValidatorContext, igno
 		// need to check if there are any other known/unknown properties...
 		unknowns := 0
 		knowns := 0
-		for propertyName, _ := range obj {
+		for propertyName := range obj {
 			if propertyName != onlyName {
 				if _, known := properties[propertyName]; known {
 					knowns++
