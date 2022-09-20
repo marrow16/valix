@@ -933,7 +933,7 @@ func (c *DatetimeTolerance) Check(v interface{}, vcx *ValidatorContext) (bool, s
 	}
 	useExcTime := c.ExcTime && c.Duration != 0
 	if dt, ok := isTime(v, useExcTime); ok {
-		if cdt, ok := stringToDatetime(c.Value, useExcTime); ok && checkDatetimeTolerance(&dt, cdt, c.Duration, c.Unit, c.MinCheck) {
+		if cdt, ok := stringToDatetime(c.Value, useExcTime); ok && checkDatetimeTolerance(cdt, &dt, c.Duration, c.Unit, c.MinCheck) {
 			return true, ""
 		}
 	}
