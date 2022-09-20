@@ -1307,6 +1307,16 @@ func TestDatetimeTolerance(t *testing.T) {
 	}`)
 	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
+
+	// seven days...
+	validator = buildFooValidator(JsonAny, &DatetimeTolerance{Value: "2022-04-01T00:00:00", Unit: "day", Duration: 7}, false)
+	obj["foo"] = "2022-04-09T00:00:00"
+	ok, violations = validator.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	obj["foo"] = "2022-04-08T00:00:00"
+	ok, _ = validator.Validate(obj)
+	require.True(t, ok)
 }
 
 func TestDatetimeToleranceToNow(t *testing.T) {
