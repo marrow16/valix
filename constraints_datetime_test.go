@@ -540,3 +540,22 @@ func TestStringValidTimezone(t *testing.T) {
 	ok, _ = c.Check(0, vcx)
 	require.False(t, ok)
 }
+
+func TestDatetimeDayOfWeek(t *testing.T) {
+	vcx := newValidatorContext(nil, nil, false, nil)
+	c := &DatetimeDayOfWeek{Days: "54321"}
+	day := time.Hour * 24
+	for i := time.Duration(-8); i < 9; i++ {
+		dt := time.Now().Add(i * day)
+		ok, msg := c.Check(dt, vcx)
+		okS, _ := c.Check(dt.Format(time.RFC3339), vcx)
+		if dt.Weekday() > 0 && dt.Weekday() < 6 {
+			require.True(t, ok)
+			require.True(t, okS)
+		} else {
+			require.False(t, ok)
+			require.False(t, okS)
+			require.Equal(t, msgDatetimeDayOfWeek, msg)
+		}
+	}
+}

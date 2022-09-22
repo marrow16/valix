@@ -72,6 +72,18 @@ func TestArgsStringToArgs(t *testing.T) {
 	require.False(t, args[1].hasValue)
 }
 
+func TestPropertyValidator_AddAllConstraints(t *testing.T) {
+	constraints := defaultConstraints()
+	pv := &PropertyValidator{}
+	for cn := range constraints {
+		t.Run(fmt.Sprintf("&%s{}", cn), func(t *testing.T) {
+			err := pv.addTagItem("", "", fmt.Sprintf("&%s", cn))
+			require.Nil(t, err)
+		})
+	}
+	require.Equal(t, len(constraints), len(pv.Constraints))
+}
+
 func TestPropertyValidator_ProcessTagItems(t *testing.T) {
 	pv := &PropertyValidator{}
 	err := pv.processTagItems("", "", []string{})
@@ -515,6 +527,21 @@ func TestPropertyValidator_AddConditionalConstraintWithExpr(t *testing.T) {
 	err = pv.addTagItem("", "", "&<no closing StringNotEmpty{'Foo Message'}")
 	require.NotNil(t, err)
 	require.Equal(t, fmt.Sprintf(msgConditionalConstraintsFormat, "&<no closing StringNotEmpty{'Foo Message'}"), err.Error())
+}
+
+func TestPropertyValidator_AddSetConditionIf(t *testing.T) {
+	pv := &PropertyValidator{}
+	require.Equal(t, 0, len(pv.Constraints))
+
+	err := pv.addTagItem("", "", "&SetConditionIf{Constraint:&StringNotEmpty, SetOk:'OK', SetFail:'FAIL'}")
+	require.Nil(t, err)
+	require.Equal(t, 1, len(pv.Constraints))
+	c0, ok := pv.Constraints[0].(*SetConditionIf)
+	require.True(t, ok)
+	require.Equal(t, "OK", c0.SetOk)
+	require.Equal(t, "FAIL", c0.SetFail)
+	_, ok = c0.Constraint.(*StringNotEmpty)
+	require.True(t, ok)
 }
 
 func TestPropertyValidator_AddObjectTagItem_RequiredWith(t *testing.T) {

@@ -297,3 +297,21 @@ func (c *ArrayConditionalConstraint) MarshalJSON() ([]byte, error) {
 	}
 	return json.Marshal(j)
 }
+
+func (c *SetConditionIf) MarshalJSON() ([]byte, error) {
+	j := map[string]interface{}{
+		"SetOk":      c.SetOk,
+		"SetFail":    c.SetFail,
+		"Parent":     c.Parent,
+		"Global":     c.Global,
+		"Constraint": nil,
+	}
+	if c.Constraint != nil {
+		if cj, err := constraintToJson(c.Constraint); err == nil {
+			j["Constraint"] = cj
+		} else {
+			return nil, err
+		}
+	}
+	return json.Marshal(j)
+}

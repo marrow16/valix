@@ -160,6 +160,38 @@ func (c *StringValidTimezone) GetMessage(tcx I18nContext) string {
 	return defaultMessage(tcx, c.Message, msgValidTimezone)
 }
 
+// DatetimeDayOfWeek checks that a date (represented as string or time.Time) is an allowed day of the week
+type DatetimeDayOfWeek struct {
+	// is the allowed days (of the week) expressed as a string of allowed week day numbers (in any order)
+	//
+	// Where 0 = Sunday, e.g. "06" (or "60") allows Sunday or Saturday
+	//
+	// or to allow only 'working days' of the week - "12345"
+	Days string `v8n:"default"`
+	// the violation message to be used if the constraint fails (see Violation.Message)
+	//
+	// (if the Message is an empty string then the default violation message is used)
+	Message string
+	// when set to true, Stop prevents further validation checks on the property if this constraint fails
+	Stop bool
+}
+
+// Check implements Constraint.Check
+func (c *DatetimeDayOfWeek) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
+	if dt, ok := isTime(v, false); ok {
+		if strings.Contains(c.Days, strconv.Itoa(int(dt.Weekday()))) {
+			return true, ""
+		}
+	}
+	vcx.CeaseFurtherIf(c.Stop)
+	return false, c.GetMessage(vcx)
+}
+
+// GetMessage implements the Constraint.GetMessage
+func (c *DatetimeDayOfWeek) GetMessage(tcx I18nContext) string {
+	return defaultMessage(tcx, c.Message, msgDatetimeDayOfWeek)
+}
+
 // DatetimeFuture constraint checks that a datetime/date (represented as string or time.Time) is in the future
 type DatetimeFuture struct {
 	// when set to true, excludes the time when comparing

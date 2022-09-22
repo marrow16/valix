@@ -1037,3 +1037,119 @@ func TestConditionalConstraint_Others(t *testing.T) {
 	require.Equal(t, "foo", violations[0].Property)
 	require.Equal(t, "", violations[0].Path)
 }
+
+func TestSetConditionIf(t *testing.T) {
+	v := &Validator{
+		Properties: Properties{
+			"foo": {
+				Type: JsonString,
+				Constraints: Constraints{
+					&SetConditionIf{
+						Constraint: &StringUppercase{},
+						SetOk:      "IS_UPPER",
+						SetFail:    "IS_NOT_UPPER",
+					},
+					&ConditionalConstraint{
+						When:       Conditions{"IS_UPPER"},
+						Constraint: &FailingConstraint{Message: "IS UPPER FAIL"},
+					},
+					&ConditionalConstraint{
+						When:       Conditions{"IS_NOT_UPPER"},
+						Constraint: &FailingConstraint{Message: "IS NOT UPPER FAIL"},
+					},
+				},
+			},
+		},
+	}
+	obj := jsonObject(`{
+		"foo": "A"
+	}`)
+
+	ok, violations := v.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, "IS UPPER FAIL", violations[0].Message)
+
+	obj["foo"] = "a"
+	ok, violations = v.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, "IS NOT UPPER FAIL", violations[0].Message)
+}
+
+func TestSetConditionIf_NoLeaks(t *testing.T) {
+	v := &Validator{
+		Properties: Properties{
+			"foo": {
+				Type:      JsonString,
+				Mandatory: true,
+				Constraints: Constraints{
+					&SetConditionIf{
+						Constraint: NewCustomConstraint(func(value interface{}, vcx *ValidatorContext, this *CustomConstraint) (passed bool, message string) {
+							vcx.AddViolation(NewViolation("", "", "SHOULD NOT BE SEEN"))
+							vcx.Stop()
+							vcx.CeaseFurther()
+							return false, ""
+						}, ""),
+						SetOk:   "YES",
+						SetFail: "NO",
+						Global:  true,
+					},
+					&FailingConstraint{Message: "HERE"},
+				},
+			},
+			"bar": {
+				Type:      JsonString,
+				Mandatory: true,
+				Constraints: Constraints{
+					&FailingConstraint{Message: "HERE"},
+				},
+			},
+		},
+	}
+	obj := jsonObject(`{
+		"foo": "",
+		"bar": ""
+	}`)
+
+	ok, violations := v.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 2, len(violations))
+	require.Equal(t, "HERE", violations[0].Message)
+	require.Equal(t, "HERE", violations[1].Message)
+
+	v = &Validator{
+		Properties: Properties{
+			"foo": {
+				Type:      JsonString,
+				Mandatory: true,
+				Constraints: Constraints{
+					&SetConditionIf{
+						Constraint: NewCustomConstraint(func(value interface{}, vcx *ValidatorContext, this *CustomConstraint) (passed bool, message string) {
+							vcx.AddViolation(NewViolation("", "", "SHOULD NOT BE SEEN"))
+							vcx.Stop()
+							vcx.CeaseFurther()
+							return false, ""
+						}, ""),
+						SetOk:   "YES",
+						SetFail: "NO",
+						Parent:  true,
+					},
+					&FailingConstraint{Message: "HERE"},
+				},
+			},
+			"bar": {
+				Type:      JsonString,
+				Mandatory: true,
+				Constraints: Constraints{
+					&FailingConstraint{Message: "HERE"},
+				},
+			},
+		},
+	}
+	ok, violations = v.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 2, len(violations))
+	require.Equal(t, "HERE", violations[0].Message)
+	require.Equal(t, "HERE", violations[1].Message)
+}

@@ -135,6 +135,7 @@ const (
 	msgDatetimePast                   = "Value must be a valid date/time in the past"
 	msgDatetimePastOrPresent          = "Value must be a valid date/time in the past or present"
 	msgValidTimezone                  = "Value must be a valid timezone"
+	msgDatetimeDayOfWeek              = "Value must be a valid day of week"
 )
 
 var (

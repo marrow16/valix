@@ -26,6 +26,8 @@ type ValidatorContext struct {
 	pathStack []*pathStackItem
 	// i18nContext is the actual I18nContext used to perform translations
 	i18nContext I18nContext
+	// locking is the locking level of the context
+	locking uint
 }
 
 type Conditions []string
@@ -60,10 +62,12 @@ func newEmptyValidatorContext(i18nCtx I18nContext) *ValidatorContext {
 //
 // Note: Adding a violation always causes the validator to fail!
 func (vc *ValidatorContext) AddViolation(v *Violation) {
-	vc.violations = append(vc.violations, v)
-	vc.ok = false
-	if vc.stopOnFirst {
-		vc.continueAll = false
+	if vc.locking == 0 {
+		vc.violations = append(vc.violations, v)
+		vc.ok = false
+		if vc.stopOnFirst {
+			vc.continueAll = false
+		}
 	}
 }
 
@@ -74,29 +78,37 @@ func (vc *ValidatorContext) AddViolation(v *Violation) {
 //
 // Note 2: Adding a violation always causes the validator to fail!
 func (vc *ValidatorContext) AddViolationForCurrent(msg string, translate bool, codes ...interface{}) {
-	curr := vc.currentStackItem()
-	useMsg := msg
-	if translate {
-		useMsg = vc.TranslateMessage(msg)
+	if vc.locking == 0 {
+		curr := vc.currentStackItem()
+		useMsg := msg
+		if translate {
+			useMsg = vc.TranslateMessage(msg)
+		}
+		vc.AddViolation(NewViolation(curr.propertyAsString(), curr.path, useMsg, codes...))
 	}
-	vc.AddViolation(NewViolation(curr.propertyAsString(), curr.path, useMsg, codes...))
 }
 
 // internal and message is already translated
 func (vc *ValidatorContext) addTranslatedViolationForCurrent(msg string, codes ...interface{}) {
-	curr := vc.currentStackItem()
-	vc.AddViolation(NewViolation(curr.propertyAsString(), curr.path, msg, codes...))
+	if vc.locking == 0 {
+		curr := vc.currentStackItem()
+		vc.AddViolation(NewViolation(curr.propertyAsString(), curr.path, msg, codes...))
+	}
 }
 
 // internal and message gets translated
 func (vc *ValidatorContext) addUnTranslatedViolationForCurrent(msg string, codes ...interface{}) {
-	vc.addTranslatedViolationForCurrent(vc.TranslateMessage(msg), codes...)
+	if vc.locking == 0 {
+		vc.addTranslatedViolationForCurrent(vc.TranslateMessage(msg), codes...)
+	}
 }
 
 // internal and message is translated
 func (vc *ValidatorContext) addViolationPropertyForCurrent(name string, msg string, codes ...interface{}) {
-	curr := vc.currentStackItem()
-	vc.AddViolation(NewViolation(name, curr.asPath(), vc.TranslateMessage(msg), codes...))
+	if vc.locking == 0 {
+		curr := vc.currentStackItem()
+		vc.AddViolation(NewViolation(name, curr.asPath(), vc.TranslateMessage(msg), codes...))
+	}
 }
 
 // Stop causes the entire validation to stop - i.e. not further constraints or
@@ -104,7 +116,9 @@ func (vc *ValidatorContext) addViolationPropertyForCurrent(name string, msg stri
 //
 // Note: This does not affect whether the validator succeeds or fails
 func (vc *ValidatorContext) Stop() {
-	vc.continueAll = false
+	if vc.locking == 0 {
+		vc.continueAll = false
+	}
 }
 
 // CeaseFurther causes further constraints and property validators on the current
@@ -112,7 +126,9 @@ func (vc *ValidatorContext) Stop() {
 //
 // Note: This does not affect whether the validator succeeds or fails
 func (vc *ValidatorContext) CeaseFurther() {
-	vc.currentStackItem().stopped = true
+	if vc.locking == 0 {
+		vc.currentStackItem().stopped = true
+	}
 }
 
 // CeaseFurtherIf causes further constraints and property validators on the current
@@ -120,7 +136,19 @@ func (vc *ValidatorContext) CeaseFurther() {
 //
 // Note: This does not affect whether the validator succeeds or fails
 func (vc *ValidatorContext) CeaseFurtherIf(condition bool) {
-	vc.currentStackItem().stopped = condition
+	if vc.locking == 0 {
+		vc.currentStackItem().stopped = condition
+	}
+}
+
+func (vc *ValidatorContext) Lock() {
+	vc.locking++
+}
+
+func (vc *ValidatorContext) UnLock() {
+	if vc.locking > 0 {
+		vc.locking--
+	}
 }
 
 // CurrentProperty returns the current property - which may be a string (for property name)

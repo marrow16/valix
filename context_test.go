@@ -688,3 +688,43 @@ func TestAncestorValueObject(t *testing.T) {
 	require.NotEmpty(t, c)
 	require.Empty(t, a)
 }
+
+func TestContextLock(t *testing.T) {
+	// check everything without lock...
+	vcx := newValidatorContext(map[string]interface{}{}, nil, false, nil)
+	require.Equal(t, 0, len(vcx.violations))
+	vcx.AddViolation(NewViolation("", "", ""))
+	require.Equal(t, 1, len(vcx.violations))
+
+	require.True(t, vcx.continueAll)
+	vcx.Stop()
+	require.False(t, vcx.continueAll)
+
+	require.True(t, vcx.continuePty())
+	vcx.CeaseFurther()
+	require.False(t, vcx.continuePty())
+	vcx = newValidatorContext(map[string]interface{}{}, nil, false, nil)
+	require.True(t, vcx.continuePty())
+	vcx.CeaseFurtherIf(true)
+	require.False(t, vcx.continuePty())
+
+	// now check with lock...
+	vcx = newValidatorContext(map[string]interface{}{}, nil, false, nil)
+	vcx.Lock()
+	require.Equal(t, 0, len(vcx.violations))
+	vcx.AddViolation(NewViolation("", "", ""))
+	require.Equal(t, 0, len(vcx.violations))
+
+	require.True(t, vcx.continueAll)
+	vcx.Stop()
+	require.True(t, vcx.continueAll)
+
+	require.True(t, vcx.continuePty())
+	vcx.CeaseFurther()
+	require.True(t, vcx.continuePty())
+	vcx = newValidatorContext(map[string]interface{}{}, nil, false, nil)
+	vcx.Lock()
+	require.True(t, vcx.continuePty())
+	vcx.CeaseFurtherIf(true)
+	require.True(t, vcx.continuePty())
+}

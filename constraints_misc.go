@@ -100,74 +100,87 @@ type StringValidCountryCode struct {
 // Check implements Constraint.Check
 func (c *StringValidCountryCode) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
 	if c.NumericOnly {
-		if str, ok := v.(string); ok {
-			if ISO3166_1_NumericCodes[str] {
-				return true, ""
-			} else if c.AllowUserAssigned {
-				if iv, err := strconv.Atoi(str); err == nil && iv >= 900 && iv <= 999 {
-					return true, ""
-				}
-			}
-		} else if iv, ok, isNumber := coerceToInt(v); ok && isNumber {
-			if c.AllowUserAssigned && iv >= 900 && iv <= 999 {
-				return true, ""
-			}
-			ic := fmt.Sprintf("%03d", iv)
-			if ISO3166_1_NumericCodes[ic] {
-				return true, ""
-			}
+		if c.checkNumericOnly(v) {
+			return true, ""
 		}
 	} else {
-		if str, ok := v.(string); ok {
-			if strings.Contains(str, "-") {
-				if c.Allow3166_2 {
-					if parts := strings.Split(str, "-"); len(parts) == 2 {
-						if rs, ok := ISO3166_2_CountryCodes[parts[0]]; ok {
-							if rs[parts[1]] {
-								return true, ""
-							}
-						}
-						if c.Allow3166_2_Obsoletes && ISO3166_2_ObsoleteCodes[str] {
-							return true, ""
-						}
-					}
-				}
-			} else if _, ok := ISO3166_2_CountryCodes[str]; ok {
-				return true, ""
-			} else if c.Allow3166_1_Numeric && ISO3166_1_NumericCodes[str] {
-				return true, ""
-			} else if len(str) == 2 {
-				if subs, ok := iso3166_1_CountryCodesMatrix[str[0]]; ok {
-					if assignment, ok := subs[str[1]]; ok {
-						if assignment == ccAs || assignment == ccRa ||
-							(c.AllowUserAssigned && assignment == ccUA) ||
-							(c.Allow3166_1_ExceptionallyReserved && assignment == ccER) ||
-							(c.Allow3166_1_IndeterminatelyReserved && assignment == ccIR) ||
-							(c.Allow3166_1_TransitionallyReserved && assignment == ccTR) ||
-							(c.Allow3166_1_Deleted && assignment == ccDl) {
-							return true, ""
-						}
-					}
-				}
-			} else if c.Allow3166_1_Numeric && c.AllowUserAssigned {
-				if iv, err := strconv.Atoi(str); err == nil && iv >= 900 && iv <= 999 {
-					return true, ""
-				}
-			}
-		} else if c.Allow3166_1_Numeric {
-			if iv, ok, isNumber := coerceToInt(v); ok && isNumber {
-				if c.AllowUserAssigned && iv >= 900 && iv <= 999 {
-					return true, ""
-				}
-				ic := fmt.Sprintf("%03d", iv)
-				if ISO3166_1_NumericCodes[ic] {
-					return true, ""
-				}
-			}
+		if c.checkAll(v) {
+			return true, ""
 		}
 	}
 	vcx.CeaseFurtherIf(c.Stop)
 	return false, c.GetMessage(vcx)
+}
+
+func (c *StringValidCountryCode) checkAll(v interface{}) bool {
+	if str, ok := v.(string); ok {
+		if strings.Contains(str, "-") {
+			if c.Allow3166_2 {
+				if parts := strings.Split(str, "-"); len(parts) == 2 {
+					if rs, ok := ISO3166_2_CountryCodes[parts[0]]; ok {
+						if rs[parts[1]] {
+							return true
+						}
+					}
+					if c.Allow3166_2_Obsoletes && ISO3166_2_ObsoleteCodes[str] {
+						return true
+					}
+				}
+			}
+		} else if _, ok := ISO3166_2_CountryCodes[str]; ok {
+			return true
+		} else if c.Allow3166_1_Numeric && ISO3166_1_NumericCodes[str] {
+			return true
+		} else if len(str) == 2 {
+			if subs, ok := iso3166_1_CountryCodesMatrix[str[0]]; ok {
+				if assignment, ok := subs[str[1]]; ok {
+					if assignment == ccAs || assignment == ccRa ||
+						(c.AllowUserAssigned && assignment == ccUA) ||
+						(c.Allow3166_1_ExceptionallyReserved && assignment == ccER) ||
+						(c.Allow3166_1_IndeterminatelyReserved && assignment == ccIR) ||
+						(c.Allow3166_1_TransitionallyReserved && assignment == ccTR) ||
+						(c.Allow3166_1_Deleted && assignment == ccDl) {
+						return true
+					}
+				}
+			}
+		} else if c.Allow3166_1_Numeric && c.AllowUserAssigned {
+			if iv, err := strconv.Atoi(str); err == nil && iv >= 900 && iv <= 999 {
+				return true
+			}
+		}
+	} else if c.Allow3166_1_Numeric {
+		if iv, ok, isNumber := coerceToInt(v); ok && isNumber {
+			return c.checkNumeric(iv)
+		}
+	}
+	return false
+}
+
+func (c *StringValidCountryCode) checkNumericOnly(v interface{}) bool {
+	if str, ok := v.(string); ok {
+		if ISO3166_1_NumericCodes[str] {
+			return true
+		} else if c.AllowUserAssigned {
+			if iv, err := strconv.Atoi(str); err == nil && iv >= 900 && iv <= 999 {
+				return true
+			}
+		}
+	} else if iv, ok, isNumber := coerceToInt(v); ok && isNumber {
+		return c.checkNumeric(iv)
+	}
+	return false
+}
+
+func (c *StringValidCountryCode) checkNumeric(iv int64) bool {
+	if c.AllowUserAssigned && iv >= 900 && iv <= 999 {
+		return true
+	}
+	ic := fmt.Sprintf("%03d", iv)
+	if ISO3166_1_NumericCodes[ic] {
+		return true
+	}
+	return false
 }
 
 // GetMessage implements the Constraint.GetMessage

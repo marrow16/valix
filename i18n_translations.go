@@ -877,6 +877,13 @@ var defaultInternalTranslator = &internalTranslator{
 			langIt: "Il valore deve essere una stringa di data/ora valida (formato: AAAA-MM-GGThh: mm:ss [Z|+- hh:mm ])",
 			langDe: "Wert muss ein gültiger Datums-/Uhrzeit-String sein (Format: YYYY-MM-DDThh: mm:ss [Z|+- hh:mm ])",
 		},
+		msgDatetimeDayOfWeek: {
+			langEn: msgDatetimeDayOfWeek,
+			langFr: "La valeur doit être un jour valide de la semaine",
+			langEs: "El valor debe ser un día válido de la semana",
+			langIt: "Il valore deve essere un giorno valido della settimana",
+			langDe: "Wert muss ein gültiger Wochentag sein",
+		},
 		msgValidTimezone: {
 			langEn: msgValidTimezone,
 			langFr: "La valeur doit être un fuseau horaire valide",
