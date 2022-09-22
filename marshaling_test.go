@@ -110,6 +110,15 @@ func TestValidator_MarshalJSON(t *testing.T) {
 					},
 				},
 			},
+			"qux": {
+				Constraints: Constraints{
+					&SetConditionIf{
+						Constraint: &StringUppercase{},
+						SetOk:      "IS_UPPER",
+						SetFail:    "IS_NOT_UPPER",
+					},
+				},
+			},
 			"arr": {
 				Type: JsonString,
 				Constraints: Constraints{
@@ -192,7 +201,7 @@ func TestValidator_MarshalJSON(t *testing.T) {
 	require.True(t, sub[ptyNameOasDeprecated].(bool))
 
 	sub = obj[ptyNameProperties].(map[string]interface{})
-	require.Equal(t, 4, len(sub))
+	require.Equal(t, 5, len(sub))
 
 	pty := sub["foo"].(map[string]interface{})
 	require.Equal(t, 13, len(pty))
@@ -245,6 +254,19 @@ func TestValidator_MarshalJSON(t *testing.T) {
 	require.Equal(t, 1, len(constraints))
 	c0 := constraints[0].(map[string]interface{})
 	require.Equal(t, "foo && bar", c0[ptyNameOthersExpr])
+
+	pty = sub["qux"].(map[string]interface{})
+	constraints = pty[ptyNameConstraints].([]interface{})
+	require.Equal(t, 1, len(constraints))
+	c0 = constraints[0].(map[string]interface{})
+	require.Equal(t, "SetConditionIf", c0["name"])
+	require.NotEmpty(t, c0["fields"])
+	fields = c0["fields"].(map[string]interface{})
+	require.Equal(t, "IS_UPPER", fields["SetOk"])
+	require.Equal(t, "IS_NOT_UPPER", fields["SetFail"])
+	require.NotEmpty(t, fields["Constraint"])
+	wc := fields["Constraint"].(map[string]interface{})
+	require.Equal(t, "StringUppercase", wc["name"])
 }
 
 func TestValidator_MarshalJSON_FailsWithCustomConstraints(t *testing.T) {
@@ -510,4 +532,16 @@ func TestAllConstraintsCanBeMarshalledAndUnmarshalled(t *testing.T) {
 	require.Nil(t, err)
 	upv := uv.Properties["foo"]
 	require.Equal(t, len(pv.Constraints), len(upv.Constraints))
+}
+
+func TestConstraint_SetConditionIf_MarshalJSONFails(t *testing.T) {
+	c := &SetConditionIf{
+		Constraint: &CustomConstraint{
+			CheckFunc: func(value interface{}, vcx *ValidatorContext, this *CustomConstraint) (passed bool, message string) {
+				return true, ""
+			},
+		},
+	}
+	_, err := json.Marshal(c)
+	require.NotNil(t, err)
 }

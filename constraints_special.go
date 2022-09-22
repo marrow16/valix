@@ -116,6 +116,60 @@ func (c *SetConditionFrom) GetMessage(tcx I18nContext) string {
 	return ""
 }
 
+// SetConditionIf is a special constraint that wraps another constraint and sets a condition based on whether
+// that wrapped constraint is ok or fails
+//
+// Note: the wrapped constraint cannot add any violations and cannot stop the validation (i.e. it is called 'silently')
+type SetConditionIf struct {
+	// is the wrapped constraint to be checked
+	//
+	// If this is nil, the SetOk condition is always set
+	//
+	// Note: the wrapped constraint cannot add any violations and cannot stop the validation (i.e. it is called 'silently')
+	Constraint Constraint
+	// is the condition to set if the wrapped constraint is ok
+	//
+	// Note: if this is an empty string - no condition is set
+	SetOk string
+	// is the condition to set if the wrapped constraint fails
+	//
+	// Note: if this is an empty string - no condition is set
+	SetFail string
+	// Parent by default, conditions are set on the current property or object - but specifying
+	// true for this field means the condition is set on the parent object too
+	Parent bool
+	// Global setting this field to true means the condition is set for the entire
+	// validator context
+	Global bool
+}
+
+// Check implements Constraint.Check
+func (c *SetConditionIf) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
+	setCond := c.SetOk
+	if c.Constraint != nil {
+		vcx.Lock()
+		if ok, _ := c.Constraint.Check(v, vcx); !ok {
+			setCond = c.SetFail
+		}
+		vcx.UnLock()
+	}
+	if setCond != "" {
+		if c.Global {
+			vcx.SetGlobalCondition(setCond)
+		} else if c.Parent {
+			vcx.SetParentCondition(setCond)
+		} else {
+			vcx.SetCondition(setCond)
+		}
+	}
+	return true, c.GetMessage(vcx)
+}
+
+// GetMessage implements the Constraint.GetMessage
+func (c *SetConditionIf) GetMessage(tcx I18nContext) string {
+	return ""
+}
+
 // SetConditionOnType constraint is a utility constraint that can be used to set a condition in the
 // ValidatorContext indicating the type of the property value to which this constraint is added.
 //

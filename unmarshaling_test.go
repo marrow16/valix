@@ -245,6 +245,32 @@ const (
 				"notNull": true,
 				"order": 0,
 				"type": "object"
+			},
+			"qux": {
+				"constraints": [
+					{
+						"fields": {
+							"Constraint": {
+								"fields": {
+									"Message": "",
+									"Stop": false
+								},
+								"name": "StringUppercase"
+							},
+							"Global": false,
+							"Parent": false,
+							"SetFail": "IS_NOT_UPPER",
+							"SetOk": "IS_UPPER"
+						},
+						"name": "SetConditionIf"
+					}
+				],
+				"mandatory": false,
+				"notNull": false,
+				"order": 0,
+				"requiredWithMessage": "",
+				"type": "any",
+				"unwantedWithMessage": ""
 			}
 		},
 		"stopOnFirst": true,
@@ -290,7 +316,7 @@ func TestValidatorUnmarshal(t *testing.T) {
 	require.Equal(t, 1, len(cv.WhenConditions))
 	require.Equal(t, "cv_foo", cv.WhenConditions[0])
 
-	require.Equal(t, 4, len(v.Properties))
+	require.Equal(t, 5, len(v.Properties))
 	foo := v.Properties["foo"]
 	require.Equal(t, 1, foo.Order)
 	require.True(t, foo.Mandatory)
@@ -350,6 +376,15 @@ func TestValidatorUnmarshal(t *testing.T) {
 	require.Equal(t, "%2", constraint5.When)
 	constraint6 := constraint5.Constraint.(*StringGreaterThanOther)
 	require.Equal(t, "foo", constraint6.PropertyName)
+
+	qux := v.Properties["qux"]
+	require.Equal(t, 1, len(qux.Constraints))
+	constraint7 := qux.Constraints[0].(*SetConditionIf)
+	require.Equal(t, "IS_UPPER", constraint7.SetOk)
+	require.Equal(t, "IS_NOT_UPPER", constraint7.SetFail)
+	require.NotNil(t, constraint7.Constraint)
+	_, ok := constraint7.Constraint.(*StringUppercase)
+	require.True(t, ok)
 }
 
 func TestValidatorValidation(t *testing.T) {
@@ -1217,4 +1252,42 @@ func TestPropertyValidatorValidatorFailsWithBadWiths(t *testing.T) {
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
 	require.True(t, strings.Contains(violations[0].Message, fmt.Sprintf("at position %d", 4)))
+}
+
+func TestSetConditionIf_UnmarshalJSONFails(t *testing.T) {
+	c := &SetConditionIf{}
+	js := `{}`
+
+	err := json.Unmarshal([]byte(js), c)
+	require.Nil(t, err)
+
+	js = `{"Constraint": "should be object"}`
+	err = json.Unmarshal([]byte(js), c)
+	require.NotNil(t, err)
+	require.Equal(t, fmt.Sprintf(errMsgFieldExpectedType, "Constraint", "object"), err.Error())
+
+	js = `{"Constraint": {"foo": "this isnt a constraint"}}`
+	err = json.Unmarshal([]byte(js), c)
+	require.NotNil(t, err)
+	require.Equal(t, fmt.Sprintf(errMsgUnknownNamedConstraint, ""), err.Error())
+
+	js = `{"SetOk": 1}`
+	err = json.Unmarshal([]byte(js), c)
+	require.NotNil(t, err)
+	require.Equal(t, fmt.Sprintf(errMsgFieldExpectedType, "SetOk", "string"), err.Error())
+
+	js = `{"SetFail": 1}`
+	err = json.Unmarshal([]byte(js), c)
+	require.NotNil(t, err)
+	require.Equal(t, fmt.Sprintf(errMsgFieldExpectedType, "SetFail", "string"), err.Error())
+
+	js = `{"Parent": "should be bool"}`
+	err = json.Unmarshal([]byte(js), c)
+	require.NotNil(t, err)
+	require.Equal(t, fmt.Sprintf(errMsgFieldExpectedType, "Parent", "bool"), err.Error())
+
+	js = `{"Global": "should be bool"}`
+	err = json.Unmarshal([]byte(js), c)
+	require.NotNil(t, err)
+	require.Equal(t, fmt.Sprintf(errMsgFieldExpectedType, "Global", "bool"), err.Error())
 }

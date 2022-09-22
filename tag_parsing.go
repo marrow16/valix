@@ -148,168 +148,147 @@ func isConstraintsList(tagItem string) ([]string, bool, error) {
 	return nil, false, nil
 }
 
+var tagExpectsColon = map[string]bool{
+	tagTokenNotNull:  false,
+	tagTokenNullable: false,
+	// tagTokenMandatory, tagTokenRequired: either
+	tagTokenOptional:       false,
+	tagTokenStopOnFirst:    false,
+	tagTokenStopOnFirstAlt: false,
+	// tagTokenOnly: either
+	tagTokenOnlyMsg:                    true,
+	tagTokenType:                       true,
+	tagTokenOrder:                      true,
+	tagTokenConstraint:                 true,
+	tagTokenObjConstraint:              true,
+	tagTokenWhen:                       true,
+	tagTokenUnwanted:                   true,
+	tagTokenRequiredWith:               true,
+	tagTokenRequiredWithAlt:            true,
+	tagTokenUnwantedWith:               true,
+	tagTokenUnwantedWithAlt:            true,
+	tagTokenRequiredWithMsg:            true,
+	tagTokenRequiredWithAltMsg:         true,
+	tagTokenUnwantedWithMsg:            true,
+	tagTokenUnwantedWithAltMsg:         true,
+	tagTokenObjIgnoreUnknownProperties: false,
+	tagTokenObjUnknownProperties:       true,
+	tagTokenObjOrdered:                 false,
+	tagTokenObjWhen:                    true,
+	tagTokenObjNo:                      false,
+	tagTokenArrAllowNullItems:          false,
+}
+
 func (pv *PropertyValidator) addTagItem(fieldName string, propertyName string, tagItem string) (result error) {
-	result = nil
-	tagToken := tagItem
-	tagValue := ""
-	hasColon := false
+	tagToken, tagValue, hasColon, err := splitTagItem(tagItem)
+	if err != nil {
+		return err
+	}
+	switch tagToken {
+	case tagTokenNotNull:
+		pv.NotNull = true
+	case tagTokenNullable:
+		pv.NotNull = false
+	case tagTokenMandatory, tagTokenRequired:
+		result = pv.setTagMandatoryWhen(hasColon, tagValue)
+	case tagTokenOptional:
+		pv.Mandatory = false
+	case tagTokenStopOnFirst, tagTokenStopOnFirstAlt:
+		pv.StopOnFirst = true
+	case tagTokenOnly:
+		result = pv.setTagOnlyConditions(hasColon, tagValue)
+	case tagTokenOnlyMsg:
+		pv.setTagOnlyMessage(tagValue)
+	case tagTokenType:
+		result = pv.setTagType(tagValue)
+	case tagTokenOrder:
+		result = pv.setTagOrder(tagValue)
+	case tagTokenConstraint:
+		result = pv.addConstraint(tagValue)
+	case tagTokenObjConstraint:
+		result = pv.setTagObjConstraint(tagValue)
+	case tagTokenWhen:
+		result = pv.setTagWhen(tagValue)
+	case tagTokenUnwanted:
+		result = pv.setTagUnwanted(tagValue)
+	case tagTokenRequiredWith, tagTokenRequiredWithAlt:
+		result = pv.addRequiredWith(tagValue)
+	case tagTokenUnwantedWith, tagTokenUnwantedWithAlt:
+		result = pv.addUnwantedWith(tagValue)
+	case tagTokenRequiredWithMsg, tagTokenRequiredWithAltMsg:
+		pv.setTagRequiredWithMessage(tagValue)
+	case tagTokenUnwantedWithMsg, tagTokenUnwantedWithAltMsg:
+		pv.setTagUnwantedWithMessage(tagValue)
+	case tagTokenObjIgnoreUnknownProperties:
+		result = pv.setTagObjIgnoreUnknownProperties(tagToken)
+	case tagTokenObjUnknownProperties:
+		result = pv.setTagObjUnknownProperties(tagValue)
+	case tagTokenObjOrdered:
+		result = pv.setTagOrderedPropertyChecks(tagToken)
+	case tagTokenObjWhen:
+		result = pv.setTagObjWhen(tagValue)
+	case tagTokenObjNo:
+		pv.ObjectValidator = nil
+	case tagTokenArrAllowNullItems:
+		result = pv.setTagAllowArrayNullItems(tagToken)
+	default:
+		result = pv.defaultTagItemProcess(tagItem, tagToken, tagValue, hasColon, propertyName, fieldName)
+	}
+	return
+}
+
+func splitTagItem(tagItem string) (tagToken string, tagValue string, hasColon bool, err error) {
+	tagToken = tagItem
+	tagValue = ""
+	hasColon = false
+	err = nil
 	if cAt := firstValidColonAt(tagItem); cAt != -1 {
 		hasColon = true
 		tagToken = strings.Trim(tagItem[0:cAt], " ")
 		tagValue = strings.Trim(tagItem[cAt+1:], " ")
 	}
-	colonErr := false
-	noColonErr := false
-	switch tagToken {
-	case tagTokenNotNull:
-		colonErr = hasColon
-		pv.NotNull = true
-	case tagTokenNullable:
-		colonErr = hasColon
-		pv.NotNull = false
-	case tagTokenMandatory, tagTokenRequired:
-		if hasColon {
-			result = pv.setTagMandatoryWhen(tagValue)
-		}
-		pv.Mandatory = true
-	case tagTokenOptional:
-		colonErr = hasColon
-		pv.Mandatory = false
-	case tagTokenStopOnFirst, tagTokenStopOnFirstAlt:
-		colonErr = hasColon
-		pv.StopOnFirst = true
-	case tagTokenOnly:
-		if hasColon {
-			result = pv.setTagOnlyConditions(tagValue)
-		}
-		pv.Only = true
-	case tagTokenOnlyMsg:
-		noColonErr = !hasColon
-		if !noColonErr {
-			if isQuotedStr(tagValue, true) {
-				pv.OnlyMessage = tagValue[1 : len(tagValue)-1]
-			} else {
-				pv.OnlyMessage = tagValue
-			}
-		}
-	case tagTokenType:
-		noColonErr = !hasColon
-		if !noColonErr {
-			result = pv.setTagType(tagValue)
-		}
-	case tagTokenOrder:
-		noColonErr = !hasColon
-		if !noColonErr {
-			result = pv.setTagOrder(tagValue)
-		}
-	case tagTokenConstraint:
-		noColonErr = !hasColon
-		if !noColonErr {
-			result = pv.addConstraint(tagValue)
-		}
-	case tagTokenObjConstraint:
-		noColonErr = !hasColon
-		if !noColonErr {
-			result = pv.setTagObjConstraint(tagValue)
-		}
-	case tagTokenWhen:
-		noColonErr = !hasColon
-		if !noColonErr {
-			result = pv.setTagWhen(tagValue)
-		}
-	case tagTokenUnwanted:
-		noColonErr = !hasColon
-		if !noColonErr {
-			result = pv.setTagUnwanted(tagValue)
-		}
-	case tagTokenRequiredWith, tagTokenRequiredWithAlt:
-		noColonErr = !hasColon
-		if !noColonErr {
-			result = pv.addRequiredWith(tagValue)
-		}
-	case tagTokenUnwantedWith, tagTokenUnwantedWithAlt:
-		noColonErr = !hasColon
-		if !noColonErr {
-			result = pv.addUnwantedWith(tagValue)
-		}
-	case tagTokenRequiredWithMsg, tagTokenRequiredWithAltMsg:
-		noColonErr = !hasColon
-		if !noColonErr {
-			if isQuotedStr(tagValue, true) {
-				pv.RequiredWithMessage = tagValue[1 : len(tagValue)-1]
-			} else {
-				pv.RequiredWithMessage = tagValue
-			}
-		}
-	case tagTokenUnwantedWithMsg, tagTokenUnwantedWithAltMsg:
-		noColonErr = !hasColon
-		if !noColonErr {
-			if isQuotedStr(tagValue, true) {
-				pv.UnwantedWithMessage = tagValue[1 : len(tagValue)-1]
-			} else {
-				pv.UnwantedWithMessage = tagValue
-			}
-		}
-	case tagTokenObjIgnoreUnknownProperties:
-		colonErr = hasColon
-		if !colonErr {
-			if pv.ObjectValidator == nil {
-				result = fmt.Errorf(msgPropertyNotObject, tagToken)
-			} else {
-				pv.ObjectValidator.IgnoreUnknownProperties = true
-			}
-		}
-	case tagTokenObjUnknownProperties:
-		noColonErr = !hasColon
-		if !noColonErr {
-			result = pv.setTagObjUnknownProperties(tagValue)
-		}
-	case tagTokenObjOrdered:
-		colonErr = hasColon
-		if !colonErr {
-			if pv.ObjectValidator == nil {
-				result = fmt.Errorf(msgPropertyNotObject, tagToken)
-			} else {
-				pv.ObjectValidator.OrderedPropertyChecks = true
-			}
-		}
-	case tagTokenObjWhen:
-		noColonErr = !hasColon
-		if !noColonErr {
-			result = pv.setTagObjWhen(tagValue)
-		}
-	case tagTokenObjNo:
-		colonErr = hasColon
-		pv.ObjectValidator = nil
-	case tagTokenArrAllowNullItems:
-		colonErr = hasColon
-		if !colonErr {
-			if pv.ObjectValidator == nil {
-				result = fmt.Errorf(msgPropertyNotObject, tagToken)
-			} else {
-				pv.ObjectValidator.AllowNullItems = true
-			}
-		}
-	default:
-		if strings.HasPrefix(tagItem, "&") {
-			// if tagName starts with '&' we can assume it's a constraint
-			if err := pv.addConstraint(tagItem); err != nil {
-				result = err
-			}
-		} else if ok, err := customTagTokenRegistry.handle(tagToken, hasColon, tagValue, pv, propertyName, fieldName); ok {
-			result = err
-		} else {
-			result = fmt.Errorf(msgUnknownTokenInTag, tagToken)
-		}
-	}
-	if result == nil {
-		if colonErr {
-			result = fmt.Errorf(msgUnexpectedColon, tagToken)
-		} else if noColonErr {
-			result = fmt.Errorf(msgExpectedColon, tagToken)
+	if expectColon, known := tagExpectsColon[tagToken]; known {
+		if expectColon && !hasColon {
+			err = fmt.Errorf(msgExpectedColon, tagToken)
+		} else if !expectColon && hasColon {
+			err = fmt.Errorf(msgUnexpectedColon, tagToken)
 		}
 	}
 	return
+}
+
+func (pv *PropertyValidator) defaultTagItemProcess(tagItem, tagToken, tagValue string, hasColon bool, propertyName, fieldName string) error {
+	if strings.HasPrefix(tagItem, "&") {
+		// if tagName starts with '&' we can assume it's a constraint
+		return pv.addConstraint(tagItem)
+	} else if ok, err := customTagTokenRegistry.handle(tagToken, hasColon, tagValue, pv, propertyName, fieldName); ok {
+		return err
+	}
+	return fmt.Errorf(msgUnknownTokenInTag, tagToken)
+}
+
+func (pv *PropertyValidator) setTagObjIgnoreUnknownProperties(tagToken string) error {
+	if pv.ObjectValidator == nil {
+		return fmt.Errorf(msgPropertyNotObject, tagToken)
+	}
+	pv.ObjectValidator.IgnoreUnknownProperties = true
+	return nil
+}
+
+func (pv *PropertyValidator) setTagOrderedPropertyChecks(tagToken string) error {
+	if pv.ObjectValidator == nil {
+		return fmt.Errorf(msgPropertyNotObject, tagToken)
+	}
+	pv.ObjectValidator.OrderedPropertyChecks = true
+	return nil
+}
+
+func (pv *PropertyValidator) setTagAllowArrayNullItems(tagToken string) error {
+	if pv.ObjectValidator == nil {
+		return fmt.Errorf(msgPropertyNotObject, tagToken)
+	}
+	pv.ObjectValidator.AllowNullItems = true
+	return nil
 }
 
 func (pv *PropertyValidator) setTagType(tagValue string) error {
@@ -351,12 +330,28 @@ func addConditions(conditions *Conditions, tagValue string, allowCurly bool) err
 	return nil
 }
 
-func (pv *PropertyValidator) setTagMandatoryWhen(tagValue string) error {
-	return addConditions(&pv.MandatoryWhen, tagValue, true)
+func (pv *PropertyValidator) setTagMandatoryWhen(hasValue bool, tagValue string) error {
+	pv.Mandatory = true
+	if hasValue {
+		return addConditions(&pv.MandatoryWhen, tagValue, true)
+	}
+	return nil
 }
 
-func (pv *PropertyValidator) setTagOnlyConditions(tagValue string) error {
-	return addConditions(&pv.OnlyConditions, tagValue, true)
+func (pv *PropertyValidator) setTagOnlyConditions(hasValue bool, tagValue string) error {
+	pv.Only = true
+	if hasValue {
+		return addConditions(&pv.OnlyConditions, tagValue, true)
+	}
+	return nil
+}
+
+func (pv *PropertyValidator) setTagOnlyMessage(tagValue string) {
+	if isQuotedStr(tagValue, true) {
+		pv.OnlyMessage = tagValue[1 : len(tagValue)-1]
+	} else {
+		pv.OnlyMessage = tagValue
+	}
 }
 
 func (pv *PropertyValidator) setTagObjConstraint(tagValue string) error {
@@ -447,6 +442,22 @@ func (pv *PropertyValidator) addUnwantedWith(tagValue string) error {
 		}
 	}
 	return nil
+}
+
+func (pv *PropertyValidator) setTagRequiredWithMessage(tagValue string) {
+	if isQuotedStr(tagValue, true) {
+		pv.RequiredWithMessage = tagValue[1 : len(tagValue)-1]
+	} else {
+		pv.RequiredWithMessage = tagValue
+	}
+}
+
+func (pv *PropertyValidator) setTagUnwantedWithMessage(tagValue string) {
+	if isQuotedStr(tagValue, true) {
+		pv.UnwantedWithMessage = tagValue[1 : len(tagValue)-1]
+	} else {
+		pv.UnwantedWithMessage = tagValue
+	}
 }
 
 func (v *Validator) addConstraint(tagValue string) error {

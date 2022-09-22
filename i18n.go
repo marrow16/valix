@@ -208,6 +208,7 @@ var internalMessages = map[string]string{
 	msgValidISODatetimeFormatNoMillis: msgValidISODatetimeFormatNoMillis,
 	msgValidISODatetimeFormatMin:      msgValidISODatetimeFormatMin,
 	msgValidTimezone:                  msgValidTimezone,
+	msgDatetimeDayOfWeek:              msgDatetimeDayOfWeek,
 	msgDatetimeFuture:                 msgDatetimeFuture,
 	msgDatetimeFutureOrPresent:        msgDatetimeFutureOrPresent,
 	msgDatetimePast:                   msgDatetimePast,

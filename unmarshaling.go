@@ -792,3 +792,48 @@ func (o *OthersExpr) UnmarshalJSON(data []byte) error {
 	*o = newO
 	return nil
 }
+
+func (c *SetConditionIf) UnmarshalJSON(data []byte) error {
+	obj := map[string]interface{}{}
+	_ = json.Unmarshal(data, &obj)
+	if raw, ok := obj["Constraint"]; ok && raw != nil {
+		if v, ok := raw.(map[string]interface{}); ok {
+			if wrapped, err := unmarshalConstraint(v); err == nil {
+				c.Constraint = wrapped
+			} else {
+				return err
+			}
+		} else {
+			return fmt.Errorf(errMsgFieldExpectedType, "Constraint", "object")
+		}
+	}
+	if raw, ok := obj["SetOk"]; ok {
+		if v, ok := raw.(string); ok {
+			c.SetOk = v
+		} else {
+			return fmt.Errorf(errMsgFieldExpectedType, "SetOk", "string")
+		}
+	}
+	if raw, ok := obj["SetFail"]; ok {
+		if v, ok := raw.(string); ok {
+			c.SetFail = v
+		} else {
+			return fmt.Errorf(errMsgFieldExpectedType, "SetFail", "string")
+		}
+	}
+	if raw, ok := obj["Parent"]; ok {
+		if v, ok := raw.(bool); ok {
+			c.Parent = v
+		} else {
+			return fmt.Errorf(errMsgFieldExpectedType, "Parent", "bool")
+		}
+	}
+	if raw, ok := obj["Global"]; ok {
+		if v, ok := raw.(bool); ok {
+			c.Global = v
+		} else {
+			return fmt.Errorf(errMsgFieldExpectedType, "Global", "bool")
+		}
+	}
+	return nil
+}

@@ -622,6 +622,46 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
     <tr></tr>
     <tr>
         <td>
+            <code>DatetimeDayOfWeek</code><br>&nbsp;&nbsp;<code>dtdow</code>&nbsp;<em>(i18n tag abbr.)</em>
+        </td>
+        <td>
+            Checks that a date (represented as string or time.Time) is an allowed day of the week
+            <details>
+                <summary>Fields</summary>
+                <table>
+                    <tr>
+                        <td>
+                            <code>Value</code> <em>string</em>
+                        </td>
+                        <td>
+                            is the allowed days (of the week) expressed as a string of allowed week day numbers (in any order)<br>
+                            Where 0 = Sunday, e.g. <code>"06"</code> (or <code>"60"</code>) allows Sunday or Saturday<br>
+                            or to allow only 'working days' of the week - <code>"12345"</code>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Message</code> <em>string</em>
+                        </td>
+                        <td>
+                            the violation message to be used if the constraint fails (if empty, the default violation message is used)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Stop</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set to true, prevents further validation checks on the property if this constraint fails
+                        </td>
+                    </tr>
+                </table>
+            </details>
+        </td>
+    </tr>
+    <tr></tr>
+    <tr>
+        <td>
             <code>DatetimeGreaterThan</code><br>&nbsp;&nbsp;<code>dtgt</code>&nbsp;<em>(i18n tag abbr.)</em>
         </td>
         <td>
@@ -3445,6 +3485,98 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             <details>
                 <summary>Fields</summary>
                 <table>
+                    <tr>
+                        <td>
+                            <code>Parent</code> <em>bool</em>
+                        </td>
+                        <td>
+                            by default, conditions are set on the current property or object - but specifying true for this field means the condition is set on the parent object too
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Global</code> <em>bool</em>
+                        </td>
+                        <td>
+                            setting this field to true means the condition is set for the entire validator context
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Prefix</code> <em>string</em>
+                        </td>
+                        <td>
+                            is any prefix to be appended to the condition token
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Mapping</code> <em>map[string]string</em>
+                        </td>
+                        <td>
+                            converts the string value to alternate values (if the value is not found in the map then the original value is used
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>NullToken</code> <em>string</em>
+                        </td>
+                        <td>
+                            is the condition token used if the value of the property is null/nil.  If this field is not set
+                            and the property value is null at validation - then a condition token of "null" is used
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Format</code> <em>string</em>
+                        </td>
+                        <td>
+                            is an optional format string for dealing with non-string property values
+                        </td>
+                    </tr>
+                </table>
+            </details>
+        </td>
+    </tr>
+    <tr></tr>
+    <tr>
+        <td>
+            <code>SetConditionIf</code><br>&nbsp;&nbsp;<code>cif</code>&nbsp;<em>(i18n tag abbr.)</em>
+        </td>
+        <td>
+            Is a special constraint that wraps another constraint and sets a condition based on whether that wrapped constraint is ok or fails<br>
+            <em>Note: the wrapped constraint cannot add any violations and cannot stop the validation (i.e. it is called 'silently')</em>
+            <details>
+                <summary>Fields</summary>
+                <table>
+                    <tr>
+                        <td>
+                            <code>Constraint</code> <em>Constraint</em>
+                        </td>
+                        <td>
+                            is the wrapped constraint to be checked<br>
+                            If this is nil, the SetOk condition is always set<br>
+                            <em>Note: the wrapped constraint cannot add any violations and cannot stop the validation (i.e. it is called 'silently')</em>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>SetOk</code> <em>string</em>
+                        </td>
+                        <td>
+                            is the condition to set if the wrapped constraint is ok<br>
+                            <em>Note: if this is an empty string - no condition is set</em>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>SetFail</code> <em>string</em>
+                        </td>
+                        <td>
+                            is the condition to set if the wrapped constraint fails<br>
+                            <em>Note: if this is an empty string - no condition is set</em>
+                        </td>
+                    </tr>
                     <tr>
                         <td>
                             <code>Parent</code> <em>bool</em>
