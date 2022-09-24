@@ -377,7 +377,7 @@ type parseCheckPropertiesExpression struct {
 
 func (ck *parseCheckPropertiesExpression) Check(value interface{}, vcx *ValidatorContext) (bool, string) {
 	if str, ok := value.(string); ok {
-		_, _, err := parseExpressionTokens(str)
+		_, _, err := parseExpression(str)
 		if err != nil {
 			return false, fmt.Sprintf(ck.GetMessage(vcx)+" - %s", err.Error())
 		}
@@ -588,6 +588,49 @@ func unmarshalConstraints(cs []interface{}) (Constraints, error) {
 }
 
 func unmarshalConstraint(c map[string]interface{}) (Constraint, error) {
+	constraint, err := unmarshalGetConstraint(c)
+	if err != nil {
+		return nil, err
+	}
+	var whens []string
+	var othersExpr OthersExpr
+	if rawWhens, ok := c[ptyNameWhenConditions]; ok {
+		if slc, ok := rawWhens.([]interface{}); ok {
+			whens = make([]string, len(slc))
+			for i, v := range slc {
+				if str, ok := v.(string); ok {
+					whens[i] = str
+				} else {
+					return nil, fmt.Errorf(errMsgFieldExpectedType, ptyNameWhenConditions, "array of strings")
+				}
+			}
+		} else {
+			return nil, fmt.Errorf(errMsgFieldExpectedType, ptyNameWhenConditions, "array")
+		}
+	}
+	if rawExpr, ok := c[ptyNameOthersExpr]; ok {
+		if cExpr, ok := rawExpr.(string); ok {
+			if expr, err := ParseExpression(cExpr); err == nil {
+				othersExpr = expr
+			} else {
+				return nil, fmt.Errorf(errMsgCannotParseExpr, cExpr, err.Error())
+			}
+		} else {
+			return nil, fmt.Errorf(errMsgFieldExpectedType, ptyNameOthersExpr, "string")
+		}
+	}
+	if fs, ok := c[ptyNameFields]; ok && fs != nil {
+		if fields, fOk := fs.(map[string]interface{}); fOk {
+			return validateUnmarshallingConstraint(constraint, fields, whens, othersExpr)
+		} else {
+			return nil, fmt.Errorf(errMsgFieldExpectedType, ptyNameFields, "object")
+		}
+	} else {
+		return validateUnmarshallingConstraint(constraint, map[string]interface{}{}, whens, othersExpr)
+	}
+}
+
+func unmarshalGetConstraint(c map[string]interface{}) (Constraint, error) {
 	constraintName := ""
 	if raw, ok := c[ptyNameName]; ok {
 		if v, ok := raw.(string); ok {
@@ -597,58 +640,19 @@ func unmarshalConstraint(c map[string]interface{}) (Constraint, error) {
 		}
 	}
 	var constraint Constraint
-	constraintFound := false
 	if constraintName == constraintSetName {
 		constraint = &ConstraintSet{}
-		constraintFound = true
 	} else if constraintName == constraintVariableProperty {
 		constraint = &VariablePropertyConstraint{}
-		constraintFound = true
 	} else if constraintName == arrayconditionalConstraintName {
 		constraint = &ArrayConditionalConstraint{}
-		constraintFound = true
 	} else {
-		constraint, constraintFound = constraintsRegistry.get(constraintName)
+		constraint, _ = constraintsRegistry.get(constraintName)
 	}
-	if constraintFound {
-		var whens []string
-		var othersExpr OthersExpr
-		if rawWhens, ok := c[ptyNameWhenConditions]; ok {
-			if slc, ok := rawWhens.([]interface{}); ok {
-				whens = make([]string, len(slc))
-				for i, v := range slc {
-					if str, ok := v.(string); ok {
-						whens[i] = str
-					} else {
-						return nil, fmt.Errorf(errMsgFieldExpectedType, ptyNameWhenConditions, "array of strings")
-					}
-				}
-			} else {
-				return nil, fmt.Errorf(errMsgFieldExpectedType, ptyNameWhenConditions, "array")
-			}
-		}
-		if rawExpr, ok := c[ptyNameOthersExpr]; ok {
-			if cExpr, ok := rawExpr.(string); ok {
-				if expr, err := ParseExpression(cExpr); err == nil {
-					othersExpr = expr
-				} else {
-					return nil, fmt.Errorf(errMsgCannotParseExpr, cExpr, err.Error())
-				}
-			} else {
-				return nil, fmt.Errorf(errMsgFieldExpectedType, ptyNameOthersExpr, "string")
-			}
-		}
-		if fs, ok := c[ptyNameFields]; ok && fs != nil {
-			if fields, fOk := fs.(map[string]interface{}); fOk {
-				return validateUnmarshallingConstraint(constraint, fields, whens, othersExpr)
-			} else {
-				return nil, fmt.Errorf(errMsgFieldExpectedType, ptyNameFields, "object")
-			}
-		} else {
-			return validateUnmarshallingConstraint(constraint, map[string]interface{}{}, whens, othersExpr)
-		}
+	if constraint == nil {
+		return nil, fmt.Errorf(errMsgUnknownNamedConstraint, constraintName)
 	}
-	return nil, fmt.Errorf(errMsgUnknownNamedConstraint, constraintName)
+	return constraint, nil
 }
 
 func (jt *JsonType) UnmarshalJSON(data []byte) error {

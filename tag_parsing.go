@@ -148,90 +148,14 @@ func isConstraintsList(tagItem string) ([]string, bool, error) {
 	return nil, false, nil
 }
 
-var tagExpectsColon = map[string]bool{
-	tagTokenNotNull:  false,
-	tagTokenNullable: false,
-	// tagTokenMandatory, tagTokenRequired: either
-	tagTokenOptional:       false,
-	tagTokenStopOnFirst:    false,
-	tagTokenStopOnFirstAlt: false,
-	// tagTokenOnly: either
-	tagTokenOnlyMsg:                    true,
-	tagTokenType:                       true,
-	tagTokenOrder:                      true,
-	tagTokenConstraint:                 true,
-	tagTokenObjConstraint:              true,
-	tagTokenWhen:                       true,
-	tagTokenUnwanted:                   true,
-	tagTokenRequiredWith:               true,
-	tagTokenRequiredWithAlt:            true,
-	tagTokenUnwantedWith:               true,
-	tagTokenUnwantedWithAlt:            true,
-	tagTokenRequiredWithMsg:            true,
-	tagTokenRequiredWithAltMsg:         true,
-	tagTokenUnwantedWithMsg:            true,
-	tagTokenUnwantedWithAltMsg:         true,
-	tagTokenObjIgnoreUnknownProperties: false,
-	tagTokenObjUnknownProperties:       true,
-	tagTokenObjOrdered:                 false,
-	tagTokenObjWhen:                    true,
-	tagTokenObjNo:                      false,
-	tagTokenArrAllowNullItems:          false,
-}
-
 func (pv *PropertyValidator) addTagItem(fieldName string, propertyName string, tagItem string) (result error) {
 	tagToken, tagValue, hasColon, err := splitTagItem(tagItem)
 	if err != nil {
 		return err
 	}
-	switch tagToken {
-	case tagTokenNotNull:
-		pv.NotNull = true
-	case tagTokenNullable:
-		pv.NotNull = false
-	case tagTokenMandatory, tagTokenRequired:
-		result = pv.setTagMandatoryWhen(hasColon, tagValue)
-	case tagTokenOptional:
-		pv.Mandatory = false
-	case tagTokenStopOnFirst, tagTokenStopOnFirstAlt:
-		pv.StopOnFirst = true
-	case tagTokenOnly:
-		result = pv.setTagOnlyConditions(hasColon, tagValue)
-	case tagTokenOnlyMsg:
-		pv.setTagOnlyMessage(tagValue)
-	case tagTokenType:
-		result = pv.setTagType(tagValue)
-	case tagTokenOrder:
-		result = pv.setTagOrder(tagValue)
-	case tagTokenConstraint:
-		result = pv.addConstraint(tagValue)
-	case tagTokenObjConstraint:
-		result = pv.setTagObjConstraint(tagValue)
-	case tagTokenWhen:
-		result = pv.setTagWhen(tagValue)
-	case tagTokenUnwanted:
-		result = pv.setTagUnwanted(tagValue)
-	case tagTokenRequiredWith, tagTokenRequiredWithAlt:
-		result = pv.addRequiredWith(tagValue)
-	case tagTokenUnwantedWith, tagTokenUnwantedWithAlt:
-		result = pv.addUnwantedWith(tagValue)
-	case tagTokenRequiredWithMsg, tagTokenRequiredWithAltMsg:
-		pv.setTagRequiredWithMessage(tagValue)
-	case tagTokenUnwantedWithMsg, tagTokenUnwantedWithAltMsg:
-		pv.setTagUnwantedWithMessage(tagValue)
-	case tagTokenObjIgnoreUnknownProperties:
-		result = pv.setTagObjIgnoreUnknownProperties(tagToken)
-	case tagTokenObjUnknownProperties:
-		result = pv.setTagObjUnknownProperties(tagValue)
-	case tagTokenObjOrdered:
-		result = pv.setTagOrderedPropertyChecks(tagToken)
-	case tagTokenObjWhen:
-		result = pv.setTagObjWhen(tagValue)
-	case tagTokenObjNo:
-		pv.ObjectValidator = nil
-	case tagTokenArrAllowNullItems:
-		result = pv.setTagAllowArrayNullItems(tagToken)
-	default:
+	if op, ok := tagTokenOperations[tagToken]; ok {
+		result = op(pv, hasColon, tagValue)
+	} else {
 		result = pv.defaultTagItemProcess(tagItem, tagToken, tagValue, hasColon, propertyName, fieldName)
 	}
 	return
@@ -267,48 +191,6 @@ func (pv *PropertyValidator) defaultTagItemProcess(tagItem, tagToken, tagValue s
 	return fmt.Errorf(msgUnknownTokenInTag, tagToken)
 }
 
-func (pv *PropertyValidator) setTagObjIgnoreUnknownProperties(tagToken string) error {
-	if pv.ObjectValidator == nil {
-		return fmt.Errorf(msgPropertyNotObject, tagToken)
-	}
-	pv.ObjectValidator.IgnoreUnknownProperties = true
-	return nil
-}
-
-func (pv *PropertyValidator) setTagOrderedPropertyChecks(tagToken string) error {
-	if pv.ObjectValidator == nil {
-		return fmt.Errorf(msgPropertyNotObject, tagToken)
-	}
-	pv.ObjectValidator.OrderedPropertyChecks = true
-	return nil
-}
-
-func (pv *PropertyValidator) setTagAllowArrayNullItems(tagToken string) error {
-	if pv.ObjectValidator == nil {
-		return fmt.Errorf(msgPropertyNotObject, tagToken)
-	}
-	pv.ObjectValidator.AllowNullItems = true
-	return nil
-}
-
-func (pv *PropertyValidator) setTagType(tagValue string) error {
-	ty, ok := JsonTypeFromString(tagValue)
-	if !ok {
-		return fmt.Errorf(msgUnknownPropertyType, tagValue)
-	}
-	pv.Type = ty
-	return nil
-}
-
-func (pv *PropertyValidator) setTagOrder(tagValue string) error {
-	v, err := strconv.ParseInt(tagValue, 10, 32)
-	if err != nil {
-		return fmt.Errorf(msgUnknownTagValue, tagTokenOrder, "int", tagValue)
-	}
-	pv.Order = int(v)
-	return nil
-}
-
 func addConditions(conditions *Conditions, tagValue string, allowCurly bool) error {
 	if isBracedStr(tagValue, allowCurly) {
 		if tokens, err := parseCommas(tagValue[1 : len(tagValue)-1]); err == nil {
@@ -338,73 +220,6 @@ func (pv *PropertyValidator) setTagMandatoryWhen(hasValue bool, tagValue string)
 	return nil
 }
 
-func (pv *PropertyValidator) setTagOnlyConditions(hasValue bool, tagValue string) error {
-	pv.Only = true
-	if hasValue {
-		return addConditions(&pv.OnlyConditions, tagValue, true)
-	}
-	return nil
-}
-
-func (pv *PropertyValidator) setTagOnlyMessage(tagValue string) {
-	if isQuotedStr(tagValue, true) {
-		pv.OnlyMessage = tagValue[1 : len(tagValue)-1]
-	} else {
-		pv.OnlyMessage = tagValue
-	}
-}
-
-func (pv *PropertyValidator) setTagObjConstraint(tagValue string) error {
-	if pv.ObjectValidator == nil {
-		return fmt.Errorf(msgPropertyNotObject, tagTokenObjConstraint)
-	}
-	return pv.ObjectValidator.addConstraint(tagValue)
-}
-
-func (pv *PropertyValidator) setTagWhen(tagValue string) error {
-	return addConditions(&pv.WhenConditions, tagValue, true)
-}
-
-func (pv *PropertyValidator) setTagUnwanted(tagValue string) error {
-	return addConditions(&pv.UnwantedConditions, tagValue, true)
-}
-
-func (pv *PropertyValidator) setTagObjUnknownProperties(tagValue string) error {
-	if pv.ObjectValidator == nil {
-		return fmt.Errorf(msgPropertyNotObject, tagTokenObjUnknownProperties)
-	}
-	b, err := strconv.ParseBool(tagValue)
-	if err != nil {
-		return fmt.Errorf(msgUnknownTagValue, tagTokenObjUnknownProperties, "boolean", tagValue)
-	}
-	pv.ObjectValidator.IgnoreUnknownProperties = b
-	return nil
-}
-
-func (pv *PropertyValidator) setTagObjWhen(tagValue string) error {
-	if pv.ObjectValidator == nil {
-		return fmt.Errorf(msgPropertyNotObject, tagTokenObjWhen)
-	}
-	if isBracedStr(tagValue, true) {
-		if tokens, err := parseCommas(tagValue[1 : len(tagValue)-1]); err == nil {
-			for _, token := range tokens {
-				if isQuotedStr(token, true) {
-					pv.ObjectValidator.WhenConditions = append(pv.ObjectValidator.WhenConditions, token[1:len(token)-1])
-				} else {
-					pv.ObjectValidator.WhenConditions = append(pv.ObjectValidator.WhenConditions, token)
-				}
-			}
-		} else {
-			return err
-		}
-	} else if isQuotedStr(tagValue, true) {
-		pv.ObjectValidator.WhenConditions = append(pv.ObjectValidator.WhenConditions, tagValue[1:len(tagValue)-1])
-	} else {
-		pv.ObjectValidator.WhenConditions = append(pv.ObjectValidator.WhenConditions, tagValue)
-	}
-	return nil
-}
-
 func (pv *PropertyValidator) addConstraint(tagValue string) error {
 	c, err := buildConstraintFromTagValue(tagValue)
 	if err != nil {
@@ -412,52 +227,6 @@ func (pv *PropertyValidator) addConstraint(tagValue string) error {
 	}
 	pv.Constraints = append(pv.Constraints, c)
 	return nil
-}
-
-func (pv *PropertyValidator) addRequiredWith(tagValue string) error {
-	expr, err := ParseExpression(tagValue)
-	if err != nil {
-		return err
-	}
-	if pv.RequiredWith == nil {
-		pv.RequiredWith = expr
-	} else {
-		for _, x := range expr {
-			pv.RequiredWith = append(pv.RequiredWith, x)
-		}
-	}
-	return nil
-}
-
-func (pv *PropertyValidator) addUnwantedWith(tagValue string) error {
-	expr, err := ParseExpression(tagValue)
-	if err != nil {
-		return err
-	}
-	if pv.UnwantedWith == nil {
-		pv.UnwantedWith = expr
-	} else {
-		for _, x := range expr {
-			pv.UnwantedWith = append(pv.UnwantedWith, x)
-		}
-	}
-	return nil
-}
-
-func (pv *PropertyValidator) setTagRequiredWithMessage(tagValue string) {
-	if isQuotedStr(tagValue, true) {
-		pv.RequiredWithMessage = tagValue[1 : len(tagValue)-1]
-	} else {
-		pv.RequiredWithMessage = tagValue
-	}
-}
-
-func (pv *PropertyValidator) setTagUnwantedWithMessage(tagValue string) {
-	if isQuotedStr(tagValue, true) {
-		pv.UnwantedWithMessage = tagValue[1 : len(tagValue)-1]
-	} else {
-		pv.UnwantedWithMessage = tagValue
-	}
 }
 
 func (v *Validator) addConstraint(tagValue string) error {
@@ -587,60 +356,46 @@ func rebuildConstraintWithArgs(cName string, c Constraint, argsStr string) (Cons
 		defaultFieldName = firstFieldName
 	}
 	// now overwrite any specified args into the constraint fields...
+	err = overwriteFieldArgs(cName, args, fields, defaultField, defaultFieldName)
+	return result, err
+}
+
+func overwriteFieldArgs(cName string, args []argHolder, fields map[string]reflect.Value, defaultField *reflect.Value, defaultFieldName string) error {
 	if len(args) == 1 && !args[0].hasValue && defaultField != nil {
 		// only one arg, it has no value and we have a default field...
 		if fld, ok := secondGuessField(args[0].name, fields); ok {
 			if !safeSet(fld, "", false) {
-				return nil, fmt.Errorf(msgConstraintFieldInvalidValue, cName, args[0].name)
+				return fmt.Errorf(msgConstraintFieldInvalidValue, cName, args[0].name)
 			}
 		} else {
 			if !safeSet(*defaultField, args[0].name, false) {
-				return nil, fmt.Errorf(msgConstraintFieldInvalidValue, cName, defaultFieldName)
+				return fmt.Errorf(msgConstraintFieldInvalidValue, cName, defaultFieldName)
 			}
 		}
 	} else {
 		for _, arg := range args {
 			if fld, ok := secondGuessField(arg.name, fields); ok {
 				if !safeSet(fld, arg.value, arg.hasValue) {
-					return nil, fmt.Errorf(msgConstraintFieldInvalidValue, cName, arg.name)
+					return fmt.Errorf(msgConstraintFieldInvalidValue, cName, arg.name)
 				}
 			} else {
-				return nil, fmt.Errorf(msgConstraintFieldUnknown, cName, arg.name)
+				return fmt.Errorf(msgConstraintFieldUnknown, cName, arg.name)
 			}
 		}
 	}
-	return result, nil
+	return nil
 }
 
 func secondGuessField(name string, fields map[string]reflect.Value) (reflect.Value, bool) {
 	if fld, ok := fields[name]; ok {
 		return fld, true
 	}
-	candidates := 0
-	fld := reflect.Value{}
-	singleCandidates := 0
-	singleFld := reflect.Value{}
-	lcName := strings.ToLower(name)
 	wds := camelToWords(name)
-	for n, f := range fields {
-		ln := strings.ToLower(n)
-		if ln == lcName {
-			fld = f
-			candidates = 1
-			break
-		} else if strings.HasPrefix(ln, lcName) && len(wds) == 1 {
-			singleFld = f
-			singleCandidates++
-			candidates++
-		} else if strings.Contains(ln, lcName) {
-			fld = f
-			candidates++
-		}
-	}
+	lcName := strings.ToLower(name)
+	candidates, singleCandidates, fld, singleFld := countFieldNameCandidates(lcName, len(wds) == 1, fields)
 	if singleCandidates == 1 {
 		return singleFld, true
-	}
-	if candidates == 0 {
+	} else if candidates == 0 {
 		for n, f := range fields {
 			if abbreviateName(strings.ToLower(n)) == lcName {
 				fld = f
@@ -666,6 +421,27 @@ func secondGuessField(name string, fields map[string]reflect.Value) (reflect.Val
 		}
 	}
 	return fld, candidates == 1
+}
+
+func countFieldNameCandidates(name string, singleWord bool, fields map[string]reflect.Value) (candidates, singleCandidates int, fld, singleFld reflect.Value) {
+	candidates = 0
+	singleCandidates = 0
+	for n, f := range fields {
+		ln := strings.ToLower(n)
+		if ln == name {
+			fld = f
+			candidates = 1
+			break
+		} else if singleWord && strings.HasPrefix(ln, name) {
+			singleFld = f
+			singleCandidates++
+			candidates++
+		} else if strings.Contains(ln, name) {
+			fld = f
+			candidates++
+		}
+	}
+	return
 }
 
 var vowelReplacer = strings.NewReplacer("a", "", "e", "", "i", "", "o", "", "u", "")
@@ -714,139 +490,215 @@ func safeSet(fv reflect.Value, valueStr string, hasValue bool) (result bool) {
 	result = false
 	switch fv.Kind() {
 	case reflect.String:
-		if isQuotedStr(valueStr, true) {
-			fv.SetString(valueStr[1 : len(valueStr)-1])
-			result = true
-		}
+		result = safeSetString(fv, valueStr)
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		if i, err := strconv.ParseInt(valueStr, 10, 64); err == nil {
-			fv.SetInt(i)
-			result = true
-		}
+		result = safeSetInt(fv, valueStr)
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		if i, err := strconv.ParseUint(valueStr, 10, 64); err == nil {
-			fv.SetUint(i)
-			result = true
-		}
+		result = safeSetUint(fv, valueStr)
 	case reflect.Float64, reflect.Float32:
-		if f, err := strconv.ParseFloat(valueStr, 64); err == nil {
-			fv.SetFloat(f)
-			result = true
-		}
+		result = safeSetFloat(fv, valueStr)
 	case reflect.Bool:
-		if !hasValue {
-			fv.SetBool(true)
-			result = true
-		} else if b, err := strconv.ParseBool(valueStr); err == nil {
-			fv.SetBool(b)
-			result = true
-		}
+		result = safeSetBool(fv, valueStr, hasValue)
 	case reflect.Slice:
-		if isBracedStr(valueStr, true) {
-			if items, ok := itemsToSlice(fv.Type(), valueStr); ok {
-				fv.Set(items)
-				result = true
-			}
-		} else if fv.Type().Elem().Kind() == otherKind {
-			useValue := valueStr
-			if isQuotedStr(valueStr, true) {
-				useValue = valueStr[1 : len(valueStr)-1]
-			}
-			if expr, err := ParseExpression(useValue); err == nil {
-				vx := reflect.ValueOf(expr)
-				fv.Set(vx)
-				result = true
-			}
-		}
+		result = safeSetSlice(fv, valueStr)
 	case regexpKind:
-		if isQuotedStr(valueStr, true) {
-			if rx, err := regexp.Compile(valueStr[1 : len(valueStr)-1]); err == nil {
-				rxv := reflect.ValueOf(rx).Elem()
-				fv.Set(rxv)
-				result = true
-			}
-		}
+		result = safeSetRegexp(fv, valueStr)
 	case constraintKind:
-		if c, err := buildConstraintFromTagValue(valueStr); err == nil {
-			fv.Set(reflect.ValueOf(c))
+		result = safeSetConstraint(fv, valueStr)
+	}
+	return
+}
+
+func safeSetString(fv reflect.Value, valueStr string) (result bool) {
+	result = false
+	if isQuotedStr(valueStr, true) {
+		fv.SetString(valueStr[1 : len(valueStr)-1])
+		result = true
+	}
+	return
+}
+
+func safeSetInt(fv reflect.Value, valueStr string) (result bool) {
+	result = false
+	if i, err := strconv.ParseInt(valueStr, 10, 64); err == nil {
+		fv.SetInt(i)
+		result = true
+	}
+	return
+}
+
+func safeSetUint(fv reflect.Value, valueStr string) (result bool) {
+	result = false
+	if i, err := strconv.ParseUint(valueStr, 10, 64); err == nil {
+		fv.SetUint(i)
+		result = true
+	}
+	return
+}
+
+func safeSetFloat(fv reflect.Value, valueStr string) (result bool) {
+	result = false
+	if f, err := strconv.ParseFloat(valueStr, 64); err == nil {
+		fv.SetFloat(f)
+		result = true
+	}
+	return
+}
+
+func safeSetBool(fv reflect.Value, valueStr string, hasValue bool) (result bool) {
+	result = false
+	if !hasValue {
+		fv.SetBool(true)
+		result = true
+	} else if b, err := strconv.ParseBool(valueStr); err == nil {
+		fv.SetBool(b)
+		result = true
+	}
+	return
+}
+
+func safeSetSlice(fv reflect.Value, valueStr string) (result bool) {
+	result = false
+	if isBracedStr(valueStr, true) {
+		if items, ok := itemsToSlice(fv.Type(), valueStr); ok {
+			fv.Set(items)
+			result = true
+		}
+	} else if fv.Type().Elem().Kind() == otherKind {
+		useValue := valueStr
+		if isQuotedStr(valueStr, true) {
+			useValue = valueStr[1 : len(valueStr)-1]
+		}
+		if expr, err := ParseExpression(useValue); err == nil {
+			vx := reflect.ValueOf(expr)
+			fv.Set(vx)
 			result = true
 		}
 	}
 	return
 }
 
+func safeSetRegexp(fv reflect.Value, valueStr string) (result bool) {
+	result = false
+	if isQuotedStr(valueStr, true) {
+		if rx, err := regexp.Compile(valueStr[1 : len(valueStr)-1]); err == nil {
+			rxv := reflect.ValueOf(rx).Elem()
+			fv.Set(rxv)
+			result = true
+		}
+	}
+	return
+}
+
+func safeSetConstraint(fv reflect.Value, valueStr string) (result bool) {
+	result = false
+	if c, err := buildConstraintFromTagValue(valueStr); err == nil {
+		fv.Set(reflect.ValueOf(c))
+		result = true
+	}
+	return
+}
+
 func itemsToSlice(itemType reflect.Type, arrayStr string) (result reflect.Value, ok bool) {
-	ok = false
 	if strItems, err := parseCommas(arrayStr[1 : len(arrayStr)-1]); err == nil {
-		result = reflect.MakeSlice(itemType, len(strItems), len(strItems))
 		switch itemType.Elem().Kind() {
 		case reflect.String:
-			ok = true
-			for i, vu := range strItems {
-				v := strings.Trim(vu, " ")
-				if isQuotedStr(v, true) {
-					result.Index(i).SetString(v[1 : len(v)-1])
-				} else {
-					ok = false
-					break
-				}
-			}
+			result, ok = itemsToSliceOfStrings(strItems, itemType)
 		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-			ok = true
-			for i, vu := range strItems {
-				v := strings.Trim(vu, " ")
-				if iv, e := strconv.ParseInt(v, 10, 64); e == nil {
-					result.Index(i).SetInt(iv)
-				} else {
-					ok = false
-					break
-				}
-			}
+			result, ok = itemsToSliceOfInts(strItems, itemType)
 		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-			ok = true
-			for i, vu := range strItems {
-				v := strings.Trim(vu, " ")
-				if iv, e := strconv.ParseUint(v, 10, 64); e == nil {
-					result.Index(i).SetUint(iv)
-				} else {
-					ok = false
-					break
-				}
-			}
+			result, ok = itemsToSliceOfUints(strItems, itemType)
 		case reflect.Float64, reflect.Float32:
-			ok = true
-			for i, vu := range strItems {
-				v := strings.Trim(vu, " ")
-				if fv, e := strconv.ParseFloat(v, 64); e == nil {
-					result.Index(i).SetFloat(fv)
-				} else {
-					ok = false
-					break
-				}
-			}
+			result, ok = itemsToSliceOfFloats(strItems, itemType)
 		case reflect.Bool:
-			ok = true
-			for i, vu := range strItems {
-				v := strings.Trim(vu, " ")
-				if bv, e := strconv.ParseBool(v); e == nil {
-					result.Index(i).SetBool(bv)
-				} else {
-					ok = false
-					break
-				}
-			}
+			result, ok = itemsToSliceOfBools(strItems, itemType)
 		case constraintKind:
-			ok = true
-			for i, vu := range strItems {
-				v := strings.Trim(vu, " ")
-				if c, err := buildConstraintFromTagValue(v); err == nil {
-					result.Index(i).Set(reflect.ValueOf(c))
-				} else {
-					ok = false
-					break
-				}
+			result, ok = itemsToSliceOfConstraints(strItems, itemType)
+		}
+	}
+	return
+}
 
-			}
+func itemsToSliceOfStrings(strItems []string, itemType reflect.Type) (result reflect.Value, ok bool) {
+	ok = true
+	result = reflect.MakeSlice(itemType, len(strItems), len(strItems))
+	for i, vu := range strItems {
+		v := strings.Trim(vu, " ")
+		if isQuotedStr(v, true) {
+			result.Index(i).SetString(v[1 : len(v)-1])
+		} else {
+			ok = false
+			break
+		}
+	}
+	return
+}
+
+func itemsToSliceOfInts(strItems []string, itemType reflect.Type) (result reflect.Value, ok bool) {
+	ok = true
+	result = reflect.MakeSlice(itemType, len(strItems), len(strItems))
+	for i, vu := range strItems {
+		if iv, e := strconv.ParseInt(strings.Trim(vu, " "), 10, 64); e == nil {
+			result.Index(i).SetInt(iv)
+		} else {
+			ok = false
+			break
+		}
+	}
+	return
+}
+
+func itemsToSliceOfUints(strItems []string, itemType reflect.Type) (result reflect.Value, ok bool) {
+	ok = true
+	result = reflect.MakeSlice(itemType, len(strItems), len(strItems))
+	for i, vu := range strItems {
+		if iv, e := strconv.ParseUint(strings.Trim(vu, " "), 10, 64); e == nil {
+			result.Index(i).SetUint(iv)
+		} else {
+			ok = false
+			break
+		}
+	}
+	return
+}
+
+func itemsToSliceOfFloats(strItems []string, itemType reflect.Type) (result reflect.Value, ok bool) {
+	ok = true
+	result = reflect.MakeSlice(itemType, len(strItems), len(strItems))
+	for i, vu := range strItems {
+		if fv, e := strconv.ParseFloat(strings.Trim(vu, " "), 64); e == nil {
+			result.Index(i).SetFloat(fv)
+		} else {
+			ok = false
+			break
+		}
+	}
+	return
+}
+
+func itemsToSliceOfBools(strItems []string, itemType reflect.Type) (result reflect.Value, ok bool) {
+	ok = true
+	result = reflect.MakeSlice(itemType, len(strItems), len(strItems))
+	for i, vu := range strItems {
+		if bv, e := strconv.ParseBool(strings.Trim(vu, " ")); e == nil {
+			result.Index(i).SetBool(bv)
+		} else {
+			ok = false
+			break
+		}
+	}
+	return
+}
+
+func itemsToSliceOfConstraints(strItems []string, itemType reflect.Type) (result reflect.Value, ok bool) {
+	ok = true
+	result = reflect.MakeSlice(itemType, len(strItems), len(strItems))
+	for i, vu := range strItems {
+		if c, err := buildConstraintFromTagValue(strings.Trim(vu, " ")); err == nil {
+			result.Index(i).Set(reflect.ValueOf(c))
+		} else {
+			ok = false
+			break
 		}
 	}
 	return
@@ -938,41 +790,39 @@ type delimiter struct {
 func (ds *delimiterStack) delimiter(ch rune, pos int) error {
 	switch ch {
 	case '"', '\'':
-		if ds.current != nil && ds.current.open == ch {
-			ds.pop()
-		} else if !ds.inQuote() {
-			ds.push(ch, pos)
-		}
-		break
+		ds.delimiterQuote(ch, pos)
 	case '(', '[', '{':
-		if !ds.inQuote() {
-			ds.push(ch, pos)
-		}
-		break
+		ds.delimiterOpenBrace(ch, pos)
 	case ')':
-		if !ds.inQuote() {
-			if ds.current == nil || ds.current.open != '(' {
-				return fmt.Errorf(msgUnopened, pos)
-			}
-			ds.pop()
-		}
-		break
+		return ds.delimiterCloseBrace(pos, '(')
 	case ']':
-		if !ds.inQuote() {
-			if ds.current == nil || ds.current.open != '[' {
-				return fmt.Errorf(msgUnopened, pos)
-			}
-			ds.pop()
-		}
-		break
+		return ds.delimiterCloseBrace(pos, '[')
 	case '}':
-		if !ds.inQuote() {
-			if ds.current == nil || ds.current.open != '{' {
-				return fmt.Errorf(msgUnopened, pos)
-			}
-			ds.pop()
+		return ds.delimiterCloseBrace(pos, '{')
+	}
+	return nil
+}
+
+func (ds *delimiterStack) delimiterQuote(ch rune, pos int) {
+	if ds.current != nil && ds.current.open == ch {
+		ds.pop()
+	} else if !ds.inQuote() {
+		ds.push(ch, pos)
+	}
+}
+
+func (ds *delimiterStack) delimiterOpenBrace(ch rune, pos int) {
+	if !ds.inQuote() {
+		ds.push(ch, pos)
+	}
+}
+
+func (ds *delimiterStack) delimiterCloseBrace(pos int, opened rune) error {
+	if !ds.inQuote() {
+		if ds.current == nil || ds.current.open != opened {
+			return fmt.Errorf(msgUnopened, pos)
 		}
-		break
+		ds.pop()
 	}
 	return nil
 }
@@ -997,14 +847,4 @@ func (ds *delimiterStack) inAny() bool {
 }
 func (ds *delimiterStack) inQuote() bool {
 	return ds.current != nil && ds.current.isQuote
-}
-
-func isQuotedStr(str string, allowSingles bool) bool {
-	return (strings.HasPrefix(str, "\"") && strings.HasSuffix(str, "\"")) ||
-		(allowSingles && strings.HasPrefix(str, "'") && strings.HasSuffix(str, "'"))
-}
-
-func isBracedStr(str string, allowCurly bool) bool {
-	return (strings.HasPrefix(str, "[") && strings.HasSuffix(str, "]")) ||
-		(allowCurly && strings.HasPrefix(str, "{") && strings.HasSuffix(str, "}"))
 }

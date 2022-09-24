@@ -126,22 +126,8 @@ var timeoffsetRegex = regexp.MustCompile("^[+-]?\\d{1,2}(:\\d{2})?$")
 func (c *StringValidTimezone) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
 	if !(c.LocationOnly && c.OffsetOnly) {
 		if str, ok := v.(string); ok && str != "" && strings.ToLower(str) != "local" {
-			if !c.LocationOnly && timeoffsetRegex.MatchString(str) {
-				var h, m int
-				if cAt := strings.IndexByte(str, ':'); cAt != -1 {
-					h, _ = strconv.Atoi(str[:cAt])
-					m, _ = strconv.Atoi(str[cAt+1:])
-				} else {
-					h, _ = strconv.Atoi(str)
-				}
-				if h >= -12 && h <= 14 && m < 60 {
-					return true, ""
-				}
-			}
-			if !c.OffsetOnly {
-				if _, err := time.LoadLocation(str); err == nil {
-					return true, ""
-				}
+			if c.checkString(str) {
+				return true, ""
 			}
 		} else if c.AllowNumeric && !c.LocationOnly {
 			if iv, ok, isNumber := coerceToInt(v); ok && isNumber {
@@ -153,6 +139,27 @@ func (c *StringValidTimezone) Check(v interface{}, vcx *ValidatorContext) (bool,
 	}
 	vcx.CeaseFurtherIf(c.Stop)
 	return false, c.GetMessage(vcx)
+}
+
+func (c *StringValidTimezone) checkString(str string) bool {
+	if !c.LocationOnly && timeoffsetRegex.MatchString(str) {
+		var h, m int
+		if cAt := strings.IndexByte(str, ':'); cAt != -1 {
+			h, _ = strconv.Atoi(str[:cAt])
+			m, _ = strconv.Atoi(str[cAt+1:])
+		} else {
+			h, _ = strconv.Atoi(str)
+		}
+		if h >= -12 && h <= 14 && m < 60 {
+			return true
+		}
+	}
+	if !c.OffsetOnly {
+		if _, err := time.LoadLocation(str); err == nil {
+			return true
+		}
+	}
+	return false
 }
 
 // GetMessage implements the Constraint.GetMessage

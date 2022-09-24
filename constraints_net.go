@@ -48,19 +48,10 @@ type NetIsCIDR struct {
 
 // Check implements Constraint.Check
 func (c *NetIsCIDR) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
-	if str, ok := v.(string); ok {
+	if str, ok := v.(string); ok && !(c.V4Only && c.V6Only) {
 		pass := false
-		if !(c.V4Only && c.V6Only) { // can only pass if v4 and v6 are not both set
-			if ip, _, err := net.ParseCIDR(str); err == nil {
-				ipv4 := ip.To4()
-				pass = (!c.V4Only && !c.V6Only) || (c.V4Only && ipv4 != nil) || (c.V6Only && ipv4 == nil)
-				if pass && c.DisallowPrivate {
-					pass = !ip.IsPrivate()
-				}
-				if pass && c.DisallowLoopback {
-					pass = !((ipv4 != nil && ipv4[0] == 127) || (ipv4 == nil && ip.Equal(net.IPv6loopback)))
-				}
-			}
+		if ip, _, err := net.ParseCIDR(str); err == nil {
+			pass = isValidIp(ip, c.V4Only, c.V6Only, c.DisallowPrivate, c.DisallowLoopback)
 		}
 		if pass {
 			return true, ""
@@ -68,6 +59,13 @@ func (c *NetIsCIDR) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
 	}
 	vcx.CeaseFurtherIf(c.Stop)
 	return false, c.GetMessage(vcx)
+}
+
+func isValidIp(ip net.IP, v4Only, v6Only, disallowPrivate, disallowLoopback bool) bool {
+	ipv4 := ip.To4()
+	return ((!v4Only && !v6Only) || (v4Only && ipv4 != nil) || (v6Only && ipv4 == nil)) &&
+		(!disallowPrivate || !ip.IsPrivate()) &&
+		(!disallowLoopback || !((ipv4 != nil && ipv4[0] == 127) || (ipv4 == nil && ip.Equal(net.IPv6loopback))))
 }
 
 // GetMessage implements the Constraint.GetMessage
@@ -184,38 +182,21 @@ type NetIsIP struct {
 
 // Check implements Constraint.Check
 func (c *NetIsIP) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
-	if str, ok := v.(string); ok {
+	if str, ok := v.(string); ok && !(c.V4Only && c.V6Only) {
 		pass := false
-		if !(c.V4Only && c.V6Only) { // can only pass if v4 and v6 are not both set
-			var ip net.IP = nil
-			if c.Resolvable {
-				if ipa, err := net.ResolveIPAddr(useNetwork("ip", c.V4Only, c.V6Only), str); err == nil {
-					ip = ipa.IP
-				}
-			} else {
-				if c.AllowLocalhost && str == "localhost" {
-					if c.V6Only {
-						str = "::1"
-					} else {
-						str = "127.0.0.1"
-					}
-				}
-				ip = net.ParseIP(str)
+		var ip net.IP = nil
+		if c.Resolvable {
+			if ipa, err := net.ResolveIPAddr(useNetwork("ip", c.V4Only, c.V6Only), str); err == nil {
+				ip = ipa.IP
 			}
-			if ip != nil {
-				ipv4 := ip.To4()
-				if ipv4 != nil {
-					pass = !c.V6Only
-				} else {
-					pass = !c.V4Only
-				}
-				if pass && c.DisallowPrivate {
-					pass = !ip.IsPrivate()
-				}
-				if pass && c.DisallowLoopback {
-					pass = !((ipv4 != nil && ipv4[0] == 127) || (ipv4 == nil && ip.Equal(net.IPv6loopback)))
-				}
-			}
+		} else if c.AllowLocalhost && str == "localhost" {
+			lhip := ternary(c.V6Only).string("::1", "127.0.0.1")
+			ip = net.ParseIP(lhip)
+		} else {
+			ip = net.ParseIP(str)
+		}
+		if ip != nil {
+			pass = isValidIp(ip, c.V4Only, c.V6Only, c.DisallowPrivate, c.DisallowLoopback)
 		}
 		if pass {
 			return true, ""
@@ -283,20 +264,10 @@ type NetIsTCP struct {
 
 // Check implements Constraint.Check
 func (c *NetIsTCP) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
-	if str, ok := v.(string); ok {
+	if str, ok := v.(string); ok && !(c.V4Only && c.V6Only) && str != "" {
 		pass := false
-		if !(c.V4Only && c.V6Only) && str != "" { // can only pass if v4 and v6 are not both set
-			if ta, err := net.ResolveTCPAddr(useNetwork("tcp", c.V4Only, c.V6Only), str); err == nil {
-				ip := ta.IP
-				ipv4 := ip.To4()
-				pass = (!c.V4Only && !c.V6Only) || (c.V4Only && ipv4 != nil) || (c.V6Only && ipv4 == nil)
-				if pass && c.DisallowPrivate {
-					pass = !ip.IsPrivate()
-				}
-				if pass && c.DisallowLoopback {
-					pass = !((ipv4 != nil && ipv4[0] == 127) || (ipv4 == nil && ip.Equal(net.IPv6loopback)))
-				}
-			}
+		if ta, err := net.ResolveTCPAddr(useNetwork("tcp", c.V4Only, c.V6Only), str); err == nil {
+			pass = isValidIp(ta.IP, c.V4Only, c.V6Only, c.DisallowPrivate, c.DisallowLoopback)
 		}
 		if pass {
 			return true, ""
@@ -383,20 +354,10 @@ type NetIsUDP struct {
 
 // Check implements Constraint.Check
 func (c *NetIsUDP) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
-	if str, ok := v.(string); ok {
+	if str, ok := v.(string); ok && !(c.V4Only && c.V6Only) && str != "" {
 		pass := false
-		if !(c.V4Only && c.V6Only) && str != "" { // can only pass if v4 and v6 are not both set
-			if ta, err := net.ResolveUDPAddr(useNetwork("udp", c.V4Only, c.V6Only), str); err == nil {
-				ip := ta.IP
-				ipv4 := ip.To4()
-				pass = (!c.V4Only && !c.V6Only) || (c.V4Only && ipv4 != nil) || (c.V6Only && ipv4 == nil)
-				if pass && c.DisallowPrivate {
-					pass = !ip.IsPrivate()
-				}
-				if pass && c.DisallowLoopback {
-					pass = !((ipv4 != nil && ipv4[0] == 127) || (ipv4 == nil && ip.Equal(net.IPv6loopback)))
-				}
-			}
+		if ta, err := net.ResolveUDPAddr(useNetwork("udp", c.V4Only, c.V6Only), str); err == nil {
+			pass = isValidIp(ta.IP, c.V4Only, c.V6Only, c.DisallowPrivate, c.DisallowLoopback)
 		}
 		if pass {
 			return true, ""

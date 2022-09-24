@@ -66,27 +66,7 @@ const (
 // Check implements the Constraint.Check and checks the constraints within the set
 func (c *ConstraintSet) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
 	if c.OneOf {
-		finalOk := false
-		firstMsg := ""
-		for _, cc := range c.Constraints {
-			if ok, msg := cc.Check(v, vcx); ok {
-				finalOk = true
-				break
-			} else if firstMsg == "" {
-				firstMsg = msg
-			}
-			if !vcx.continueAll || !vcx.continuePty() {
-				break
-			}
-		}
-		if finalOk {
-			return true, ""
-		}
-		vcx.CeaseFurtherIf(c.Stop)
-		if c.Message == "" && firstMsg != "" {
-			return false, firstMsg
-		}
-		return false, c.GetMessage(vcx)
+		return c.checkOneOf(v, vcx)
 	}
 	for _, cc := range c.Constraints {
 		if ok, msg := cc.Check(v, vcx); !ok {
@@ -102,6 +82,30 @@ func (c *ConstraintSet) Check(v interface{}, vcx *ValidatorContext) (bool, strin
 		}
 	}
 	return true, ""
+}
+
+func (c *ConstraintSet) checkOneOf(v interface{}, vcx *ValidatorContext) (bool, string) {
+	finalOk := false
+	firstMsg := ""
+	for _, cc := range c.Constraints {
+		if ok, msg := cc.Check(v, vcx); ok {
+			finalOk = true
+			break
+		} else if firstMsg == "" {
+			firstMsg = msg
+		}
+		if !vcx.continueAll || !vcx.continuePty() {
+			break
+		}
+	}
+	if finalOk {
+		return true, ""
+	}
+	vcx.CeaseFurtherIf(c.Stop)
+	if c.Message == "" && firstMsg != "" {
+		return false, firstMsg
+	}
+	return false, c.GetMessage(vcx)
 }
 
 // GetMessage implements the Constraint.GetMessage
