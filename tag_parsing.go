@@ -9,44 +9,6 @@ import (
 )
 
 const (
-	tagTokenNotNull            = "notNull"
-	tagTokenNullable           = "nullable"
-	tagTokenMandatory          = "mandatory"
-	tagTokenRequired           = "required"
-	tagTokenOptional           = "optional"
-	tagTokenOnly               = "only"
-	tagTokenOnlyMsg            = "only_msg"
-	tagTokenType               = "type"
-	tagTokenConstraint         = "constraint"
-	tagTokenConstraints        = "constraints"
-	tagTokenConstraintsPrefix  = tagTokenConstraints + ":"
-	tagTokenOrder              = "order"
-	tagTokenWhen               = "when"
-	tagTokenUnwanted           = "unwanted"
-	tagTokenRequiredWith       = "required_with"
-	tagTokenRequiredWithAlt    = "+"
-	tagTokenRequiredWithMsg    = "required_with_msg"
-	tagTokenRequiredWithAltMsg = "+msg"
-	tagTokenUnwantedWith       = "unwanted_with"
-	tagTokenUnwantedWithAlt    = "-"
-	tagTokenUnwantedWithMsg    = "unwanted_with_msg"
-	tagTokenUnwantedWithAltMsg = "-msg"
-	tagTokenStopOnFirst        = "stop_on_first"
-	tagTokenStopOnFirstAlt     = "stop1st"
-	// object level tag items...
-	tagTokenObjPrefix                  = "obj."
-	tagTokenObjIgnoreUnknownProperties = tagTokenObjPrefix + "ignoreUnknownProperties"
-	tagTokenObjUnknownProperties       = tagTokenObjPrefix + "unknownProperties" // true/false
-	tagTokenObjConstraint              = tagTokenObjPrefix + tagTokenConstraint
-	tagTokenObjOrdered                 = tagTokenObjPrefix + "ordered"
-	tagTokenObjWhen                    = tagTokenObjPrefix + tagTokenWhen
-	tagTokenObjNo                      = tagTokenObjPrefix + "no"
-	// array level tag items...
-	tagTokenArrPrefix         = "arr."
-	tagTokenArrAllowNullItems = tagTokenArrPrefix + "allowNulls"
-)
-
-const (
 	msgV8nPrefix                    = "tag " + tagNameV8n + " - "
 	msgUnknownPropertyType          = msgV8nPrefix + "unknown property type '%s'"
 	msgUnknownTokenInTag            = msgV8nPrefix + "unknown token '%s'"

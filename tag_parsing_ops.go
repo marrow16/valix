@@ -6,15 +6,43 @@ import (
 	"strings"
 )
 
-func isQuotedStr(str string, allowSingles bool) bool {
-	return (strings.HasPrefix(str, "\"") && strings.HasSuffix(str, "\"")) ||
-		(allowSingles && strings.HasPrefix(str, "'") && strings.HasSuffix(str, "'"))
-}
-
-func isBracedStr(str string, allowCurly bool) bool {
-	return (strings.HasPrefix(str, "[") && strings.HasSuffix(str, "]")) ||
-		(allowCurly && strings.HasPrefix(str, "{") && strings.HasSuffix(str, "}"))
-}
+const (
+	tagTokenNotNull            = "notNull"
+	tagTokenNullable           = "nullable"
+	tagTokenMandatory          = "mandatory"
+	tagTokenRequired           = "required"
+	tagTokenOptional           = "optional"
+	tagTokenOnly               = "only"
+	tagTokenOnlyMsg            = "only_msg"
+	tagTokenType               = "type"
+	tagTokenConstraint         = "constraint"
+	tagTokenConstraints        = "constraints"
+	tagTokenConstraintsPrefix  = tagTokenConstraints + ":"
+	tagTokenOrder              = "order"
+	tagTokenWhen               = "when"
+	tagTokenUnwanted           = "unwanted"
+	tagTokenRequiredWith       = "required_with"
+	tagTokenRequiredWithAlt    = "+"
+	tagTokenRequiredWithMsg    = "required_with_msg"
+	tagTokenRequiredWithAltMsg = "+msg"
+	tagTokenUnwantedWith       = "unwanted_with"
+	tagTokenUnwantedWithAlt    = "-"
+	tagTokenUnwantedWithMsg    = "unwanted_with_msg"
+	tagTokenUnwantedWithAltMsg = "-msg"
+	tagTokenStopOnFirst        = "stop_on_first"
+	tagTokenStopOnFirstAlt     = "stop1st"
+	// object level tag items...
+	tagTokenObjPrefix                  = "obj."
+	tagTokenObjIgnoreUnknownProperties = tagTokenObjPrefix + "ignoreUnknownProperties"
+	tagTokenObjUnknownProperties       = tagTokenObjPrefix + "unknownProperties" // true/false
+	tagTokenObjConstraint              = tagTokenObjPrefix + tagTokenConstraint
+	tagTokenObjOrdered                 = tagTokenObjPrefix + "ordered"
+	tagTokenObjWhen                    = tagTokenObjPrefix + tagTokenWhen
+	tagTokenObjNo                      = tagTokenObjPrefix + "no"
+	// array level tag items...
+	tagTokenArrPrefix         = "arr."
+	tagTokenArrAllowNullItems = tagTokenArrPrefix + "allowNulls"
+)
 
 var tagExpectsColon = map[string]bool{
 	tagTokenNotNull:  false,
@@ -233,4 +261,14 @@ var tagTokenOperations = map[string]tagTokenOperation{
 		pv.ObjectValidator.AllowNullItems = true
 		return nil
 	},
+}
+
+func isQuotedStr(str string, allowSingles bool) bool {
+	return (strings.HasPrefix(str, "\"") && strings.HasSuffix(str, "\"")) ||
+		(allowSingles && strings.HasPrefix(str, "'") && strings.HasSuffix(str, "'"))
+}
+
+func isBracedStr(str string, allowCurly bool) bool {
+	return (strings.HasPrefix(str, "[") && strings.HasSuffix(str, "]")) ||
+		(allowCurly && strings.HasPrefix(str, "{") && strings.HasSuffix(str, "}"))
 }
