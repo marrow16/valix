@@ -559,3 +559,318 @@ func TestDatetimeDayOfWeek(t *testing.T) {
 		}
 	}
 }
+
+func TestDatetimeRange(t *testing.T) {
+	vcx := newValidatorContext(nil, nil, false, nil)
+	testCases := []struct {
+		value    string
+		min      string
+		max      string
+		excTime  bool
+		excMin   bool
+		excMax   bool
+		expectOk bool
+	}{
+		{
+			value: "",
+		},
+		{
+			value: "",
+			min:   "2022-01-10",
+			max:   "2022-01-20",
+		},
+		{
+			value:    "2022-01-15",
+			min:      "2022-01-10",
+			max:      "2022-01-20",
+			expectOk: true,
+		},
+		{
+			value: "2022-01-09",
+			min:   "2022-01-10",
+			max:   "2022-01-20",
+		},
+		{
+			value:    "2022-01-09",
+			min:      "",
+			max:      "2022-01-20",
+			expectOk: true,
+		},
+		{
+			value: "2022-01-09",
+			min:   "not a valid date",
+			max:   "2022-01-20",
+		},
+		{
+			value: "2022-01-21",
+			min:   "2022-01-10",
+			max:   "2022-01-20",
+		},
+		{
+			value:    "2022-01-21",
+			min:      "2022-01-10",
+			max:      "",
+			expectOk: true,
+		},
+		{
+			value: "2022-01-21",
+			min:   "2022-01-10",
+			max:   "not a valid date",
+		},
+		{
+			value: "2022-01-10T00:00:00",
+			min:   "2022-01-10T12:00:00",
+			max:   "2022-01-20",
+		},
+		{
+			value:    "2022-01-10T00:00:00",
+			min:      "2022-01-10T12:00:00",
+			max:      "2022-01-20",
+			excTime:  true,
+			expectOk: true,
+		},
+		{
+			value: "2022-01-20T12:00:00",
+			min:   "2022-01-10T12:00:00",
+			max:   "2022-01-20",
+		},
+		{
+			value:    "2022-01-20T12:00:00",
+			min:      "2022-01-10T12:00:00",
+			max:      "2022-01-20",
+			excTime:  true,
+			expectOk: true,
+		},
+		{
+			value: "2022-01-09",
+			min:   "2022-01-10T12:00:00",
+		},
+		{
+			value: "2022-01-10T00:00:00",
+			min:   "2022-01-10T12:00:00",
+		},
+		{
+			value:    "2022-01-10T00:00:00",
+			min:      "2022-01-10T12:00:00",
+			excTime:  true,
+			expectOk: true,
+		},
+		{
+			value: "2022-01-11",
+			max:   "2022-01-10T12:00:00",
+		},
+		{
+			value: "2022-01-10T16:00:00",
+			max:   "2022-01-10T12:00:00",
+		},
+		{
+			value:    "2022-01-10T16:00:00",
+			max:      "2022-01-10T12:00:00",
+			excTime:  true,
+			expectOk: true,
+		},
+	}
+	for i, tc := range testCases {
+		t.Run(fmt.Sprintf("[%d]%s", i+1, tc.value), func(t *testing.T) {
+			c := &DatetimeRange{
+				Minimum:      tc.min,
+				Maximum:      tc.max,
+				ExcTime:      tc.excTime,
+				ExclusiveMin: tc.excMin,
+				ExclusiveMax: tc.excMax,
+			}
+			ok, msg := c.Check(tc.value, vcx)
+			require.Equal(t, tc.expectOk, ok)
+			if !tc.expectOk {
+				if c.Minimum != "" && c.Maximum != "" {
+					require.Equal(t, fmt.Sprintf(fmtMsgRange, c.Minimum, incExc(vcx, c.ExclusiveMin), c.Maximum, incExc(vcx, c.ExclusiveMax)), msg)
+				} else if c.Minimum != "" {
+					require.Equal(t, fmt.Sprintf(ternary(c.ExclusiveMin).string(fmtMsgDtGt, fmtMsgDtGte), c.Minimum), msg)
+				} else if c.Maximum != "" {
+					require.Equal(t, fmt.Sprintf(ternary(c.ExclusiveMax).string(fmtMsgDtLt, fmtMsgDtLte), c.Maximum), msg)
+				} else {
+					require.Equal(t, msgValidISODatetimeFormatFull, msg)
+				}
+			}
+		})
+	}
+	c := &DatetimeRange{Message: "fooey"}
+	ok, msg := c.Check("xxx", vcx)
+	require.False(t, ok)
+	require.Equal(t, "fooey", msg)
+}
+
+func TestDatetimeTimeOfDayRange_timeToDatetime(t *testing.T) {
+	c := &DatetimeTimeOfDayRange{}
+	testCases := map[string]string{
+		"":         "2000-01-01T00:00:00.000000000",
+		"0":        "2000-01-01T00:00:00.000000000",
+		"00":       "2000-01-01T00:00:00.000000000",
+		"1":        "2000-01-01T01:00:00.000000000",
+		"10":       "2000-01-01T10:00:00.000000000",
+		"10:":      "2000-01-01T10:00:00.000000000",
+		"10:1":     "2000-01-01T10:10:00.000000000",
+		"10:10":    "2000-01-01T10:10:00.000000000",
+		"10:10:":   "2000-01-01T10:10:00.000000000",
+		"10:10:1":  "2000-01-01T10:10:10.000000000",
+		"10:10:10": "2000-01-01T10:10:10",
+	}
+	for v, expect := range testCases {
+		dt := c.timeToDatetime(v)
+		require.Equal(t, expect, dt)
+		_, ok := stringToDatetime(dt, false)
+		require.True(t, ok)
+	}
+}
+
+func TestTimeOfDayCompare(t *testing.T) {
+	testCases := []struct {
+		a      time.Time
+		b      time.Time
+		expect int
+	}{
+		{
+			time.Date(2022, 1, 2, 17, 30, 45, 123, time.UTC),
+			time.Date(2021, 10, 3, 17, 30, 45, 123, time.UTC),
+			0,
+		},
+		{
+			time.Date(2022, 1, 2, 17, 30, 45, 123, time.UTC),
+			time.Date(2021, 10, 3, 18, 30, 45, 123, time.UTC),
+			-1,
+		},
+		{
+			time.Date(2022, 1, 2, 17, 30, 45, 123, time.UTC),
+			time.Date(2021, 10, 3, 16, 30, 45, 123, time.UTC),
+			1,
+		},
+		{
+			time.Date(2022, 1, 2, 17, 30, 45, 123, time.UTC),
+			time.Date(2021, 10, 3, 17, 40, 45, 123, time.UTC),
+			-1,
+		},
+		{
+			time.Date(2022, 1, 2, 17, 30, 45, 123, time.UTC),
+			time.Date(2021, 10, 3, 17, 20, 45, 123, time.UTC),
+			1,
+		},
+		{
+			time.Date(2022, 1, 2, 17, 30, 45, 123, time.UTC),
+			time.Date(2021, 10, 3, 17, 30, 55, 123, time.UTC),
+			-1,
+		},
+		{
+			time.Date(2022, 1, 2, 17, 30, 45, 123, time.UTC),
+			time.Date(2021, 10, 3, 17, 30, 35, 123, time.UTC),
+			1,
+		},
+		{
+			time.Date(2022, 1, 2, 17, 30, 45, 100, time.UTC),
+			time.Date(2021, 10, 3, 17, 30, 45, 200, time.UTC),
+			-1,
+		},
+		{
+			time.Date(2022, 1, 2, 17, 30, 45, 101, time.UTC),
+			time.Date(2021, 10, 3, 17, 30, 45, 100, time.UTC),
+			1,
+		},
+	}
+	for i, tc := range testCases {
+		t.Run(fmt.Sprintf("[%d]", i+1), func(t *testing.T) {
+			require.Equal(t, tc.expect, timeOfDayCompare(tc.a, tc.b))
+		})
+	}
+}
+
+func TestDatetimeTimeOfDayRange(t *testing.T) {
+	vcx := newValidatorContext(nil, nil, false, nil)
+	testCases := []struct {
+		value    string
+		min      string
+		max      string
+		excTime  bool
+		excMin   bool
+		excMax   bool
+		expectOk bool
+	}{
+		{
+			value: "",
+		},
+		{
+			value: "",
+			min:   "17:00:00",
+			max:   "18:00",
+		},
+		{
+			value:    "2022-01-15T17:10:00",
+			min:      "16:00",
+			max:      "18:00",
+			expectOk: true,
+		},
+		{
+			value:    "2022-01-15T17:11:00",
+			min:      "",
+			max:      "18:00",
+			expectOk: true,
+		},
+		{
+			value: "2022-01-15T19:00:00",
+			min:   "",
+			max:   "18:00",
+		},
+		{
+			value:    "2022-01-15T17:11:00",
+			min:      "16:00",
+			max:      "",
+			expectOk: true,
+		},
+		{
+			value: "2022-01-15T15:00:00",
+			min:   "16:00",
+			max:   "",
+		},
+		{
+			value:    "2022-01-15T17:11:00",
+			min:      "",
+			max:      "",
+			expectOk: true,
+		},
+		{
+			value: "2022-01-15T17:12:00",
+			min:   "not a valid time",
+			max:   "18:00",
+		},
+		{
+			value: "2022-01-15T17:13:00",
+			min:   "16:00",
+			max:   "not a valid time",
+		},
+	}
+	for i, tc := range testCases {
+		t.Run(fmt.Sprintf("[%d]%s", i+1, tc.value), func(t *testing.T) {
+			c := &DatetimeTimeOfDayRange{
+				Minimum:      tc.min,
+				Maximum:      tc.max,
+				ExclusiveMin: tc.excMin,
+				ExclusiveMax: tc.excMax,
+			}
+			ok, msg := c.Check(tc.value, vcx)
+			require.Equal(t, tc.expectOk, ok)
+			if !tc.expectOk {
+				if c.Minimum != "" && c.Maximum != "" {
+					require.Equal(t, fmt.Sprintf(fmtMsgRange, c.Minimum, incExc(vcx, c.ExclusiveMin), c.Maximum, incExc(vcx, c.ExclusiveMax)), msg)
+				} else if c.Minimum != "" {
+					require.Equal(t, fmt.Sprintf(ternary(c.ExclusiveMin).string(fmtMsgDtGt, fmtMsgDtGte), c.Minimum), msg)
+				} else if c.Maximum != "" {
+					require.Equal(t, fmt.Sprintf(ternary(c.ExclusiveMax).string(fmtMsgDtLt, fmtMsgDtLte), c.Maximum), msg)
+				} else {
+					require.Equal(t, msgValidISODatetimeFormatFull, msg)
+				}
+			}
+		})
+	}
+	c := &DatetimeTimeOfDayRange{Message: "fooey"}
+	ok, msg := c.Check("xxx", vcx)
+	require.False(t, ok)
+	require.Equal(t, "fooey", msg)
+}

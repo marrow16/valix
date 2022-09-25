@@ -122,6 +122,16 @@ func defaultString(str string, def string) string {
 	return def
 }
 
+// intCompare compares two ints - the result will be 0 if a==b, -1 if a < b, and +1 if a > b
+func intCompare(a, b int) int {
+	if a < b {
+		return -1
+	} else if a > b {
+		return 1
+	}
+	return 0
+}
+
 // ternary operations
 
 type ternary bool
