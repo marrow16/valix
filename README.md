@@ -1206,6 +1206,140 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
     <tr></tr>
     <tr>
         <td>
+            <code>DatetimeRange</code><br>&nbsp;&nbsp;<code>dtrange</code>&nbsp;<em>(i18n tag abbr.)</em>
+        </td>
+        <td>
+            Check that a datetime/date (represented as string or time.Time) is within a specified range
+            <details>
+                <summary>Fields</summary>
+                <table>
+                    <tr>
+                        <td>
+                            <code>Minimum</code> <em>string</em>
+                        </td>
+                        <td>
+                            is the minimum datetime/date (if this is empty, then no minimum check is performed)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Maximum</code> <em>string</em>
+                        </td>
+                        <td>
+                            is the maximum datetime/date (if this is empty, then no maximum check is performed)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>ExcTime</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set to true, excludes the time when comparing<br>
+                            <em>Note: This also excludes the effect of any timezone offsets specified in either of the compared values</em>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>ExclusiveMin</code> <em>bool</em>
+                        </td>
+                        <td>
+                            if set to true, ExclusiveMin specifies the minimum value is exclusive
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>ExclusiveMax</code> <em>bool</em>
+                        </td>
+                        <td>
+                            if set to true, ExclusiveMax specifies the maximum value is exclusive
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Message</code> <em>string</em>
+                        </td>
+                        <td>
+                            the violation message to be used if the constraint fails (if empty, the default violation message is used)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Stop</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set to true, prevents further validation checks on the property if this constraint fails
+                        </td>
+                    </tr>
+                </table>
+            </details>
+        </td>
+    </tr>
+    <tr></tr>
+    <tr>
+        <td>
+            <code>DatetimeTimeOfDayRange</code><br>&nbsp;&nbsp;<code>dttodrange</code>&nbsp;<em>(i18n tag abbr.)</em>
+        </td>
+        <td>
+            Check that a datetime (represented as string or time.Time) is within a specified time of day range
+            <details>
+                <summary>Fields</summary>
+                <table>
+                    <tr>
+                        <td>
+                            <code>Minimum</code> <em>string</em>
+                        </td>
+                        <td>
+                            is the minimum time of day (if this is empty, then no minimum check is performed)<br>
+                            The time of day is specified in the format <code>"hh:mm:ss[.nnnnnnnnn]"</code> - but can be abbreviated, for example specifying <code>"17"</code> is equivalent to specifying <code>"17:00:00</code>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Maximum</code> <em>string</em>
+                        </td>
+                        <td>
+                            is the maximum time of day (if this is empty, then no maximum check is performed)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>ExclusiveMin</code> <em>bool</em>
+                        </td>
+                        <td>
+                            if set to true, ExclusiveMin specifies the minimum value is exclusive
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>ExclusiveMax</code> <em>bool</em>
+                        </td>
+                        <td>
+                            if set to true, ExclusiveMax specifies the maximum value is exclusive
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Message</code> <em>string</em>
+                        </td>
+                        <td>
+                            the violation message to be used if the constraint fails (if empty, the default violation message is used)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Stop</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set to true, prevents further validation checks on the property if this constraint fails
+                        </td>
+                    </tr>
+                </table>
+            </details>
+        </td>
+    </tr>
+    <tr></tr>
+    <tr>
+        <td>
             <code>DatetimeTolerance</code><br>&nbsp;&nbsp;<code>dttol</code>&nbsp;<em>(i18n tag abbr.)</em>
         </td>
         <td>
