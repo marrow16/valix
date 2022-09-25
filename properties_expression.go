@@ -30,7 +30,7 @@ func MustParseExpression(expr string) OthersExpr {
 // An example:
 //   expr, err := valix.ParseExpression(`(foo && bar) || (foo && baz) || (bar && baz) && !(foo && bar && baz)`)
 func ParseExpression(expr string) (OthersExpr, error) {
-	tokens, groupsCount, err := parseExpressionTokens(expr)
+	tokens, groupsCount, err := parseExpression(expr)
 	if err != nil {
 		return nil, err
 	}
@@ -85,12 +85,20 @@ func ParseExpression(expr string) (OthersExpr, error) {
 	return result, nil
 }
 
-func parseExpressionTokens(expr string) (tokens []*parsedToken, groupStarts int, err error) {
-	err = nil
-	groupStarts = 0
+var charOperators = map[rune]BooleanOperator{
+	'&': And,
+	'|': Or,
+	'^': Xor,
+}
+
+func parseExpression(expr string) (tokens []*parsedToken, groupStarts int, err error) {
 	if len(strings.Trim(expr, " \t\n")) == 0 {
 		return
 	}
+	return parseExpressionTokens(expr)
+}
+
+func parseExpressionTokens(expr string) (tokens []*parsedToken, groupStarts int, err error) {
 	runes := []rune(expr)
 	tokens = make([]*parsedToken, 0, len(runes))
 	max := len(runes) - 1
@@ -99,10 +107,14 @@ func parseExpressionTokens(expr string) (tokens []*parsedToken, groupStarts int,
 	groupEnds := 0
 	groupsOpen := 0
 	currentToken := &parsedToken{}
-	startNewToken := func(i int, t parseTokenType) *parsedToken {
+	startNewToken := func(i int, t parseTokenType) {
 		currentToken = &parsedToken{tokenType: t, start: i, end: i}
 		tokens = append(tokens, currentToken)
-		return currentToken
+	}
+	conditionalStartNewToken := func(yes bool, i int, t parseTokenType) {
+		if yes {
+			startNewToken(i, t)
+		}
 	}
 	startNewToken(0, tokenTypeStart)
 	for i := 0; i <= max; i++ {
@@ -121,39 +133,17 @@ func parseExpressionTokens(expr string) (tokens []*parsedToken, groupStarts int,
 				quoteChar = ch
 				startNewToken(i, tokenTypeName)
 			case ' ', '\t', '\n':
-				if currentToken.tokenType != tokenTypeWhitespace && currentToken.tokenType != tokenTypeStart {
-					startNewToken(i, tokenTypeWhitespace)
-				}
+				conditionalStartNewToken(currentToken.tokenType != tokenTypeWhitespace && currentToken.tokenType != tokenTypeStart, i, tokenTypeWhitespace)
 			case '!':
 				startNewToken(i, tokenTypeNot)
-			case '&':
-				if i < max && runes[i+1] == '&' {
+			case '&', '|', '^':
+				if nextRuneSame(runes, i, max, ch) {
 					startNewToken(i, tokenTypeOperator)
-					currentToken.operator = And
+					currentToken.operator = charOperators[ch]
 					i++
 					currentToken.end = i + 1
 				} else {
-					err = fmt.Errorf("invalid operator character '%s' - expected '&&' (at position %d)", string(ch), i)
-					return
-				}
-			case '|':
-				if i < max && runes[i+1] == '|' {
-					startNewToken(i, tokenTypeOperator)
-					currentToken.operator = Or
-					i++
-					currentToken.end = i + 1
-				} else {
-					err = fmt.Errorf("invaid operator character '%s' - expected '||' (at position %d)", string(ch), i)
-					return
-				}
-			case '^':
-				if i < max && runes[i+1] == '^' {
-					startNewToken(i, tokenTypeOperator)
-					currentToken.operator = Xor
-					i++
-					currentToken.end = i + 1
-				} else {
-					err = fmt.Errorf("invaid operator character '%s' - expected '^^' (at position %d)", string(ch), i)
+					err = fmt.Errorf("invalid operator character '%s' (at position %d)", string(ch), i)
 					return
 				}
 			case '(':
@@ -169,26 +159,25 @@ func parseExpressionTokens(expr string) (tokens []*parsedToken, groupStarts int,
 					return
 				}
 			default:
-				if ch < 32 || ch > 127 {
-					err = fmt.Errorf("unexpected non-naming character code %v (at position %d) - use enclosing quotes if necessary", ch, i)
-					return
-				} else if !unicode.Is(allowedNameChars, ch) {
-					err = fmt.Errorf("unexpected non-naming character '%s' (at position %d) - use enclosing quotes if necessary", string(ch), i)
+				if cErr := isAllowableTokenNameChar(i, ch); cErr != nil {
+					err = cErr
 					return
 				}
-				if currentToken.tokenType != tokenTypeName {
-					startNewToken(i, tokenTypeName)
-				}
+				conditionalStartNewToken(currentToken.tokenType != tokenTypeName, i, tokenTypeName)
 			}
 		}
 	}
+	err = checkParsingEndState(currentToken, startNewToken, max, groupStarts, groupEnds, inQuote)
+	// check all the tokens are correctly sequenced...
+	err = checkTokenSequencing(tokens, runes, err)
+	return
+}
+
+func checkParsingEndState(currentToken *parsedToken, startNewToken func(i int, t parseTokenType), max, groupStarts, groupEnds int, inQuote bool) error {
 	if groupStarts != groupEnds {
-		err = fmt.Errorf("unbalanced grouping parentheses (at position %d)", max)
-		return
-	}
-	if inQuote {
-		err = fmt.Errorf("unclosed quote (started at position %d)", currentToken.start)
-		return
+		return fmt.Errorf("unbalanced grouping parentheses (at position %d)", max)
+	} else if inQuote {
+		return fmt.Errorf("unclosed quote (started at position %d)", currentToken.start)
 	}
 	currentToken.end = max + 1
 	if currentToken.tokenType == tokenTypeWhitespace {
@@ -196,49 +185,79 @@ func parseExpressionTokens(expr string) (tokens []*parsedToken, groupStarts int,
 	} else {
 		startNewToken(max, tokenTypeEnd)
 	}
-	// check all the tokens are correctly sequenced...
-	max = len(tokens) - 1
+	return nil
+}
+
+func nextRuneSame(runes []rune, i, max int, ch rune) bool {
+	return i < max && runes[i+1] == ch
+}
+
+func isAllowableTokenNameChar(i int, ch rune) error {
+	if ch < 32 || ch > 127 {
+		return fmt.Errorf("unexpected non-naming character code %v (at position %d) - use enclosing quotes if necessary", ch, i)
+	} else if !unicode.Is(allowedNameChars, ch) {
+		return fmt.Errorf("unexpected non-naming character '%s' (at position %d) - use enclosing quotes if necessary", string(ch), i)
+	}
+	return nil
+}
+
+func checkTokenSequencing(tokens []*parsedToken, runes []rune, err error) error {
+	if err != nil {
+		return err
+	}
+	max := len(tokens) - 1
 	for i, token := range tokens {
 		if i < max && !tokenAllowedFollowedBy[token.tokenType][tokens[i+1].tokenType] {
-			err = fmt.Errorf("unexpected character '%s' (at position %d)", string(runes[tokens[i+1].start]), tokens[i+1].start)
-			return
+			return fmt.Errorf("unexpected character '%s' (at position %d)", string(runes[tokens[i+1].start]), tokens[i+1].start)
 		}
 		switch token.tokenType {
 		case tokenTypeNot:
-			found := false
-			for j := i - 1; j >= 0; j-- {
-				if tokens[j].tokenType == tokenTypeOperator || tokens[j].tokenType == tokenTypeGroupStart || tokens[j].tokenType == tokenTypeStart {
-					found = true
-					break
-				} else if tokens[j].tokenType != tokenTypeWhitespace {
-					break
-				}
-			}
-			if !found {
-				err = fmt.Errorf("unexpected not operator (at position %d)", token.start)
-				return
+			if err := checkTokenTypeNotSequencing(token, tokens, i); err != nil {
+				return err
 			}
 		case tokenTypeName:
-			found := false
-			for j := i - 1; j >= 0; j-- {
-				if tokens[j].tokenType == tokenTypeOperator || tokens[j].tokenType == tokenTypeGroupStart || tokens[j].tokenType == tokenTypeStart {
-					found = true
-					break
-				} else if tokens[j].tokenType != tokenTypeWhitespace && tokens[j].tokenType != tokenTypeNot {
-					break
-				}
-			}
-			if !found {
-				err = fmt.Errorf("unexpected property name start (at position %d)", token.start)
-				return
-			}
-			token.name = string(runes[token.start:token.end])
-			if isQuotedStr(token.name, true) {
-				token.name = token.name[1 : len(token.name)-1]
+			if err := checkTokenTypeNameSequencing(token, runes, tokens, i); err != nil {
+				return err
 			}
 		}
 	}
-	return
+	return nil
+}
+
+func checkTokenTypeNotSequencing(token *parsedToken, tokens []*parsedToken, i int) error {
+	found := false
+	for j := i - 1; j >= 0; j-- {
+		if tokens[j].tokenType == tokenTypeOperator || tokens[j].tokenType == tokenTypeGroupStart || tokens[j].tokenType == tokenTypeStart {
+			found = true
+			break
+		} else if tokens[j].tokenType != tokenTypeWhitespace {
+			break
+		}
+	}
+	if !found {
+		return fmt.Errorf("unexpected not operator (at position %d)", token.start)
+	}
+	return nil
+}
+
+func checkTokenTypeNameSequencing(token *parsedToken, runes []rune, tokens []*parsedToken, i int) error {
+	found := false
+	for j := i - 1; j >= 0; j-- {
+		if tokens[j].tokenType == tokenTypeOperator || tokens[j].tokenType == tokenTypeGroupStart || tokens[j].tokenType == tokenTypeStart {
+			found = true
+			break
+		} else if tokens[j].tokenType != tokenTypeWhitespace && tokens[j].tokenType != tokenTypeNot {
+			break
+		}
+	}
+	if !found {
+		return fmt.Errorf("unexpected property name start (at position %d)", token.start)
+	}
+	token.name = string(runes[token.start:token.end])
+	if isQuotedStr(token.name, true) {
+		token.name = token.name[1 : len(token.name)-1]
+	}
+	return nil
 }
 
 var allowedNameChars = &unicode.RangeTable{
@@ -537,16 +556,7 @@ func (p *OtherProperty) checkChanged() {
 	p.pathed = false
 	p.upPath = 0
 	p.downPath = nil
-	// short circuit out of any obvious non-pathing dots...
-	if p.normalizedName == "." || p.normalizedName == "" {
-		// empty or just dot is ignored
-		p.normalizedName = ""
-		return
-	} else if strings.HasPrefix(p.normalizedName, ".") && !strings.Contains(p.normalizedName[1:], ".") {
-		// starts with just one dot...
-		p.normalizedName = p.normalizedName[1:]
-		return
-	} else if !strings.Contains(p.normalizedName, ".") {
+	if p.checkChangedNormalizations() {
 		return
 	}
 	// now count and splice the dots...
@@ -574,6 +584,22 @@ func (p *OtherProperty) checkChanged() {
 		p.downPath = append(p.downPath, unescapeDots(p.cachedName[lastDot+1:]))
 	}
 	p.pathed = p.upPath != 0 || len(p.downPath) > 0
+}
+
+func (p *OtherProperty) checkChangedNormalizations() bool {
+	// short circuit out of any obvious non-pathing dots...
+	if p.normalizedName == "." || p.normalizedName == "" {
+		// empty or just dot is ignored
+		p.normalizedName = ""
+		return true
+	} else if strings.HasPrefix(p.normalizedName, ".") && !strings.Contains(p.normalizedName[1:], ".") {
+		// starts with just one dot...
+		p.normalizedName = p.normalizedName[1:]
+		return true
+	} else if !strings.Contains(p.normalizedName, ".") {
+		return true
+	}
+	return false
 }
 
 var escapedDotsRegexp = regexp.MustCompile(`\\\.`)

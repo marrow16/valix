@@ -1216,47 +1216,79 @@ func checkDatetimeTolerance(value *time.Time, other *time.Time, amount int64, un
 	return result
 }
 
-func checkDatetimeSame(value *time.Time, other *time.Time, unit string) bool {
+func checkDatetimeSame(value *time.Time, other *time.Time, unit string) (result bool) {
+	result = false
 	switch unit {
 	case "millennium", "millen", "mille":
-		return (value.Year() / 1000) == (other.Year() / 1000)
+		result = sameMillennium(value, other)
 	case "century":
-		return (value.Year() / 100) == (other.Year() / 100)
+		result = sameCentury(value, other)
 	case "decade":
-		return (value.Year() / 10) == (other.Year() / 10)
+		result = sameDecade(value, other)
 	case "year":
-		return value.Year() == other.Year()
+		result = sameYear(value, other)
 	case "month":
-		return value.Year() == other.Year() && value.Month() == other.Month()
+		result = sameMonth(value, other)
 	case "day", "":
-		return value.Year() == other.Year() && value.Month() == other.Month() && value.Day() == other.Day()
+		result = sameDay(value, other)
 	case "week":
-		vy, vwk := value.ISOWeek()
-		oy, owk := other.ISOWeek()
-		return vy == oy && vwk == owk
+		result = sameWeek(value, other)
 	case "hour":
-		return value.Year() == other.Year() && value.Month() == other.Month() && value.Day() == other.Day() &&
-			value.Hour() == other.Hour()
+		result = sameHour(value, other)
 	case "min", "minute":
-		return value.Year() == other.Year() && value.Month() == other.Month() && value.Day() == other.Day() &&
-			value.Hour() == other.Hour() && value.Minute() == other.Minute()
+		result = sameMinute(value, other)
 	case "sec", "second":
-		return value.Year() == other.Year() && value.Month() == other.Month() && value.Day() == other.Day() &&
-			value.Hour() == other.Hour() && value.Minute() == other.Minute() && value.Second() == other.Second()
+		result = sameSecond(value, other)
 	case "milli", "millisecond":
-		return value.Year() == other.Year() && value.Month() == other.Month() && value.Day() == other.Day() &&
-			value.Hour() == other.Hour() && value.Minute() == other.Minute() && value.Second() == other.Second() &&
-			(value.Nanosecond()/1000000) == (other.Nanosecond()/1000000)
+		result = sameMillisecond(value, other)
 	case "micro", "microsecond":
-		return value.Year() == other.Year() && value.Month() == other.Month() && value.Day() == other.Day() &&
-			value.Hour() == other.Hour() && value.Minute() == other.Minute() && value.Second() == other.Second() &&
-			(value.Nanosecond()/1000) == (other.Nanosecond()/1000)
+		result = sameMicrosecond(value, other)
 	case "nano", "nanosecond":
-		return value.Year() == other.Year() && value.Month() == other.Month() && value.Day() == other.Day() &&
-			value.Hour() == other.Hour() && value.Minute() == other.Minute() && value.Second() == other.Second() &&
-			value.Nanosecond() == other.Nanosecond()
+		result = sameNanosecond(value, other)
 	}
-	return false
+	return
+}
+
+func sameMillennium(value, other *time.Time) bool {
+	return (value.Year() / 1000) == (other.Year() / 1000)
+}
+func sameCentury(value, other *time.Time) bool {
+	return (value.Year() / 100) == (other.Year() / 100)
+}
+func sameDecade(value, other *time.Time) bool {
+	return (value.Year() / 10) == (other.Year() / 10)
+}
+func sameYear(value, other *time.Time) bool {
+	return value.Year() == other.Year()
+}
+func sameMonth(value, other *time.Time) bool {
+	return sameYear(value, other) && value.Month() == other.Month()
+}
+func sameDay(value, other *time.Time) bool {
+	return sameMonth(value, other) && value.Day() == other.Day()
+}
+func sameWeek(value, other *time.Time) bool {
+	vy, vwk := value.ISOWeek()
+	oy, owk := other.ISOWeek()
+	return vy == oy && vwk == owk
+}
+func sameHour(value, other *time.Time) bool {
+	return sameDay(value, other) && value.Hour() == other.Hour()
+}
+func sameMinute(value, other *time.Time) bool {
+	return sameHour(value, other) && value.Minute() == other.Minute()
+}
+func sameSecond(value, other *time.Time) bool {
+	return sameMinute(value, other) && value.Second() == other.Second()
+}
+func sameMillisecond(value, other *time.Time) bool {
+	return sameSecond(value, other) && (value.Nanosecond()/1000000) == (other.Nanosecond()/1000000)
+}
+func sameMicrosecond(value, other *time.Time) bool {
+	return sameSecond(value, other) && (value.Nanosecond()/1000) == (other.Nanosecond()/1000)
+}
+func sameNanosecond(value, other *time.Time) bool {
+	return sameSecond(value, other) && value.Nanosecond() == other.Nanosecond()
 }
 
 func shiftDatetimeBy(t *time.Time, amount int64, unit string) (*time.Time, bool) {

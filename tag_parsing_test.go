@@ -903,10 +903,9 @@ func TestRebuildConstraintWithArgsFailsWithInvalidArgType(t *testing.T) {
 		constraintsRegistry.reset()
 	}()
 
-	c, err := rebuildConstraintWithArgs(testConstraintName, testConstraint, "Field2:\"foo\"")
+	_, err := rebuildConstraintWithArgs(testConstraintName, testConstraint, "Field2:\"foo\"")
 	require.NotNil(t, err)
 	require.Equal(t, fmt.Sprintf(msgConstraintFieldInvalidValue, testConstraintName, "Field2"), err.Error())
-	require.Nil(t, c)
 }
 
 func TestBuildConstraintFromTagValueFailsWithBadArgs(t *testing.T) {

@@ -150,50 +150,71 @@ func propertyValidatorFromField(fld reflect.StructField) (*PropertyValidator, st
 	fKind := fld.Type.Kind()
 	objValidatorUsed := false
 	if result.Type == JsonObject {
-		if fKind == reflect.Struct {
-			if ptys, err := buildPropertyValidators(fld.Type); err != nil {
-				return nil, name, err
-			} else if len(ptys) > 0 && result.ObjectValidator != nil {
-				result.ObjectValidator.DisallowObject = false
-				result.ObjectValidator.AllowArray = false
-				result.ObjectValidator.Properties = ptys
-				objValidatorUsed = true
-			}
-		} else if fKind == reflect.Ptr && fld.Type.Elem().Kind() == reflect.Struct {
-			if ptys, err := buildPropertyValidators(fld.Type.Elem()); err != nil {
-				return nil, name, err
-			} else if len(ptys) > 0 && result.ObjectValidator != nil {
-				result.ObjectValidator.DisallowObject = false
-				result.ObjectValidator.AllowArray = false
-				result.ObjectValidator.Properties = ptys
-				objValidatorUsed = true
-			}
+		if used, err := setPropertyValidatorObjectValidatorForStruct(fld, result); err != nil {
+			return nil, name, err
+		} else {
+			objValidatorUsed = used
 		}
 	} else if result.Type == JsonArray && fKind == reflect.Slice {
-		if fld.Type.Elem().Kind() == reflect.Struct {
-			if ptys, err := buildPropertyValidators(fld.Type.Elem()); err != nil {
-				return nil, name, err
-			} else if len(ptys) > 0 && result.ObjectValidator != nil {
-				result.ObjectValidator.DisallowObject = true
-				result.ObjectValidator.AllowArray = true
-				result.ObjectValidator.Properties = ptys
-				objValidatorUsed = true
-			}
-		} else if fld.Type.Elem().Kind() == reflect.Ptr && fld.Type.Elem().Elem().Kind() == reflect.Struct {
-			if ptys, err := buildPropertyValidators(fld.Type.Elem().Elem()); err != nil {
-				return nil, name, err
-			} else if len(ptys) > 0 && result.ObjectValidator != nil {
-				result.ObjectValidator.DisallowObject = true
-				result.ObjectValidator.AllowArray = true
-				result.ObjectValidator.Properties = ptys
-				objValidatorUsed = true
-			}
+		if used, err := setPropertyValidatorObjectValidatorForSlice(fld, result); err != nil {
+			return nil, name, err
+		} else {
+			objValidatorUsed = used
 		}
 	}
 	if !objValidatorUsed {
 		result.ObjectValidator = nil
 	}
 	return result, name, nil
+}
+
+func setPropertyValidatorObjectValidatorForStruct(fld reflect.StructField, pv *PropertyValidator) (used bool, err error) {
+	used = false
+	fKind := fld.Type.Kind()
+	if fKind == reflect.Struct {
+		if ptys, err := buildPropertyValidators(fld.Type); err != nil {
+			return false, err
+		} else if len(ptys) > 0 && pv.ObjectValidator != nil {
+			pv.ObjectValidator.DisallowObject = false
+			pv.ObjectValidator.AllowArray = false
+			pv.ObjectValidator.Properties = ptys
+			used = true
+		}
+	} else if fKind == reflect.Ptr && fld.Type.Elem().Kind() == reflect.Struct {
+		if ptys, err := buildPropertyValidators(fld.Type.Elem()); err != nil {
+			return false, err
+		} else if len(ptys) > 0 && pv.ObjectValidator != nil {
+			pv.ObjectValidator.DisallowObject = false
+			pv.ObjectValidator.AllowArray = false
+			pv.ObjectValidator.Properties = ptys
+			used = true
+		}
+	}
+	return
+}
+
+func setPropertyValidatorObjectValidatorForSlice(fld reflect.StructField, pv *PropertyValidator) (used bool, err error) {
+	used = false
+	if fld.Type.Elem().Kind() == reflect.Struct {
+		if ptys, err := buildPropertyValidators(fld.Type.Elem()); err != nil {
+			return false, err
+		} else if len(ptys) > 0 && pv.ObjectValidator != nil {
+			pv.ObjectValidator.DisallowObject = true
+			pv.ObjectValidator.AllowArray = true
+			pv.ObjectValidator.Properties = ptys
+			used = true
+		}
+	} else if fld.Type.Elem().Kind() == reflect.Ptr && fld.Type.Elem().Elem().Kind() == reflect.Struct {
+		if ptys, err := buildPropertyValidators(fld.Type.Elem().Elem()); err != nil {
+			return false, err
+		} else if len(ptys) > 0 && pv.ObjectValidator != nil {
+			pv.ObjectValidator.DisallowObject = true
+			pv.ObjectValidator.AllowArray = true
+			pv.ObjectValidator.Properties = ptys
+			used = true
+		}
+	}
+	return
 }
 
 func initialPropertyValidator(fld reflect.StructField, name string) (*PropertyValidator, error) {
@@ -251,37 +272,48 @@ func getFieldName(fld reflect.StructField) string {
 var timeType = reflect.TypeOf(time.Time{})
 var valixTimeType = reflect.TypeOf(Time{})
 
-func detectFieldType(fld reflect.StructField) JsonType {
+func detectFieldType(fld reflect.StructField) (result JsonType) {
 	k := fld.Type.Kind()
-	isPtr := k == reflect.Ptr
-	if isPtr {
+	isPtr := false
+	if k == reflect.Ptr {
+		isPtr = true
 		k = fld.Type.Elem().Kind()
 	}
+	result = JsonAny
 	switch k {
 	case reflect.String:
-		return JsonString
+		result = JsonString
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		return JsonNumber
+		result = JsonNumber
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		return JsonNumber
+		result = JsonNumber
 	case reflect.Float64, reflect.Float32:
-		return JsonNumber
+		result = JsonNumber
 	case reflect.Bool:
-		return JsonBoolean
+		result = JsonBoolean
 	case reflect.Struct:
-		if (!isPtr && fld.Type.AssignableTo(timeType)) || (isPtr && fld.Type.Elem().AssignableTo(timeType)) ||
-			(!isPtr && fld.Type.AssignableTo(valixTimeType)) || (isPtr && fld.Type.Elem().AssignableTo(valixTimeType)) {
-			return JsonDatetime
-		}
-		return JsonObject
+		result = detectFieldTypeForStruct(isPtr, fld)
 	case reflect.Slice:
-		return JsonArray
+		result = JsonArray
 	case reflect.Map:
-		if fld.Type.Key().Kind() == reflect.String && fld.Type.Elem().Kind() == reflect.Interface {
-			// only if it's a 'map[string]interface{}` (because that's a representation of a JSON object)...
-			//  .Type.Key().Kind() --^       ^-- .Type.Elem().Kind()
-			return JsonObject
-		}
+		result = detectFieldTypeForMap(fld)
+	}
+	return
+}
+
+func detectFieldTypeForStruct(isPtr bool, fld reflect.StructField) JsonType {
+	if (!isPtr && fld.Type.AssignableTo(timeType)) || (isPtr && fld.Type.Elem().AssignableTo(timeType)) ||
+		(!isPtr && fld.Type.AssignableTo(valixTimeType)) || (isPtr && fld.Type.Elem().AssignableTo(valixTimeType)) {
+		return JsonDatetime
+	}
+	return JsonObject
+}
+
+func detectFieldTypeForMap(fld reflect.StructField) JsonType {
+	if fld.Type.Key().Kind() == reflect.String && fld.Type.Elem().Kind() == reflect.Interface {
+		// only if it's a 'map[string]interface{}` (because that's a representation of a JSON object)...
+		//  .Type.Key().Kind() --^       ^-- .Type.Elem().Kind()
+		return JsonObject
 	}
 	return JsonAny
 }

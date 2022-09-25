@@ -23,53 +23,54 @@ type StringValidCardNumber struct {
 
 // Check implements Constraint.Check
 func (c *StringValidCardNumber) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
-	const digitMinChar = '0'
-	const digitMaxChar = '9'
 	if str, ok := v.(string); ok {
-		buffer := []byte(str)
-		l := len(buffer)
-		if c.AllowSpaces {
-			stripBuffer := make([]byte, 0, len(str))
-			for i, by := range buffer {
-				if by == ' ' {
-					if (i+1)%5 != 0 || i+1 == l {
-						vcx.CeaseFurtherIf(c.Stop)
-						return false, c.GetMessage(vcx)
-					}
-				} else {
-					stripBuffer = append(stripBuffer, by)
-				}
-			}
-			buffer = stripBuffer
-			l = len(buffer)
-		}
-		if l < 10 || l > 19 {
-			vcx.CeaseFurtherIf(c.Stop)
-			return false, c.GetMessage(vcx)
-		}
-		var checkSum uint8 = 0
-		doubling := false
-		for i := l - 1; i >= 0; i-- {
-			ch := buffer[i]
-			if (ch < digitMinChar) || (ch > digitMaxChar) {
-				vcx.CeaseFurtherIf(c.Stop)
-				return false, c.GetMessage(vcx)
-			}
-			digit := ch - digitMinChar
-			if doubling && digit > 4 {
-				digit = (digit * 2) - 9
-			} else if doubling {
-				digit = digit * 2
-			}
-			checkSum = checkSum + digit
-			doubling = !doubling
-		}
-		if checkSum%10 != 0 {
+		if !c.check(str) {
 			vcx.CeaseFurtherIf(c.Stop)
 			return false, c.GetMessage(vcx)
 		}
 	}
 	return true, ""
+}
+
+func (c *StringValidCardNumber) check(str string) bool {
+	const digitMinChar = '0'
+	const digitMaxChar = '9'
+	buffer := []byte(str)
+	l := len(buffer)
+	if c.AllowSpaces {
+		stripBuffer := make([]byte, 0, len(str))
+		for i, by := range buffer {
+			if by == ' ' {
+				if (i+1)%5 != 0 || i+1 == l {
+					return false
+				}
+			} else {
+				stripBuffer = append(stripBuffer, by)
+			}
+		}
+		buffer = stripBuffer
+		l = len(buffer)
+	}
+	if l < 10 || l > 19 {
+		return false
+	}
+	var checkSum uint8 = 0
+	doubling := false
+	for i := l - 1; i >= 0; i-- {
+		ch := buffer[i]
+		if (ch < digitMinChar) || (ch > digitMaxChar) {
+			return false
+		}
+		digit := ch - digitMinChar
+		if doubling && digit > 4 {
+			digit = (digit * 2) - 9
+		} else if doubling {
+			digit = digit * 2
+		}
+		checkSum = checkSum + digit
+		doubling = !doubling
+	}
+	return checkSum%10 == 0
 }
 
 // GetMessage implements the Constraint.GetMessage
@@ -114,44 +115,59 @@ func (c *StringValidCountryCode) Check(v interface{}, vcx *ValidatorContext) (bo
 
 func (c *StringValidCountryCode) checkAll(v interface{}) bool {
 	if str, ok := v.(string); ok {
-		if strings.Contains(str, "-") {
-			if c.Allow3166_2 {
-				if parts := strings.Split(str, "-"); len(parts) == 2 {
-					if rs, ok := ISO3166_2_CountryCodes[parts[0]]; ok {
-						if rs[parts[1]] {
-							return true
-						}
-					}
-					if c.Allow3166_2_Obsoletes && ISO3166_2_ObsoleteCodes[str] {
-						return true
-					}
-				}
-			}
-		} else if _, ok := ISO3166_2_CountryCodes[str]; ok {
-			return true
-		} else if c.Allow3166_1_Numeric && ISO3166_1_NumericCodes[str] {
-			return true
-		} else if len(str) == 2 {
-			if subs, ok := iso3166_1_CountryCodesMatrix[str[0]]; ok {
-				if assignment, ok := subs[str[1]]; ok {
-					if assignment == ccAs || assignment == ccRa ||
-						(c.AllowUserAssigned && assignment == ccUA) ||
-						(c.Allow3166_1_ExceptionallyReserved && assignment == ccER) ||
-						(c.Allow3166_1_IndeterminatelyReserved && assignment == ccIR) ||
-						(c.Allow3166_1_TransitionallyReserved && assignment == ccTR) ||
-						(c.Allow3166_1_Deleted && assignment == ccDl) {
-						return true
-					}
-				}
-			}
-		} else if c.Allow3166_1_Numeric && c.AllowUserAssigned {
-			if iv, err := strconv.Atoi(str); err == nil && iv >= 900 && iv <= 999 {
-				return true
-			}
-		}
+		return c.checkString(str)
 	} else if c.Allow3166_1_Numeric {
 		if iv, ok, isNumber := coerceToInt(v); ok && isNumber {
 			return c.checkNumeric(iv)
+		}
+	}
+	return false
+}
+
+func (c *StringValidCountryCode) checkString(str string) bool {
+	if strings.Contains(str, "-") {
+		return c.isOk31662(str)
+	} else if _, ok := ISO3166_2_CountryCodes[str]; ok {
+		return true
+	} else if c.Allow3166_1_Numeric && ISO3166_1_NumericCodes[str] {
+		return true
+	} else if len(str) == 2 {
+		return c.isOk31661(str)
+	} else if c.Allow3166_1_Numeric && c.AllowUserAssigned {
+		if iv, err := strconv.Atoi(str); err == nil && iv >= 900 && iv <= 999 {
+			return true
+		}
+	}
+	return false
+}
+
+func (c *StringValidCountryCode) isOk31661(str string) bool {
+	if subs, ok := iso3166_1_CountryCodesMatrix[str[0]]; ok {
+		if assignment, ok := subs[str[1]]; ok {
+			if assignment == ccAs || assignment == ccRa ||
+				(c.AllowUserAssigned && assignment == ccUA) ||
+				(c.Allow3166_1_ExceptionallyReserved && assignment == ccER) ||
+				(c.Allow3166_1_IndeterminatelyReserved && assignment == ccIR) ||
+				(c.Allow3166_1_TransitionallyReserved && assignment == ccTR) ||
+				(c.Allow3166_1_Deleted && assignment == ccDl) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func (c *StringValidCountryCode) isOk31662(str string) bool {
+	if c.Allow3166_2 {
+		if parts := strings.Split(str, "-"); len(parts) == 2 {
+			if rs, ok := ISO3166_2_CountryCodes[parts[0]]; ok {
+				if rs[parts[1]] {
+					return true
+				}
+			}
+			if c.Allow3166_2_Obsoletes && ISO3166_2_ObsoleteCodes[str] {
+				return true
+			}
 		}
 	}
 	return false
@@ -211,46 +227,73 @@ type StringValidCurrencyCode struct {
 // Check implements Constraint.Check
 func (c *StringValidCurrencyCode) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
 	if c.NumericOnly {
-		if str, ok := v.(string); ok {
-			if (c.AllowTestCode && str == ISO4217TestCurrencyCodeNumeric) ||
-				(c.AllowNoCode && str == ISO4217NoCurrencyCodeNumeric) ||
-				ISO4217CurrencyCodesNumeric[str] ||
-				(c.AllowHistorical && ISO4217CurrencyCodesNumericHistorical[str]) {
-				return true, ""
-			}
-		} else if iv, ok, isNumber := coerceToInt(v); ok && isNumber {
-			ic := fmt.Sprintf("%03d", iv)
-			if (c.AllowTestCode && ic == ISO4217TestCurrencyCodeNumeric) ||
-				(c.AllowNoCode && ic == ISO4217NoCurrencyCodeNumeric) ||
-				ISO4217CurrencyCodesNumeric[ic] ||
-				(c.AllowHistorical && ISO4217CurrencyCodesNumericHistorical[ic]) {
-				return true, ""
-			}
+		if c.checkNumericOnly(v) {
+			return true, ""
 		}
-	} else {
-		if str, ok := v.(string); ok {
-			if (c.AllowTestCode && (str == ISO4217TestCurrencyCode || (c.AllowNumeric && str == ISO4217TestCurrencyCodeNumeric))) ||
-				(c.AllowNoCode && (str == ISO4217NoCurrencyCode || (c.AllowNumeric && str == ISO4217NoCurrencyCodeNumeric))) ||
-				ISO4217CurrencyCodes[str] || (c.AllowNumeric && ISO4217CurrencyCodesNumeric[str]) ||
-				(c.AllowHistorical && (ISO4217CurrencyCodesHistorical[str] || (c.AllowNumeric && ISO4217CurrencyCodesNumericHistorical[str]))) ||
-				(c.AllowUnofficial && UnofficialCurrencyCodes[str]) ||
-				(c.AllowCrypto && CryptoCurrencyCodes[str]) {
-				return true, ""
-			}
-		} else if c.AllowNumeric {
-			if iv, ok, isNumber := coerceToInt(v); ok && isNumber {
-				ic := fmt.Sprintf("%03d", iv)
-				if (c.AllowTestCode && ic == ISO4217TestCurrencyCodeNumeric) ||
-					(c.AllowNoCode && ic == ISO4217NoCurrencyCodeNumeric) ||
-					ISO4217CurrencyCodesNumeric[ic] ||
-					(c.AllowHistorical && ISO4217CurrencyCodesNumericHistorical[ic]) {
-					return true, ""
-				}
-			}
-		}
+	} else if c.checkEither(v) {
+		return true, ""
 	}
 	vcx.CeaseFurtherIf(c.Stop)
 	return false, c.GetMessage(vcx)
+}
+
+func (c *StringValidCurrencyCode) checkEither(v interface{}) bool {
+	if str, ok := v.(string); ok {
+		if c.isOkTest(str) || c.isOkNoCode(str) || c.isOkRegular(str) ||
+			c.isOkHistorical(str) || c.isOkOther(str) {
+			return true
+		}
+	} else if c.AllowNumeric {
+		if iv, ok, isNumber := coerceToInt(v); ok && isNumber {
+			return c.checkNumeric(iv)
+		}
+	}
+	return false
+}
+
+func (c *StringValidCurrencyCode) isOkRegular(str string) bool {
+	return ISO4217CurrencyCodes[str] || (c.AllowNumeric && ISO4217CurrencyCodesNumeric[str])
+}
+
+func (c *StringValidCurrencyCode) isOkTest(str string) bool {
+	return c.AllowTestCode && (str == ISO4217TestCurrencyCode || (c.AllowNumeric && str == ISO4217TestCurrencyCodeNumeric))
+}
+
+func (c *StringValidCurrencyCode) isOkNoCode(str string) bool {
+	return c.AllowNoCode && (str == ISO4217NoCurrencyCode || (c.AllowNumeric && str == ISO4217NoCurrencyCodeNumeric))
+}
+
+func (c *StringValidCurrencyCode) isOkHistorical(str string) bool {
+	return c.AllowHistorical && (ISO4217CurrencyCodesHistorical[str] || (c.AllowNumeric && ISO4217CurrencyCodesNumericHistorical[str]))
+}
+
+func (c *StringValidCurrencyCode) isOkOther(str string) bool {
+	return (c.AllowUnofficial && UnofficialCurrencyCodes[str]) || (c.AllowCrypto && CryptoCurrencyCodes[str])
+}
+
+func (c *StringValidCurrencyCode) checkNumericOnly(v interface{}) bool {
+	if str, ok := v.(string); ok {
+		if (c.AllowTestCode && str == ISO4217TestCurrencyCodeNumeric) ||
+			(c.AllowNoCode && str == ISO4217NoCurrencyCodeNumeric) ||
+			ISO4217CurrencyCodesNumeric[str] ||
+			(c.AllowHistorical && ISO4217CurrencyCodesNumericHistorical[str]) {
+			return true
+		}
+	} else if iv, ok, isNumber := coerceToInt(v); ok && isNumber {
+		return c.checkNumeric(iv)
+	}
+	return false
+}
+
+func (c *StringValidCurrencyCode) checkNumeric(iv int64) bool {
+	ic := fmt.Sprintf("%03d", iv)
+	if (c.AllowTestCode && ic == ISO4217TestCurrencyCodeNumeric) ||
+		(c.AllowNoCode && ic == ISO4217NoCurrencyCodeNumeric) ||
+		ISO4217CurrencyCodesNumeric[ic] ||
+		(c.AllowHistorical && ISO4217CurrencyCodesNumericHistorical[ic]) {
+		return true
+	}
+	return false
 }
 
 // GetMessage implements the Constraint.GetMessage

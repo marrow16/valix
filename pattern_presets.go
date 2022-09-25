@@ -472,28 +472,58 @@ type barcode struct{}
 func (ck barcode) Check(str string) bool {
 	switch len(str) {
 	case 8:
-		if ean8Regexp.MatchString(str) {
-			return ean8.Check(str) || issn8.Check(str) || upcE.Check(str)
-		} else if issn8Regexp.MatchString(str) {
-			return issn8.Check(str)
-		}
+		return check8DigitBarcode(str)
 	case 10:
-		return isbn10Regexp.MatchString(str) && isbn10.Check(str)
+		return check10DigitBarcode(str)
 	case 12:
-		return upcARegexp.MatchString(str) && upcA.Check(str)
+		return check12DigitBarcode(str)
 	case 13:
-		return ean13Regexp.MatchString(str) && ean13.Check(str)
+		return check13DigitBarcode(str)
 	case 14:
-		return ean14Regexp.MatchString(str) && ean14.Check(str)
+		return check14DigitBarcode(str)
 	case 18:
-		if strings.HasPrefix(str, "(") {
-			return ean14Regexp.MatchString(str) && ean14.Check(str)
-		}
-		return ean18Regexp.MatchString(str) && ean18.Check(str)
+		return check18DigitBarcode(str)
 	case 22:
-		return ean18Regexp.MatchString(str) && ean18.Check(str)
+		return check22DigitBarcode(str)
 	}
 	return false
+}
+
+func check8DigitBarcode(str string) bool {
+	result := false
+	if ean8Regexp.MatchString(str) {
+		result = ean8.Check(str) || issn8.Check(str) || upcE.Check(str)
+	} else if issn8Regexp.MatchString(str) {
+		result = issn8.Check(str)
+	}
+	return result
+}
+
+func check10DigitBarcode(str string) bool {
+	return isbn10Regexp.MatchString(str) && isbn10.Check(str)
+}
+
+func check12DigitBarcode(str string) bool {
+	return upcARegexp.MatchString(str) && upcA.Check(str)
+}
+
+func check13DigitBarcode(str string) bool {
+	return ean13Regexp.MatchString(str) && ean13.Check(str)
+}
+
+func check14DigitBarcode(str string) bool {
+	return ean14Regexp.MatchString(str) && ean14.Check(str)
+}
+
+func check18DigitBarcode(str string) bool {
+	if strings.HasPrefix(str, "(") {
+		return ean14Regexp.MatchString(str) && ean14.Check(str)
+	}
+	return ean18Regexp.MatchString(str) && ean18.Check(str)
+}
+
+func check22DigitBarcode(str string) bool {
+	return ean18Regexp.MatchString(str) && ean18.Check(str)
 }
 
 type isbn struct{}
@@ -635,93 +665,102 @@ func (ck rgbIcc) Check(str string) bool {
 					}
 				}
 			}
-			switch token {
-			case "#CMYK":
-				// we expect there to be 4 more args with cmyk values...
-				if len(args) != tokenAt+5 {
-					return false
-				}
-				for i := 1; i < 5; i++ {
-					if !isRgbIccValue(args[tokenAt+i]) {
-						return false
-					}
-				}
-			case "#Grayscale":
-				// we expect there to be 1 more arg with a 0.0-1.0 value...
-				if len(args) != tokenAt+2 {
-					return false
-				} else if !isRgbIccValue(args[tokenAt+1]) {
-					return false
-				}
-			case "#Separation":
-				// we expect there to be 1 more arg with a string value...
-				if len(args) != tokenAt+2 {
-					return false
-				} else if !isRgbIccStringOk(args[tokenAt+1], true) {
-					return false
-				}
-			case "#Registration":
-				// we expect there to be 0 or 1 more args - and if there's 1, it should be a 0.0-1.0 value...
-				if len(args) == tokenAt+2 {
-					if !isRgbIccValue(args[tokenAt+1]) {
-						return false
-					}
-				} else if len(args) > tokenAt+2 {
-					return false
-				}
-			case "#SpotColor":
-				// we expect there to be at least 2 more args after this - the 1st being 'stringy' and the 2nd being a 0.0-1.0 value...
-				if len(args) < tokenAt+3 {
-					return false
-				} else if !isRgbIccStringOk(args[tokenAt+1], false) {
-					return false
-				} else if !isRgbIccValue(args[tokenAt+2]) {
-					return false
-				}
-				if len(args) > tokenAt+3 {
-					// followed by another #token - #CMYK, #Grayscale or #Registration..
-					tokenAt = tokenAt + 3
-					token = args[tokenAt]
-					if !isRgbIccToken(token) {
-						return false
-					}
-					switch token {
-					case "#CMYK":
-						// we expect there to be 4 more args with cmyk values...
-						if len(args) != tokenAt+5 {
-							return false
-						}
-						for i := 1; i < 5; i++ {
-							if !isRgbIccValue(args[tokenAt+i]) {
-								return false
-							}
-						}
-					case "#Grayscale":
-						// we expect there to be 1 more arg with a 0.0-1.0 value...
-						if len(args) != tokenAt+2 {
-							return false
-						} else if !isRgbIccValue(args[tokenAt+1]) {
-							return false
-						}
-					case "#Registration":
-						// we expect there to be 0 or 1 more args - and if there's 1, it should be a 0.0-1.0 value...
-						if len(args) == tokenAt+2 {
-							if !isRgbIccValue(args[tokenAt+1]) {
-								return false
-							}
-						} else if len(args) > tokenAt+2 {
-							return false
-						}
-					default:
-						return false
-					}
-				}
-				return true
-			}
-			return true
+			return isValidRgbIccToken(token, args, tokenAt)
 		}
 	}
 	return false
+}
+
+func isValidRgbIccToken(token string, args []string, tokenAt int) (result bool) {
+	result = false
+	switch token {
+	case "#CMYK":
+		result = isValidRgbIccCmykToken(args, tokenAt)
+	case "#Grayscale":
+		result = isValidRgbIccGrayscaleToken(args, tokenAt)
+	case "#Separation":
+		result = isValidRgbIccSeparationToken(args, tokenAt)
+	case "#Registration":
+		result = isValidRgbIccRegistrationToken(args, tokenAt)
+	case "#SpotColor":
+		result = isValidRgbIccSpotColorToken(args, tokenAt)
+	}
+	return
+}
+
+func isValidRgbIccCmykToken(args []string, tokenAt int) bool {
+	// we expect there to be 4 more args with cmyk values...
+	if len(args) != tokenAt+5 {
+		return false
+	}
+	for i := 1; i < 5; i++ {
+		if !isRgbIccValue(args[tokenAt+i]) {
+			return false
+		}
+	}
+	return true
+}
+
+func isValidRgbIccGrayscaleToken(args []string, tokenAt int) bool {
+	// we expect there to be 1 more arg with a 0.0-1.0 value...
+	if len(args) != tokenAt+2 {
+		return false
+	} else if !isRgbIccValue(args[tokenAt+1]) {
+		return false
+	}
+	return true
+}
+
+func isValidRgbIccSeparationToken(args []string, tokenAt int) bool {
+	// we expect there to be 1 more arg with a string value...
+	if len(args) != tokenAt+2 {
+		return false
+	} else if !isRgbIccStringOk(args[tokenAt+1], true) {
+		return false
+	}
+	return true
+}
+
+func isValidRgbIccRegistrationToken(args []string, tokenAt int) bool {
+	// we expect there to be 0 or 1 more args - and if there's 1, it should be a 0.0-1.0 value...
+	if len(args) == tokenAt+2 {
+		if !isRgbIccValue(args[tokenAt+1]) {
+			return false
+		}
+	} else if len(args) > tokenAt+2 {
+		return false
+	}
+	return true
+}
+
+func isValidRgbIccSpotColorToken(args []string, tokenAt int) bool {
+	// we expect there to be at least 2 more args after this - the 1st being 'stringy' and the 2nd being a 0.0-1.0 value...
+	if len(args) < tokenAt+3 {
+		return false
+	} else if !isRgbIccStringOk(args[tokenAt+1], false) {
+		return false
+	} else if !isRgbIccValue(args[tokenAt+2]) {
+		return false
+	}
+	if len(args) > tokenAt+3 {
+		// followed by another #token - #CMYK, #Grayscale or #Registration..
+		tokenAt = tokenAt + 3
+		token := args[tokenAt]
+		if !isRgbIccToken(token) {
+			return false
+		}
+		followingTokenOk := false
+		switch token {
+		case "#CMYK":
+			followingTokenOk = isValidRgbIccCmykToken(args, tokenAt)
+		case "#Grayscale":
+			followingTokenOk = isValidRgbIccGrayscaleToken(args, tokenAt)
+		case "#Registration":
+			followingTokenOk = isValidRgbIccRegistrationToken(args, tokenAt)
+		}
+		return followingTokenOk
+	}
+	return true
 }
 
 func isRgbIccToken(str string) bool {

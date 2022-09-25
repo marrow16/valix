@@ -603,16 +603,7 @@ func checkUnknownProperties(obj map[string]interface{}, vcx *ValidatorContext, i
 func checkOnlyProperties(obj map[string]interface{}, vcx *ValidatorContext, ignoreUnknowns bool, properties Properties) (found bool, stops bool, useProperties Properties) {
 	found = false
 	stops = false
-	useProperties = Properties{}
-	onlyName := ""
-	for propertyName, pv := range properties {
-		if _, present := obj[propertyName]; present && pv != nil {
-			if (pv.Only && len(pv.OnlyConditions) == 0) || (len(pv.OnlyConditions) > 0 && vcx.meetsWhenConditions(pv.OnlyConditions)) {
-				useProperties[propertyName] = pv
-				onlyName = propertyName
-			}
-		}
-	}
+	onlyName, useProperties := getOnlyProperties(obj, vcx, properties)
 	if len(useProperties) == 1 && len(obj) == 1 {
 		// one only found and there's nothing else...
 		found = true
@@ -637,15 +628,33 @@ func checkOnlyProperties(obj map[string]interface{}, vcx *ValidatorContext, igno
 		stops = true
 	}
 	if stops {
-		for propertyName, pv := range useProperties {
-			if pv.OnlyMessage != "" {
-				vcx.addViolationPropertyForCurrent(propertyName, pv.OnlyMessage, CodeOnlyProperty)
-			} else {
-				vcx.addViolationPropertyForCurrent(propertyName, msgOnlyProperty, CodeOnlyProperty)
+		addStopViolations(useProperties, vcx)
+	}
+	return
+}
+
+func getOnlyProperties(obj map[string]interface{}, vcx *ValidatorContext, properties Properties) (onlyName string, useProperties Properties) {
+	onlyName = ""
+	useProperties = Properties{}
+	for propertyName, pv := range properties {
+		if _, present := obj[propertyName]; present && pv != nil {
+			if (pv.Only && len(pv.OnlyConditions) == 0) || (len(pv.OnlyConditions) > 0 && vcx.meetsWhenConditions(pv.OnlyConditions)) {
+				useProperties[propertyName] = pv
+				onlyName = propertyName
 			}
 		}
 	}
 	return
+}
+
+func addStopViolations(useProperties Properties, vcx *ValidatorContext) {
+	for propertyName, pv := range useProperties {
+		if pv.OnlyMessage != "" {
+			vcx.addViolationPropertyForCurrent(propertyName, pv.OnlyMessage, CodeOnlyProperty)
+		} else {
+			vcx.addViolationPropertyForCurrent(propertyName, msgOnlyProperty, CodeOnlyProperty)
+		}
+	}
 }
 
 func checkConstraints(obj map[string]interface{}, vcx *ValidatorContext, constraints Constraints) (stops bool) {

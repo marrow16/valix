@@ -620,160 +620,103 @@ func TestVariablePropertyNameValidationStopOnFirst(t *testing.T) {
 
 func TestSetConditionOnType(t *testing.T) {
 	foundTypes := map[string]bool{}
+	foundTypesTestConstraint := NewCustomConstraint(func(value interface{}, vcx *ValidatorContext, this *CustomConstraint) (passed bool, message string) {
+		for k := range foundTypes {
+			delete(foundTypes, k)
+		}
+		for _, token := range conditionTypeTokens {
+			if vcx.IsCondition("type_" + token) {
+				foundTypes["type_"+token] = true
+			}
+		}
+		return true, ""
+	}, "")
 	validator := &Validator{
 		Properties: Properties{
 			"foo": {
 				Type: JsonAny,
 				Constraints: Constraints{
 					&SetConditionOnType{},
-					NewCustomConstraint(func(value interface{}, vcx *ValidatorContext, this *CustomConstraint) (passed bool, message string) {
-						for k := range foundTypes {
-							delete(foundTypes, k)
-						}
-						for _, token := range conditionTypeTokens {
-							if vcx.IsCondition("type_" + token) {
-								foundTypes["type_"+token] = true
-							}
-						}
-						return true, ""
-					}, ""),
+					foundTypesTestConstraint,
 				},
 			},
 		},
 	}
-	obj := jsonObject(`{"foo": null}`)
-	ok, _ := validator.Validate(obj)
-	require.True(t, ok)
-	require.True(t, foundTypes["type_null"])
-	for _, other := range conditionTypeTokens {
-		if other != "null" {
-			require.False(t, foundTypes["type_"+other])
-		}
-	}
 
-	obj["foo"] = "a string"
-	ok, _ = validator.Validate(obj)
-	require.True(t, ok)
-	require.True(t, foundTypes["type_string"])
-	for _, other := range conditionTypeTokens {
-		if other != "string" {
-			require.False(t, foundTypes["type_"+other])
-		}
+	testCases := []struct {
+		fooValue         interface{}
+		expectFoundTypes []string
+	}{
+		{
+			nil,
+			[]string{"type_null"},
+		},
+		{
+			"a string",
+			[]string{"type_string"},
+		},
+		{
+			true,
+			[]string{"type_boolean"},
+		},
+		{
+			map[string]interface{}{},
+			[]string{"type_object"},
+		},
+		{
+			[]interface{}{},
+			[]string{"type_array"},
+		},
+		{
+			3,
+			[]string{"type_number", "type_integer"},
+		},
+		{
+			3.0,
+			[]string{"type_number"},
+		},
+		{
+			json.Number("3"),
+			[]string{"type_number", "type_integer"},
+		},
+		{
+			json.Number("3.0"),
+			[]string{"type_number"},
+		},
+		{
+			json.Number("NaN"),
+			[]string{"type_number", "type_nan"},
+		},
+		{
+			json.Number("Inf"),
+			[]string{"type_number", "type_inf"},
+		},
+		{
+			json.Number("xxx"),
+			[]string{"type_number", "type_invalid_number"},
+		},
+		{
+			struct{}{},
+			[]string{"type_unknown"},
+		},
 	}
-
-	obj["foo"] = true
-	ok, _ = validator.Validate(obj)
-	require.True(t, ok)
-	require.True(t, foundTypes["type_boolean"])
-	for _, other := range conditionTypeTokens {
-		if other != "boolean" {
-			require.False(t, foundTypes["type_"+other])
-		}
-	}
-
-	obj["foo"] = map[string]interface{}{}
-	ok, _ = validator.Validate(obj)
-	require.True(t, ok)
-	require.True(t, foundTypes["type_object"])
-	for _, other := range conditionTypeTokens {
-		if other != "object" {
-			require.False(t, foundTypes["type_"+other])
-		}
-	}
-
-	obj["foo"] = []interface{}{}
-	ok, _ = validator.Validate(obj)
-	require.True(t, ok)
-	require.True(t, foundTypes["type_array"])
-	for _, other := range conditionTypeTokens {
-		if other != "array" {
-			require.False(t, foundTypes["type_"+other])
-		}
-	}
-
-	obj["foo"] = 3
-	ok, _ = validator.Validate(obj)
-	require.True(t, ok)
-	require.True(t, foundTypes["type_number"])
-	require.True(t, foundTypes["type_integer"])
-	for _, other := range conditionTypeTokens {
-		if other != "number" && other != "integer" {
-			require.False(t, foundTypes["type_"+other])
-		}
-	}
-
-	obj["foo"] = 3.0
-	ok, _ = validator.Validate(obj)
-	require.True(t, ok)
-	require.True(t, foundTypes["type_number"])
-	for _, other := range conditionTypeTokens {
-		if other != "number" {
-			require.False(t, foundTypes["type_"+other])
-		}
-	}
-
-	obj["foo"] = json.Number("3")
-	ok, _ = validator.Validate(obj)
-	require.True(t, ok)
-	require.True(t, foundTypes["type_number"])
-	require.True(t, foundTypes["type_integer"])
-	for _, other := range conditionTypeTokens {
-		if other != "number" && other != "integer" {
-			require.False(t, foundTypes["type_"+other])
-		}
-	}
-
-	obj["foo"] = json.Number("3.0")
-	ok, _ = validator.Validate(obj)
-	require.True(t, ok)
-	require.True(t, foundTypes["type_number"])
-	for _, other := range conditionTypeTokens {
-		if other != "number" {
-			require.False(t, foundTypes["type_"+other])
-		}
-	}
-
-	obj["foo"] = json.Number("NaN")
-	ok, _ = validator.Validate(obj)
-	require.True(t, ok)
-	require.True(t, foundTypes["type_number"])
-	require.True(t, foundTypes["type_nan"])
-	for _, other := range conditionTypeTokens {
-		if other != "number" && other != "nan" {
-			require.False(t, foundTypes["type_"+other])
-		}
-	}
-
-	obj["foo"] = json.Number("Inf")
-	ok, _ = validator.Validate(obj)
-	require.True(t, ok)
-	require.True(t, foundTypes["type_number"])
-	require.True(t, foundTypes["type_inf"])
-	for _, other := range conditionTypeTokens {
-		if other != "number" && other != "inf" {
-			require.False(t, foundTypes["type_"+other])
-		}
-	}
-
-	obj["foo"] = json.Number("xxx")
-	ok, _ = validator.Validate(obj)
-	require.True(t, ok)
-	require.True(t, foundTypes["type_number"])
-	require.True(t, foundTypes["type_invalid_number"])
-	for _, other := range conditionTypeTokens {
-		if other != "number" && other != "invalid_number" {
-			require.False(t, foundTypes["type_"+other])
-		}
-	}
-
-	obj["foo"] = struct{}{}
-	ok, _ = validator.Validate(obj)
-	require.True(t, ok)
-	require.True(t, foundTypes["type_unknown"])
-	for _, other := range conditionTypeTokens {
-		if other != "unknown" {
-			require.False(t, foundTypes["type_"+other])
-		}
+	obj := map[string]interface{}{}
+	for i, tc := range testCases {
+		t.Run(fmt.Sprintf("[%d]%v", i+1, tc.fooValue), func(t *testing.T) {
+			obj["foo"] = tc.fooValue
+			ok, _ := validator.Validate(obj)
+			require.True(t, ok)
+			okTypes := map[string]bool{}
+			for _, ft := range tc.expectFoundTypes {
+				require.True(t, foundTypes[ft])
+				okTypes[ft[5:]] = true
+			}
+			for _, other := range conditionTypeTokens {
+				if !okTypes[other] {
+					require.False(t, foundTypes["type_"+other])
+				}
+			}
+		})
 	}
 }
 
