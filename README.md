@@ -1620,6 +1620,96 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
     <tr></tr>
     <tr>
         <td>
+            <code>DatetimeYearsOld</code><br>&nbsp;&nbsp;<code>age</code>&nbsp;<em>(i18n tag abbr.)</em>
+        </td>
+        <td>
+            Check that a date (datetime represented as string or time.Time) meets the specified minimum and/or maximum years-old.  Can also be used to simply check a minimum age or maximum age
+            <details>
+                <summary>Fields</summary>
+                <table>
+                    <tr>
+                        <td>
+                            <code>Minimum</code> <em>int</em>
+                        </td>
+                        <td>
+                            is the minimum age (not checked if this value is zero or less)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Maximum</code> <em>int</em>
+                        </td>
+                        <td>
+                            is the maximum age (not checked if this value is zero or less)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>ExclusiveMin</code> <em>bool</em>
+                        </td>
+                        <td>
+                            if set to true, ExclusiveMin specifies the minimum value is exclusive
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>ExclusiveMax</code> <em>string</em>
+                        </td>
+                        <td>
+                            if set to true, ExclusiveMax specifies the maximum value is exclusive
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>ThisYear</code> <em>bool</em>
+                        </td>
+                        <td>
+                            if set to true, only checks the minimum/maximum age against the current year - i.e. the current age is calculated based on 23:59:59.999999999 at 31st December of the current year
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>ThresholdDate</code> <em>string</em>
+                        </td>
+                        <td>
+                            is an optional string representing a threshold date at which the age is calculated<br>
+                            If this is specified, the year part is ignored (the current year is always used)<br><br>
+                            <em>Note: if specified, this also overrides the <code>ThisYear</code> flag</em>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>LeapdayAdjust</code> <em>bool</em>
+                        </td>
+                        <td>
+                            if set, adjusts the way leapday birthdays are age calculated<br>
+                            By default, leapday birthdays are taken as <em>1st March</em> when the current year is not a leap year.
+                            Setting <code>LeapdayAdjust</code> to true means that leapday birthdays are taken as <em>28th Feb</em>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Message</code> <em>string</em>
+                        </td>
+                        <td>
+                            the violation message to be used if the constraint fails (if empty, the default violation message is used)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Stop</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set to true, prevents further validation checks on the property if this constraint fails
+                        </td>
+                    </tr>
+                </table>
+            </details>
+        </td>
+    </tr>
+    <tr></tr>
+    <tr>
+        <td>
             <code>EqualsOther</code><br>&nbsp;&nbsp;<code>eqo</code>&nbsp;<em>(i18n tag abbr.)</em>
         </td>
         <td>
@@ -5452,7 +5542,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             <code>StringValidISODate</code><br>&nbsp;&nbsp;<code>strisod</code>&nbsp;<em>(i18n tag abbr.)</em>
         </td>
         <td>
-            Check that a string value is a valid ISO8601 Date format (excluding time)
+            Check that a string value is a valid ISO 8601 Date format (excluding time)
             <details>
                 <summary>Fields</summary>
                 <table>
@@ -5482,7 +5572,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
             <code>StringValidISODatetime</code><br>&nbsp;&nbsp;<code>strisodt</code>&nbsp;<em>(i18n tag abbr.)</em>
         </td>
         <td>
-            Check that a string value is a valid ISO8601 Date/time format
+            Check that a string value is a valid ISO 8601 Date/time format
             <details>
                 <summary>Fields</summary>
                 <table>
@@ -5500,6 +5590,44 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
                         </td>
                         <td>
                             specifies, if set to true, that seconds cannot have decimal places
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Message</code> <em>string</em>
+                        </td>
+                        <td>
+                            the violation message to be used if the constraint fails (if empty, the default violation message is used)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Stop</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set to true, prevents further validation checks on the property if this constraint fails
+                        </td>
+                    </tr>
+                </table>
+            </details>
+        </td>
+    </tr>
+    <tr></tr>
+    <tr>
+        <td>
+            <code>StringValidISODuration</code><br>&nbsp;&nbsp;<code>strisodur</code>&nbsp;<em>(i18n tag abbr.)</em>
+        </td>
+        <td>
+            Checks that a string value is a valid ISO 8601 Duration
+            <details>
+                <summary>Fields</summary>
+                <table>
+                    <tr>
+                        <td>
+                            <code>DisallowNegative</code> <em>bool</em>
+                        </td>
+                        <td>
+                            if set, disallows negative durations (e.g. <code>"-P1Y"</code>)
                         </td>
                     </tr>
                     <tr>

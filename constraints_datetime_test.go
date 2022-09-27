@@ -874,3 +874,243 @@ func TestDatetimeTimeOfDayRange(t *testing.T) {
 	require.False(t, ok)
 	require.Equal(t, "fooey", msg)
 }
+
+func TestDatetimeYearsOld(t *testing.T) {
+	vcx := newValidatorContext(nil, nil, false, nil)
+
+	c := &DatetimeYearsOld{}
+	ok, msg := c.Check("", vcx)
+	require.True(t, ok)
+	require.Equal(t, "", msg)
+
+	c = &DatetimeYearsOld{
+		Minimum: 10,
+	}
+	dt := time.Date(time.Now().Year()-10, 1, 1, 0, 0, 0, 0, time.UTC).Format("2006-01-02")
+	ok, _ = c.Check(dt, vcx)
+	require.True(t, ok)
+	dt = time.Date(time.Now().Year()-9, 1, 1, 0, 0, 0, 0, time.UTC).Format("2006-01-02")
+	ok, _ = c.Check(dt, vcx)
+	require.False(t, ok)
+}
+
+func TestDatetimeYearsOld_CalculateAge(t *testing.T) {
+	c := &DatetimeYearsOld{}
+	testCases := []struct {
+		now        string
+		dob        string
+		threshold  string
+		thisYear   bool
+		leapdayAdj bool
+		expectAge  int
+	}{
+		{
+			"2022-01-01",
+			"2012-07-01",
+			"",
+			false,
+			false,
+			9,
+		},
+		{
+			"2022-01-01",
+			"2012-01-01",
+			"",
+			false,
+			false,
+			10,
+		},
+		{
+			"2022-02-27",
+			"2008-02-29",
+			"",
+			false,
+			false,
+			13,
+		},
+		{
+			"2022-03-01",
+			"2008-02-29",
+			"",
+			false,
+			false,
+			14,
+		},
+		{
+			"2022-02-28",
+			"2008-02-29",
+			"",
+			false,
+			true,
+			13,
+		},
+		{
+			"2022-02-28",
+			"2008-02-29",
+			"",
+			false,
+			false,
+			13,
+		},
+		{
+			"2024-02-29",
+			"2008-02-29",
+			"",
+			false,
+			false,
+			16,
+		},
+		{
+			"2024-02-29",
+			"2008-02-29",
+			"",
+			false,
+			true,
+			16,
+		},
+		{
+			"2024-03-01",
+			"2008-02-29",
+			"",
+			false,
+			true,
+			16,
+		},
+		{
+			"2024-03-01",
+			"2008-02-29",
+			"",
+			false,
+			false,
+			16,
+		},
+		{
+			"2022-01-01",
+			"2012-07-01",
+			"",
+			true,
+			false,
+			10,
+		},
+		{
+			"2022-10-01",
+			"2012-08-01",
+			"2000-07-01",
+			false,
+			false,
+			9,
+		},
+		{
+			"2022-10-01",
+			"2012-08-01",
+			"",
+			false,
+			false,
+			10,
+		},
+	}
+
+	for i, tc := range testCases {
+		t.Run(fmt.Sprintf("[%d]\"%s\"-\"%s\"", i+1, tc.now, tc.dob), func(t *testing.T) {
+			c.ThisYear = tc.thisYear
+			c.ThresholdDate = tc.threshold
+			c.LeapdayAdjust = tc.leapdayAdj
+			nowDt, _ := stringToDatetime(tc.now, true)
+			dobDt, _ := stringToDatetime(tc.dob, true)
+			res := c.calculateAge(*nowDt, *dobDt)
+			require.Equal(t, tc.expectAge, res)
+		})
+	}
+}
+
+func TestDatetimeYearsOld_GetMessage(t *testing.T) {
+	vcx := newValidatorContext(nil, nil, false, nil)
+	c := &DatetimeYearsOld{
+		Minimum: 1,
+	}
+	msg := c.GetMessage(vcx)
+	require.Equal(t, "Age must be 1 years old or over", msg)
+
+	c = &DatetimeYearsOld{
+		Minimum:      1,
+		ExclusiveMin: true,
+	}
+	msg = c.GetMessage(vcx)
+	require.Equal(t, "Age must be over 1 years old", msg)
+
+	c = &DatetimeYearsOld{
+		Maximum: 1,
+	}
+	msg = c.GetMessage(vcx)
+	require.Equal(t, "Age must be 1 years old or under", msg)
+
+	c = &DatetimeYearsOld{
+		Maximum:      1,
+		ExclusiveMax: true,
+	}
+	msg = c.GetMessage(vcx)
+	require.Equal(t, "Age must be under 1 years old", msg)
+
+	c = &DatetimeYearsOld{
+		Minimum: 18,
+		Maximum: 30,
+	}
+	msg = c.GetMessage(vcx)
+	require.Equal(t, "Age must be between 18 years old and 30 years old", msg)
+
+	c = &DatetimeYearsOld{
+		Minimum:      18,
+		ExclusiveMin: true,
+		Maximum:      30,
+	}
+	msg = c.GetMessage(vcx)
+	require.Equal(t, "Age must be between over 18 years old and 30 years old or under", msg)
+
+	c = &DatetimeYearsOld{
+		Minimum:      18,
+		Maximum:      30,
+		ExclusiveMax: true,
+	}
+	msg = c.GetMessage(vcx)
+	require.Equal(t, "Age must be 18 years old or over and under 30 years old", msg)
+
+	c = &DatetimeYearsOld{
+		Minimum:      18,
+		ExclusiveMin: true,
+		Maximum:      30,
+		ExclusiveMax: true,
+	}
+	msg = c.GetMessage(vcx)
+	require.Equal(t, "Age must be over 18 years old and under 30 years old", msg)
+
+	c = &DatetimeYearsOld{}
+	msg = c.GetMessage(vcx)
+	require.Equal(t, "", msg)
+
+	c = &DatetimeYearsOld{
+		Message: "Age check",
+	}
+	msg = c.GetMessage(vcx)
+	require.Equal(t, "Age check", msg)
+
+	c = &DatetimeYearsOld{
+		Message: "Age check",
+		Minimum: 1,
+		Maximum: 1,
+	}
+	msg = c.GetMessage(vcx)
+	require.Equal(t, "Age check", msg)
+}
+
+func TestStringValidISODuration(t *testing.T) {
+	// NB. Actual ISO duration parse checking is unit tested by ParseDuration test!
+	vcx := newValidatorContext(nil, nil, false, nil)
+	c := &StringValidISODuration{}
+
+	ok, msg := c.Check("x", vcx)
+	require.False(t, ok)
+	require.Equal(t, msgValidISODuration, msg)
+
+	ok, _ = c.Check("P1Y", vcx)
+	require.True(t, ok)
+}
