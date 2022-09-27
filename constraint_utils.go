@@ -136,6 +136,7 @@ const (
 	msgDatetimePastOrPresent          = "Value must be a valid date/time in the past or present"
 	msgValidTimezone                  = "Value must be a valid timezone"
 	msgDatetimeDayOfWeek              = "Value must be a valid day of week"
+	msgValidISODuration               = "Value must be a valid ISO 8601 duration"
 )
 
 var (
@@ -496,4 +497,91 @@ func isUniqueCompare(v interface{}, ignoreCase bool, list *[]interface{}) bool {
 		*list = append(*list, useV)
 	}
 	return result
+}
+
+// Duration represents a parsed ISO8601 duration
+type Duration struct {
+	Negative bool
+	Years    *float64
+	Months   *float64
+	Weeks    *float64
+	Days     *float64
+	Hours    *float64
+	Minutes  *float64
+	Seconds  *float64
+}
+
+const (
+	durationNumPatt  = `(?:[+-]?)\d+(?:[.,]\d+)?`
+	durationFullPatt = `^(?P<negative>[\+\-])?P(?:(?P<year>` + durationNumPatt + `)Y)?(?:(?P<month>` + durationNumPatt + `)M)?(?:(?P<day>` + durationNumPatt + `)D)?` +
+		`(?:T(?:(?P<hour>` + durationNumPatt + `)H)?(?:(?P<minute>` + durationNumPatt + `)M)?(?:(?P<second>` + durationNumPatt + `)S)?)?$`
+	durationWeekPatt = `^(?P<negative>[\+\-])?P(?:(?P<week>` + durationNumPatt + `)W)$`
+)
+
+var (
+	iso8601DurationFullRegexp = regexp.MustCompile(durationFullPatt)
+	iso8601DurationWeekRegexp = regexp.MustCompile(durationWeekPatt)
+)
+
+func ParseDuration(str string) (*Duration, bool) {
+	if matches := iso8601DurationWeekRegexp.FindStringSubmatch(str); matches != nil {
+		return parseDurationParts(iso8601DurationWeekRegexp, matches)
+	} else if matches := iso8601DurationFullRegexp.FindStringSubmatch(str); matches != nil {
+		return parseDurationParts(iso8601DurationFullRegexp, matches)
+	}
+	return nil, false
+}
+
+func parseDurationParts(rx *regexp.Regexp, matches []string) (*Duration, bool) {
+	result := &Duration{}
+	ok := true
+	some := false
+	for i, nm := range rx.SubexpNames() {
+		pt := matches[i]
+		if i == 0 || nm == "" || pt == "" {
+			continue
+		}
+		switch nm {
+		case "negative":
+			result.Negative = pt == "-"
+		case "year":
+			result.Years, ok = parseDurationNumber(pt)
+			some = true
+		case "month":
+			result.Months, ok = parseDurationNumber(pt)
+			some = true
+		case "week":
+			result.Weeks, ok = parseDurationNumber(pt)
+			some = true
+		case "day":
+			result.Days, ok = parseDurationNumber(pt)
+			some = true
+		case "hour":
+			result.Hours, ok = parseDurationNumber(pt)
+			some = true
+		case "minute":
+			result.Minutes, ok = parseDurationNumber(pt)
+			some = true
+		case "second":
+			result.Seconds, ok = parseDurationNumber(pt)
+			some = true
+		}
+	}
+	if ok && some {
+		return result, true
+	}
+	return nil, false
+}
+
+func parseDurationNumber(str string) (fv *float64, result bool) {
+	if f, err := strconv.ParseFloat(str, 64); err == nil {
+		fv = &f
+		result = true
+	} else if strings.Contains(str, ",") {
+		if f, err := strconv.ParseFloat(strings.ReplaceAll(str, ",", "."), 64); err == nil {
+			fv = &f
+			result = true
+		}
+	}
+	return
 }

@@ -61,17 +61,23 @@ func TestCanMarshalDefaultI18nContext(t *testing.T) {
 	require.Nil(t, err)
 }
 
-func TestEverythingTranslated(t *testing.T) {
+func TestAllTokensTranslated(t *testing.T) {
 	require.Equal(t, len(internalTokens), len(defaultInternalTranslator.Tokens))
 	for k := range internalTokens {
 		_, ok := defaultInternalTranslator.Tokens[k]
 		require.True(t, ok)
 	}
+}
+
+func TestAllMessagesTranslated(t *testing.T) {
 	require.Equal(t, len(internalMessages), len(defaultInternalTranslator.Messages))
 	for k := range internalMessages {
 		_, ok := defaultInternalTranslator.Messages[k]
 		require.True(t, ok)
 	}
+}
+
+func TestAllFormatMessagesTranslated(t *testing.T) {
 	require.Equal(t, len(internalFormats), len(defaultInternalTranslator.Formats))
 	for k := range internalFormats {
 		_, ok := defaultInternalTranslator.Formats[k]

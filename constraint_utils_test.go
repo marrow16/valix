@@ -461,3 +461,198 @@ func TestPropertyWalkDownSlice(t *testing.T) {
 	require.True(t, ok)
 	require.Equal(t, "b", v)
 }
+
+func TestParseDuration(t *testing.T) {
+	testCases := map[string]struct {
+		expectOk bool
+		negative bool
+		years    float64
+		months   float64
+		weeks    float64
+		days     float64
+		hours    float64
+		minutes  float64
+		seconds  float64
+	}{
+		"":        {},
+		"xxx":     {},
+		"P":       {},
+		"p":       {},
+		"PW":      {},
+		"PYMTHMS": {},
+		"P1M1M":   {},
+		"PNaNY":   {},
+		"PInfY":   {},
+		"PT":      {},
+		"PTM":     {},
+		"P1Y1W":   {},
+		"P2W": {
+			expectOk: true,
+			weeks:    2,
+		},
+		"P1.5W": {
+			expectOk: true,
+			weeks:    1.5,
+		},
+		"P1,5W": {
+			expectOk: true,
+			weeks:    1.5,
+		},
+		"-P3W": {
+			expectOk: true,
+			negative: true,
+			weeks:    3,
+		},
+		"P1Y": {
+			expectOk: true,
+			years:    1,
+		},
+		"P-1Y": {
+			expectOk: true,
+			years:    -1,
+		},
+		"-P1Y": {
+			expectOk: true,
+			years:    1,
+			negative: true,
+		},
+		"-P-1Y": {
+			expectOk: true,
+			negative: true,
+			years:    -1,
+		},
+		"P1M": {
+			expectOk: true,
+			months:   1,
+		},
+		"P2.5M": {
+			expectOk: true,
+			months:   2.5,
+		},
+		"P2,5M": {
+			expectOk: true,
+			months:   2.5,
+		},
+		"P1D": {
+			expectOk: true,
+			days:     1,
+		},
+		"P2.5D": {
+			expectOk: true,
+			days:     2.5,
+		},
+		"P2,5D": {
+			expectOk: true,
+			days:     2.5,
+		},
+		"PT1H": {
+			expectOk: true,
+			hours:    1,
+		},
+		"PT2.5H": {
+			expectOk: true,
+			hours:    2.5,
+		},
+		"PT2,5H": {
+			expectOk: true,
+			hours:    2.5,
+		},
+		"PT1M": {
+			expectOk: true,
+			minutes:  1,
+		},
+		"PT2.5M": {
+			expectOk: true,
+			minutes:  2.5,
+		},
+		"PT2,5M": {
+			expectOk: true,
+			minutes:  2.5,
+		},
+		"PT1S": {
+			expectOk: true,
+			seconds:  1,
+		},
+		"PT2.5S": {
+			expectOk: true,
+			seconds:  2.5,
+		},
+		"PT2,5S": {
+			expectOk: true,
+			seconds:  2.5,
+		},
+		"P1Y2M3DT4H5M6S": {
+			expectOk: true,
+			years:    1,
+			months:   2,
+			days:     3,
+			hours:    4,
+			minutes:  5,
+			seconds:  6,
+		},
+		"P-1Y-2M-3DT-4H-5M-6S": {
+			expectOk: true,
+			years:    -1,
+			months:   -2,
+			days:     -3,
+			hours:    -4,
+			minutes:  -5,
+			seconds:  -6,
+		},
+		"-P1Y2M3DT4H5M6S": {
+			expectOk: true,
+			negative: true,
+			years:    1,
+			months:   2,
+			days:     3,
+			hours:    4,
+			minutes:  5,
+			seconds:  6,
+		},
+	}
+	for ds, tc := range testCases {
+		t.Run(ds, func(t *testing.T) {
+			dur, ok := ParseDuration(ds)
+			require.Equal(t, tc.expectOk, ok)
+			if tc.expectOk {
+				require.NotNil(t, dur)
+				require.Equal(t, tc.negative, dur.Negative)
+				if tc.weeks != 0 {
+					require.Equal(t, tc.weeks, *dur.Weeks)
+				} else {
+					require.Nil(t, dur.Weeks)
+				}
+				if tc.years != 0 {
+					require.Equal(t, tc.years, *dur.Years)
+				} else {
+					require.Nil(t, dur.Years)
+				}
+				if tc.months != 0 {
+					require.Equal(t, tc.months, *dur.Months)
+				} else {
+					require.Nil(t, dur.Months)
+				}
+				if tc.days != 0 {
+					require.Equal(t, tc.days, *dur.Days)
+				} else {
+					require.Nil(t, dur.Days)
+				}
+				if tc.hours != 0 {
+					require.Equal(t, tc.hours, *dur.Hours)
+				} else {
+					require.Nil(t, dur.Hours)
+				}
+				if tc.minutes != 0 {
+					require.Equal(t, tc.minutes, *dur.Minutes)
+				} else {
+					require.Nil(t, dur.Minutes)
+				}
+				if tc.seconds != 0 {
+					require.Equal(t, tc.seconds, *dur.Seconds)
+				} else {
+					require.Nil(t, dur.Seconds)
+				}
+			}
+		})
+	}
+}

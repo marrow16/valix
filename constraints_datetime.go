@@ -479,3 +479,143 @@ func (c *DatetimeTimeOfDayRange) GetMessage(tcx I18nContext) string {
 	}
 	return msgValidISODatetimeFormatFull
 }
+
+// DatetimeYearsOld constraint checks that a date (datetime represented as string or time.Time) meets the specified
+// minimum and/or maximum years-old.  Can also be used to simply check a minimum age or maximum age
+//
+// Note: If specified in the value being checked, the time portion is ignored (very few people know, or are expected to
+// specify, their exact time of birth)
+type DatetimeYearsOld struct {
+	// is the minimum age (not checked if this value is zero or less)
+	Minimum int
+	// is the maximum age (not checked if this value is zero or less)
+	Maximum int
+	// if set to true, ExclusiveMin specifies the minimum value is exclusive
+	ExclusiveMin bool
+	// if set to true, ExclusiveMax specifies the maximum value is exclusive
+	ExclusiveMax bool
+	// if set to true, only checks the minimum/maximum age against the current year - i.e. the current age is calculated
+	// based on 23:59:59.999999999 at 31st December of the current year
+	ThisYear bool
+	// is an optional string representing a threshold date at which the age is calculated
+	//
+	// If this is specified, the year part is ignored (the current year is always used)
+	//
+	// Note: if specified, this also overrides the ThisYear flag
+	ThresholdDate string
+	// if set, adjusts the way leapday birthdays are age calculated
+	//
+	// By default, leapday birthdays are taken as 1st March when the current year is not a leap year
+	//
+	// Setting LeapdayAdjust to true means that leapday birthdays are taken as 28th Feb
+	LeapdayAdjust bool
+	// the violation message to be used if the constraint fails (see Violation.Message)
+	//
+	// (if the Message is an empty string then the default violation message is used)
+	Message string `v8n:"default"`
+	// when set to true, Stop prevents further validation checks on the property if this constraint fails
+	Stop bool
+}
+
+// Check implements Constraint.Check
+func (c *DatetimeYearsOld) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
+	if c.Minimum <= 0 && c.Maximum <= 0 {
+		// if neither min nor max are set, then no checks...
+		return true, ""
+	}
+	if dob, ok := isTime(v, true); ok {
+		age := c.calculateAge(time.Now(), dob)
+		if (c.Minimum <= 0 || age > c.Minimum || (!c.ExclusiveMin && age == c.Minimum)) &&
+			(c.Maximum <= 0 || age < c.Maximum || (!c.ExclusiveMax && age == c.Maximum)) {
+			return true, ""
+		}
+	}
+	vcx.CeaseFurtherIf(c.Stop)
+	return false, c.GetMessage(vcx)
+}
+
+func (c *DatetimeYearsOld) calculateAge(now, dob time.Time) int {
+	useNow := now
+	if c.ThresholdDate != "" {
+		if td, ok := stringToDatetime(c.ThresholdDate, false); ok {
+			useNow = time.Date(now.Year(), td.Month(), td.Day(), td.Hour(), td.Minute(), td.Second(), td.Nanosecond(), time.UTC)
+		}
+	} else if c.ThisYear {
+		useNow = time.Date(now.Year(), 12, 31, 23, 59, 59, 999999999, time.UTC)
+	}
+	age := useNow.Year() - dob.Year()
+	dobM := dob.Month()
+	dobD := dob.Day()
+	if dobM == 2 && dobD == 29 {
+		dob = time.Date(now.Year(), dobM, dobD, 0, 0, 0, 0, time.UTC)
+		dobM = dob.Month()
+		dobD = dob.Day()
+		if dobM != 29 && c.LeapdayAdjust {
+			dobM = 2
+			dobD = 29 // even though 29th Feb may not be valid for this year
+		}
+	}
+	if useNow.Month() < dobM || (useNow.Month() == dobM && useNow.Day() < dobD) {
+		age--
+	}
+	return age
+}
+
+const (
+	fmtMsgDtAgeMin          = "Age must be over %[1]d years old"
+	fmtMsgDtAgeMinOrOver    = "Age must be %[1]d years old or over"
+	fmtMsgDtAgeMax          = "Age must be under %[1]d years old"
+	fmtMsgDtAgeMaxOrUnder   = "Age must be %[1]d years old or under"
+	fmtMsgDtAgeMinExcMaxExc = "Age must be over %[1]d years old and under %[2]d years old"
+	fmtMsgDtAgeMinMax       = "Age must be between %[1]d years old and %[2]d years old"
+	fmtMsgDtAgeMinMaxExc    = "Age must be %[1]d years old or over and under %[2]d years old"
+	fmtMsgDtAgeMinExcMax    = "Age must be between over %[1]d years old and %[2]d years old or under"
+)
+
+// GetMessage implements the Constraint.GetMessage
+func (c *DatetimeYearsOld) GetMessage(tcx I18nContext) string {
+	if c.Message != "" || (c.Minimum <= 0 && c.Maximum <= 0) {
+		return obtainI18nContext(tcx).TranslateMessage(c.Message)
+	} else if c.Minimum > 0 && c.Maximum > 0 {
+		if c.ExclusiveMin && c.ExclusiveMax {
+			return defaultMessage(tcx, "", fmtMsgDtAgeMinExcMaxExc, c.Minimum, c.Maximum)
+		} else if !c.ExclusiveMin && !c.ExclusiveMax {
+			return defaultMessage(tcx, "", fmtMsgDtAgeMinMax, c.Minimum, c.Maximum)
+		} else if c.ExclusiveMax {
+			return defaultMessage(tcx, "", fmtMsgDtAgeMinMaxExc, c.Minimum, c.Maximum)
+		}
+		return defaultMessage(tcx, "", fmtMsgDtAgeMinExcMax, c.Minimum, c.Maximum)
+	} else if c.Minimum > 0 {
+		return defaultMessage(tcx, "", ternary(c.ExclusiveMin).string(fmtMsgDtAgeMin, fmtMsgDtAgeMinOrOver), c.Minimum)
+	}
+	return defaultMessage(tcx, "", ternary(c.ExclusiveMax).string(fmtMsgDtAgeMax, fmtMsgDtAgeMaxOrUnder), c.Maximum)
+
+}
+
+// StringValidISODuration constraint checks that a string value is a valid ISO8601 Duration
+type StringValidISODuration struct {
+	// if set, disallows negative durations (e.g. "-P1Y")
+	DisallowNegative bool
+	// the violation message to be used if the constraint fails (see Violation.Message)
+	//
+	// (if the Message is an empty string then the default violation message is used)
+	Message string `v8n:"default"`
+	// when set to true, Stop prevents further validation checks on the property if this constraint fails
+	Stop bool
+}
+
+// Check implements Constraint.Check
+func (c *StringValidISODuration) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
+	if str, ok := v.(string); ok {
+		if dur, ok := ParseDuration(str); ok && (!c.DisallowNegative || !dur.Negative) {
+			return true, ""
+		}
+	}
+	vcx.CeaseFurtherIf(c.Stop)
+	return false, c.GetMessage(vcx)
+}
+
+// GetMessage implements the Constraint.GetMessage
+func (c *StringValidISODuration) GetMessage(tcx I18nContext) string {
+	return defaultMessage(tcx, c.Message, msgValidISODuration)
+}

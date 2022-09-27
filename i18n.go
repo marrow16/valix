@@ -207,6 +207,7 @@ var internalMessages = map[string]string{
 	msgValidISODatetimeFormatNoOffs:   msgValidISODatetimeFormatNoOffs,
 	msgValidISODatetimeFormatNoMillis: msgValidISODatetimeFormatNoMillis,
 	msgValidISODatetimeFormatMin:      msgValidISODatetimeFormatMin,
+	msgValidISODuration:               msgValidISODuration,
 	msgValidTimezone:                  msgValidTimezone,
 	msgDatetimeDayOfWeek:              msgDatetimeDayOfWeek,
 	msgDatetimeFuture:                 msgDatetimeFuture,
@@ -335,6 +336,15 @@ var internalFormats = map[string]string{
 	fmtMsgDtToleranceOtherMaxBefore: fmtMsgDtToleranceOtherMaxBefore,
 	fmtMsgDtToleranceOtherMinAfter:  fmtMsgDtToleranceOtherMinAfter,
 	fmtMsgDtToleranceOtherMinBefore: fmtMsgDtToleranceOtherMinBefore,
+	// datetime age...
+	fmtMsgDtAgeMin:          fmtMsgDtAgeMin,
+	fmtMsgDtAgeMinOrOver:    fmtMsgDtAgeMinOrOver,
+	fmtMsgDtAgeMax:          fmtMsgDtAgeMax,
+	fmtMsgDtAgeMaxOrUnder:   fmtMsgDtAgeMaxOrUnder,
+	fmtMsgDtAgeMinExcMaxExc: fmtMsgDtAgeMinExcMaxExc,
+	fmtMsgDtAgeMinMax:       fmtMsgDtAgeMinMax,
+	fmtMsgDtAgeMinMaxExc:    fmtMsgDtAgeMinMaxExc,
+	fmtMsgDtAgeMinExcMax:    fmtMsgDtAgeMinExcMax,
 	// constraint set...
 	fmtMsgConstraintSetDefaultAllOf: fmtMsgConstraintSetDefaultAllOf,
 	fmtMsgConstraintSetDefaultOneOf: fmtMsgConstraintSetDefaultOneOf,
