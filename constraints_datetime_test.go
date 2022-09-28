@@ -894,6 +894,38 @@ func TestDatetimeYearsOld(t *testing.T) {
 	require.False(t, ok)
 }
 
+func TestDatetimeYearsOld_FailsOnFutureDate(t *testing.T) {
+	vcx := newValidatorContext(nil, nil, false, nil)
+
+	now := time.Now()
+	dt := now.Add(time.Hour * 24).Format(time.RFC3339Nano)
+
+	c := &DatetimeYearsOld{Maximum: 1}
+	ok, _ := c.Check(dt, vcx)
+	require.False(t, ok)
+
+	c = &DatetimeYearsOld{Minimum: 1}
+	ok, _ = c.Check(dt, vcx)
+	require.False(t, ok)
+
+	c = &DatetimeYearsOld{Minimum: 1, Maximum: 1}
+	ok, _ = c.Check(dt, vcx)
+	require.False(t, ok)
+
+	today := now.Format(time.RFC3339Nano)
+	c = &DatetimeYearsOld{Maximum: 1}
+	ok, _ = c.Check(today, vcx)
+	require.True(t, ok)
+
+	c = &DatetimeYearsOld{Minimum: 1}
+	ok, _ = c.Check(today, vcx)
+	require.False(t, ok)
+
+	c = &DatetimeYearsOld{Minimum: 1, Maximum: 1}
+	ok, _ = c.Check(today, vcx)
+	require.False(t, ok)
+}
+
 func TestDatetimeYearsOld_CalculateAge(t *testing.T) {
 	c := &DatetimeYearsOld{}
 	testCases := []struct {

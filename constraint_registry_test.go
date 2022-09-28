@@ -285,3 +285,33 @@ func (my *myConstraint2) Check(value interface{}, vcx *ValidatorContext) (bool, 
 func (my *myConstraint2) GetMessage(tcx I18nContext) string {
 	return obtainI18nContext(tcx).TranslateMessage("My test message")
 }
+
+func TestAllConstraintMessagesWorkWithNilTranslator(t *testing.T) {
+	cs := defaultConstraints()
+	knownEmpties := map[string]bool{
+		"ArrayConditionalConstraint": true,
+		"ConditionalConstraint":      true,
+		"DatetimeYearsOld":           true,
+		"SetConditionFrom":           true,
+		"SetConditionIf":             true,
+		"SetConditionOnType":         true,
+		"SetConditionProperty":       true,
+		"acond":                      true,
+		"age":                        true,
+		"cfrom":                      true,
+		"cif":                        true,
+		"cond":                       true,
+		"cpty":                       true,
+		"ctype":                      true,
+	}
+	for nm, c := range cs {
+		t.Run(nm, func(t *testing.T) {
+			msg := c.GetMessage(nil)
+			if knownEmpties[nm] {
+				require.Equal(t, "", msg, nm)
+			} else {
+				require.NotEqual(t, "", msg, nm)
+			}
+		})
+	}
+}

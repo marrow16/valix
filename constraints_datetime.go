@@ -483,8 +483,14 @@ func (c *DatetimeTimeOfDayRange) GetMessage(tcx I18nContext) string {
 // DatetimeYearsOld constraint checks that a date (datetime represented as string or time.Time) meets the specified
 // minimum and/or maximum years-old.  Can also be used to simply check a minimum age or maximum age
 //
-// Note: If specified in the value being checked, the time portion is ignored (very few people know, or are expected to
+// Notes:
+//
+// * If the value being checked contains a time (hh:mm:ss), it is ignored (very few people know, or are expected to
 // specify, their exact time of birth)
+//
+// * If the value being checked is in the future - this constraint fails
+//
+// * If both Minimum and Maximum are set to zero (or less) then no check is performed
 type DatetimeYearsOld struct {
 	// is the minimum age (not checked if this value is zero or less)
 	Minimum int
@@ -525,7 +531,7 @@ func (c *DatetimeYearsOld) Check(v interface{}, vcx *ValidatorContext) (bool, st
 	}
 	if dob, ok := isTime(v, true); ok {
 		age := c.calculateAge(time.Now(), dob)
-		if (c.Minimum <= 0 || age > c.Minimum || (!c.ExclusiveMin && age == c.Minimum)) &&
+		if age >= 0 && (c.Minimum <= 0 || age > c.Minimum || (!c.ExclusiveMin && age == c.Minimum)) &&
 			(c.Maximum <= 0 || age < c.Maximum || (!c.ExclusiveMax && age == c.Maximum)) {
 			return true, ""
 		}
