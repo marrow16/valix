@@ -87,6 +87,54 @@ func TestFailWhen(t *testing.T) {
 	require.True(t, ok)
 }
 
+func TestFailWith(t *testing.T) {
+	constraint := &FailWith{
+		Others: MustParseExpression("(foo && bar) || (bar && baz)"),
+	}
+	validator := &Validator{
+		IgnoreUnknownProperties: true,
+		Properties: Properties{
+			"foo": {
+				Constraints: Constraints{
+					constraint,
+					&StringNotEmpty{},
+				},
+			},
+		},
+	}
+
+	obj := jsonObject(`{
+		"foo": "aaa",
+		"bar": "aaa"
+	}`)
+	ok, violations := validator.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, msgFailure, violations[0].Message)
+	require.Equal(t, "foo", violations[0].Property)
+	require.Equal(t, "", violations[0].Path)
+
+	obj = jsonObject(`{
+		"foo": "aaa",
+		"baz": "aaa"
+	}`)
+	ok, _ = validator.Validate(obj)
+	require.True(t, ok)
+
+	obj = jsonObject(`{
+		"foo": "",
+		"bar": "aaa"
+	}`)
+	ok, violations = validator.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 2, len(violations))
+
+	constraint.StopAll = true
+	ok, violations = validator.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+}
+
 func TestSetConditionFromConstraint(t *testing.T) {
 	conditionWasSet := false
 	validator := &Validator{

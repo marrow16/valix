@@ -27,6 +27,7 @@ func init() {
 func defaultConstraints() map[string]Constraint {
 	return map[string]Constraint{
 		"ArrayConditionalConstraint":      &ArrayConditionalConstraint{},
+		"ArrayDistinctProperty":           &ArrayDistinctProperty{},
 		"ArrayOf":                         &ArrayOf{},
 		"ArrayUnique":                     &ArrayUnique{},
 		"ConditionalConstraint":           &ConditionalConstraint{},
@@ -52,6 +53,7 @@ func defaultConstraints() map[string]Constraint {
 		"DatetimeYearsOld":                &DatetimeYearsOld{},
 		"EqualsOther":                     &EqualsOther{},
 		"FailWhen":                        &FailWhen{},
+		"FailWith":                        &FailWith{},
 		"FailingConstraint":               &FailingConstraint{},
 		"GreaterThan":                     &GreaterThan{},
 		"GreaterThanOrEqual":              &GreaterThanOrEqual{},
@@ -127,6 +129,7 @@ func defaultConstraints() map[string]Constraint {
 		"StringValidUuid":                 &StringValidUuid{},
 		// abbreviations...
 		"acond":      &ArrayConditionalConstraint{},
+		"adistinctp": &ArrayDistinctProperty{},
 		"age":        &DatetimeYearsOld{},
 		"aof":        &ArrayOf{},
 		"aunique":    &ArrayUnique{},
@@ -158,6 +161,7 @@ func defaultConstraints() map[string]Constraint {
 		"eqo":        &EqualsOther{},
 		"fail":       &FailingConstraint{},
 		"failw":      &FailWhen{},
+		"failwith":   &FailWith{},
 		"gt":         &GreaterThan{},
 		"gte":        &GreaterThanOrEqual{},
 		"gteo":       &GreaterThanOrEqualOther{},

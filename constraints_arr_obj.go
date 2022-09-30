@@ -101,6 +101,52 @@ func (c *ArrayUnique) GetMessage(tcx I18nContext) string {
 	return defaultMessage(tcx, c.Message, msgArrayUnique)
 }
 
+// ArrayDistinctProperty constraint to check each object element in an array has a specified property that is distinct
+//
+// This differs from ArrayUnique, which checks for unique items in the array, whereas ArrayDistinctProperty checks
+// objects within an array to ensure that a specific property is unique
+type ArrayDistinctProperty struct {
+	// the name of the property (in each array element object) to check for distinct (uniqueness)
+	PropertyName string `v8n:"default"`
+	// whether to ignore null property values in the array
+	IgnoreNulls bool
+	// whether uniqueness is case in-insensitive (for string value properties)
+	IgnoreCase bool
+	// the violation message to be used if the constraint fails (see Violation.Message)
+	//
+	// (if the Message is an empty string then the default violation message is used)
+	Message string
+	// when set to true, Stop prevents further validation checks on the property if this constraint fails
+	Stop bool
+}
+
+// Check implements Constraint.Check
+func (c *ArrayDistinctProperty) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
+	if a, ok := v.([]interface{}); ok {
+		list := make([]interface{}, 0, len(a))
+		for _, iv := range a {
+			if ov, isObj := iv.(map[string]interface{}); isObj {
+				pv, hasP := ov[c.PropertyName]
+				if !hasP {
+					pv = nil
+				}
+				if !(pv == nil && c.IgnoreNulls) {
+					if !isUniqueCompare(pv, c.IgnoreCase, &list) {
+						vcx.CeaseFurtherIf(c.Stop)
+						return false, c.GetMessage(vcx)
+					}
+				}
+			}
+		}
+	}
+	return true, ""
+}
+
+// GetMessage implements the Constraint.GetMessage
+func (c *ArrayDistinctProperty) GetMessage(tcx I18nContext) string {
+	return defaultMessage(tcx, c.Message, msgArrayUnique)
+}
+
 // Length constraint to check that a property value has minimum and maximum length
 //
 // This constraint can be used for object, array and string property values - however, if

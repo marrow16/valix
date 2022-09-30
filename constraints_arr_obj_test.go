@@ -163,6 +163,55 @@ func TestArrayUnique(t *testing.T) {
 	}
 }
 
+func TestArrayDistinct(t *testing.T) {
+	constraint := &ArrayDistinctProperty{PropertyName: "bar"}
+	validator := buildFooValidator(JsonArray, constraint, false)
+	obj := jsonObject(`{
+		"foo": [{"bar": 1}, {"bar": 2}, {"bar": "baz"}, {"bar": true}, {"bar": false}]
+	}`)
+
+	ok, _ := validator.Validate(obj)
+	require.True(t, ok)
+
+	obj = jsonObject(`{
+		"foo": [{"bar": 1}, {"bar": 1}]
+	}`)
+	ok, violations := validator.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, msgArrayUnique, violations[0].Message)
+	require.Equal(t, "foo", violations[0].Property)
+	require.Equal(t, "", violations[0].Path)
+
+	obj = jsonObject(`{
+		"foo": [{"bar": "AAA"}, {"bar": "aaa"}]
+	}`)
+	ok, _ = validator.Validate(obj)
+	require.True(t, ok)
+	constraint.IgnoreCase = true
+	ok, _ = validator.Validate(obj)
+	require.False(t, ok)
+
+	obj = jsonObject(`{
+		"foo": [{"bar": null}, {"bar": null}]
+	}`)
+	ok, _ = validator.Validate(obj)
+	require.False(t, ok)
+	constraint.IgnoreNulls = true
+	ok, _ = validator.Validate(obj)
+	require.True(t, ok)
+
+	constraint.IgnoreNulls = false
+	obj = jsonObject(`{
+		"foo": [{"bar": null}, {}]
+	}`)
+	ok, _ = validator.Validate(obj)
+	require.False(t, ok)
+	constraint.IgnoreNulls = true
+	ok, _ = validator.Validate(obj)
+	require.True(t, ok)
+}
+
 func TestLengthWithString(t *testing.T) {
 	validator := buildFooValidator(JsonString,
 		&Length{Minimum: 2, Maximum: 3}, false)

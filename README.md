@@ -1,5 +1,6 @@
 # Valix
 [![GoDoc](https://godoc.org/github.com/marrow16/valix?status.svg)](https://pkg.go.dev/github.com/marrow16/valix)
+[![Latest Version](https://img.shields.io/github/v/tag/marrow16/valix.svg?sort=semver&style=flat&label=version&color=blue)](https://github.com/marrow16/valix/releases)
 [![codecov](https://codecov.io/gh/marrow16/valix/branch/master/graph/badge.svg)](https://codecov.io/gh/marrow16/valix)
 [![Go Report Card](https://goreportcard.com/badge/github.com/marrow16/valix)](https://goreportcard.com/report/github.com/marrow16/valix)
 [![Maintainability](https://api.codeclimate.com/v1/badges/1d64bc6c8474c2074f2b/maintainability)](https://codeclimate.com/github/marrow16/valix/maintainability)
@@ -435,6 +436,60 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
     <tr></tr>
     <tr>
         <td>
+            <code>ArrayDistinctProperty</code><br>&nbsp;&nbsp;<code>adistinctp</code>&nbsp;<em>(i18n tag abbr.)</em>
+        </td>
+        <td>
+            Check each object element in an array has a specified property that is distinct
+            <details>
+                <summary>Fields</summary>
+                <table>
+                    <tr>
+                        <td>
+                            <code>PropertyName</code> <em>string</em>
+                        </td>
+                        <td>
+                            the name of the property (in each array element object) to check for distinct (uniqueness)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>IgnoreNulls</code> <em>bool</em>
+                        </td>
+                        <td>
+                            whether to ignore null items in the array
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>IgnoreCase</code> <em>bool</em>
+                        </td>
+                        <td>
+                            whether uniqueness is case in-insensitive (for string elements)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Message</code> <em>string</em>
+                        </td>
+                        <td>
+                            the violation message to be used if the constraint fails (if empty, the default violation message is used)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Stop</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set to true, prevents further validation checks on the property if this constraint fails
+                        </td>
+                    </tr>
+                </table>
+            </details>
+        </td>
+    </tr>
+    <tr></tr>
+    <tr>
+        <td>
             <code>ArrayOf</code><br>&nbsp;&nbsp;<code>aof</code>&nbsp;<em>(i18n tag abbr.)</em>
         </td>
         <td>
@@ -548,6 +603,14 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
                         </td>
                         <td>
                             is the condition tokens that determine when the wrapped constraint is checked
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Others</code> <em>OthersExpr</em>
+                        </td>
+                        <td>
+                            is the others expression to be evaluated to determine when the wrapped constraint is checked
                         </td>
                     </tr>
                     <tr>
@@ -1802,6 +1865,52 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
                         </td>
                         <td>
                             the conditions under which to fail
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Message</code> <em>string</em>
+                        </td>
+                        <td>
+                            the violation message to be used if the constraint fails (if empty, the default violation message is used)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Stop</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set to true, prevents further validation checks on the property if this constraint fails
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>StopAll</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set to true, StopAll stops the entire validation
+                        </td>
+                    </tr>
+                </table>
+            </details>
+        </td>
+    </tr>
+    <tr></tr>
+    <tr>
+        <td>
+            <code>FailWith</code><br>&nbsp;&nbsp;<code>failwith</code>&nbsp;<em>(i18n tag abbr.)</em>
+        </td>
+        <td>
+            Is a utility constraint that fails when specified others property expression evaluates to true
+            <details>
+                <summary>Fields</summary>
+                <table>
+                    <tr>
+                        <td>
+                            <code>Others</code> <em>OthersExpr</em>
+                        </td>
+                        <td>
+                            is the others expression to be evaluated to determine whether the constraint should fail
                         </td>
                     </tr>
                     <tr>
