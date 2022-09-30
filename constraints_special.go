@@ -65,6 +65,41 @@ func (c *FailWhen) GetMessage(tcx I18nContext) string {
 	return defaultMessage(tcx, c.Message, msgFailure)
 }
 
+// FailWith is a utility constraint that fails when specified others property expression evaluates to true
+type FailWith struct {
+	// Others is the others expression to be evaluated to determine whether the constraint should fail
+	Others OthersExpr `v8n:"default"`
+	// the violation message to be used if the constraint fails (see Violation.Message)
+	//
+	// (if the Message is an empty string then the default violation message is used)
+	Message string
+	// when set to true, Stop prevents further validation checks on the property if this constraint fails
+	Stop bool
+	// when set to true, StopAll stops the entire validation
+	StopAll bool
+}
+
+// Check implements Constraint.Check
+func (c *FailWith) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
+	if c.Others != nil {
+		if curr, ancestryVals, ok := vcx.ancestorValueObject(0); ok {
+			if c.Others.Evaluate(curr, ancestryVals, vcx) {
+				vcx.CeaseFurtherIf(c.Stop)
+				if c.StopAll {
+					vcx.Stop()
+				}
+				return false, c.GetMessage(vcx)
+			}
+		}
+	}
+	return true, ""
+}
+
+// GetMessage implements the Constraint.GetMessage
+func (c *FailWith) GetMessage(tcx I18nContext) string {
+	return defaultMessage(tcx, c.Message, msgFailure)
+}
+
 // SetConditionFrom constraint is a utility constraint that can be used to set a condition in the
 // ValidatorContext from the value of the property (to which this constraint is added)
 //

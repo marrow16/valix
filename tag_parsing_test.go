@@ -1090,10 +1090,15 @@ func TestItemsToSlice_String(t *testing.T) {
 	require.Equal(t, "bar", (resultant.([]string))[1])
 	require.Equal(t, "baz", (resultant.([]string))[2])
 
-	v, ok = itemsToSlice(itemType, "[1,'bar','baz']")
-	require.False(t, ok)
-	v, ok = itemsToSlice(itemType, "[x,'bar','baz']")
-	require.False(t, ok)
+	v, ok = itemsToSlice(itemType, "[ foo, bar, baz ]")
+	require.True(t, ok)
+	require.NotNil(t, v)
+	resultant = v.Interface()
+	require.NotNil(t, resultant)
+	require.Equal(t, 3, len(resultant.([]string)))
+	require.Equal(t, "foo", (resultant.([]string))[0])
+	require.Equal(t, "bar", (resultant.([]string))[1])
+	require.Equal(t, "baz", (resultant.([]string))[2])
 }
 
 func TestItemsToSlice_Int(t *testing.T) {
@@ -1390,4 +1395,30 @@ func TestCamelToWords(t *testing.T) {
 	require.Equal(t, "country", w[1])
 	require.Equal(t, "code", w[2])
 	require.Equal(t, "tlds", w[3])
+}
+
+func TestTagParsingComplex(t *testing.T) {
+	pv, err := NewPropertyValidator("&cond{w:[FOO,BAR], c:<foo && bar>strnb}, &cond{o:'foo && bar', c:[FOO,BAR]strne}")
+	require.Nil(t, err)
+	require.NotNil(t, pv)
+	require.Equal(t, 2, len(pv.Constraints))
+	c0, ok := pv.Constraints[0].(*ConditionalConstraint)
+	require.True(t, ok)
+	require.Equal(t, 2, len(c0.When))
+	require.Equal(t, "FOO", c0.When[0])
+	require.Equal(t, "BAR", c0.When[1])
+	require.NotNil(t, c0.Constraint)
+	c1, ok := c0.Constraint.(*ConditionalConstraint)
+	require.True(t, ok)
+	require.Equal(t, "foo && bar", c1.Others.String())
+
+	c1, ok = pv.Constraints[1].(*ConditionalConstraint)
+	require.True(t, ok)
+	require.Nil(t, c1.When)
+	require.Equal(t, "foo && bar", c1.Others.String())
+	c0, ok = c1.Constraint.(*ConditionalConstraint)
+	require.True(t, ok)
+	require.Equal(t, 2, len(c0.When))
+	require.Equal(t, "FOO", c0.When[0])
+	require.Equal(t, "BAR", c0.When[1])
 }

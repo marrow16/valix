@@ -3,6 +3,7 @@ package valix
 import (
 	"encoding/json"
 	"reflect"
+	"strings"
 
 	"golang.org/x/text/unicode/norm"
 )
@@ -314,4 +315,9 @@ func (c *SetConditionIf) MarshalJSON() ([]byte, error) {
 		}
 	}
 	return json.Marshal(j)
+}
+
+func (o *OthersExpr) MarshalJSON() ([]byte, error) {
+	str := `"` + strings.ReplaceAll(o.String(), `"`, `\"`) + `"`
+	return []byte(str), nil
 }

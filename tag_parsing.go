@@ -589,8 +589,7 @@ func itemsToSliceOfStrings(strItems []string, itemType reflect.Type) (result ref
 		if isQuotedStr(v, true) {
 			result.Index(i).SetString(v[1 : len(v)-1])
 		} else {
-			ok = false
-			break
+			result.Index(i).SetString(v)
 		}
 	}
 	return
