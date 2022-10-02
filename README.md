@@ -2401,6 +2401,14 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
                             when set to true, prevents further validation checks on the property if this constraint fails
                         </td>
                     </tr>
+                    <tr>
+                        <td>
+                            <code>Strict</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set to true, fails if the value being checked is not a correct type
+                        </td>
+                    </tr>
                 </table>
             </details>
         </td>
@@ -2445,6 +2453,14 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
                         </td>
                         <td>
                             when set to true, prevents further validation checks on the property if this constraint fails
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Strict</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set to true, fails if the value being checked is not a correct type
                         </td>
                     </tr>
                 </table>
@@ -2493,6 +2509,14 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
                             when set to true, prevents further validation checks on the property if this constraint fails
                         </td>
                     </tr>
+                    <tr>
+                        <td>
+                            <code>Strict</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set to true, fails if the value being checked is not a correct type
+                        </td>
+                    </tr>
                 </table>
             </details>
         </td>
@@ -2539,6 +2563,14 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
                             when set to true, prevents further validation checks on the property if this constraint fails
                         </td>
                     </tr>
+                    <tr>
+                        <td>
+                            <code>Strict</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set to true, fails if the value being checked is not a correct type
+                        </td>
+                    </tr>
                 </table>
             </details>
         </td>
@@ -2577,6 +2609,14 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
                             when set to true, prevents further validation checks on the property if this constraint fails
                         </td>
                     </tr>
+                    <tr>
+                        <td>
+                            <code>Strict</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set to true, fails if the value being checked is not a correct type
+                        </td>
+                    </tr>
                 </table>
             </details>
         </td>
@@ -2607,6 +2647,14 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
                             when set to true, prevents further validation checks on the property if this constraint fails
                         </td>
                     </tr>
+                    <tr>
+                        <td>
+                            <code>Strict</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set to true, fails if the value being checked is not a correct type
+                        </td>
+                    </tr>
                 </table>
             </details>
         </td>
@@ -2635,6 +2683,14 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
                         </td>
                         <td>
                             when set to true, prevents further validation checks on the property if this constraint fails
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Strict</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set to true, fails if the value being checked is not a correct type
                         </td>
                     </tr>
                 </table>
@@ -3618,6 +3674,14 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
                             when set to true, prevents further validation checks on the property if this constraint fails
                         </td>
                     </tr>
+                    <tr>
+                        <td>
+                            <code>Strict</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set to true, fails if the other property is not present (even though the not equals would technically be ok)
+                        </td>
+                    </tr>
                 </table>
             </details>
         </td>
@@ -3648,6 +3712,14 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
                             when set to true, prevents further validation checks on the property if this constraint fails
                         </td>
                     </tr>
+                    <tr>
+                        <td>
+                            <code>Strict</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set to true, fails if the value being checked is not a correct type
+                        </td>
+                    </tr>
                 </table>
             </details>
         </td>
@@ -3676,6 +3748,14 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
                         </td>
                         <td>
                             when set to true, prevents further validation checks on the property if this constraint fails
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Strict</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set to true, fails if the value being checked is not a correct type
                         </td>
                     </tr>
                 </table>
@@ -3740,6 +3820,14 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
                             when set to true, prevents further validation checks on the property if this constraint fails
                         </td>
                     </tr>
+                    <tr>
+                        <td>
+                            <code>Strict</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set to true, fails if the value being checked is not a correct type
+                        </td>
+                    </tr>
                 </table>
             </details>
         </td>
@@ -3800,6 +3888,14 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
                         </td>
                         <td>
                             when set to true, prevents further validation checks on the property if this constraint fails
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Strict</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set to true, fails if the value being checked is not a correct type
                         </td>
                     </tr>
                 </table>
@@ -4085,6 +4181,14 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
                             when set to true, prevents further validation checks on the property if this constraint fails
                         </td>
                     </tr>
+                    <tr>
+                        <td>
+                            <code>Strict</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set to true, fails if the value being checked is not a correct type
+                        </td>
+                    </tr>
                 </table>
             </details>
         </td>
@@ -4147,6 +4251,14 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
                             when set to true, prevents further validation checks on the property if this constraint fails
                         </td>
                     </tr>
+                    <tr>
+                        <td>
+                            <code>Strict</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set to true, fails if the value being checked is not a correct type
+                        </td>
+                    </tr>
                 </table>
             </details>
         </td>
@@ -4207,6 +4319,14 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
                         </td>
                         <td>
                             when set to true, prevents further validation checks on the property if this constraint fails
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Strict</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set to true, fails if the value being checked is not a correct type
                         </td>
                     </tr>
                 </table>
@@ -4279,6 +4399,14 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
                             when set to true, prevents further validation checks on the property if this constraint fails
                         </td>
                     </tr>
+                    <tr>
+                        <td>
+                            <code>Strict</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set to true, fails if the value being checked is not a correct type
+                        </td>
+                    </tr>
                 </table>
             </details>
         </td>
@@ -4323,6 +4451,14 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
                         </td>
                         <td>
                             when set to true, prevents further validation checks on the property if this constraint fails
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Strict</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set to true, fails if the value being checked is not a correct type
                         </td>
                     </tr>
                 </table>
@@ -4735,6 +4871,14 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
                             when set to true, prevents further validation checks on the property if this constraint fails
                         </td>
                     </tr>
+                    <tr>
+                        <td>
+                            <code>Strict</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set to true, fails if the value being checked is not a correct type
+                        </td>
+                    </tr>
                 </table>
             </details>
         </td>
@@ -4787,6 +4931,14 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
                         </td>
                         <td>
                             when set to true, prevents further validation checks on the property if this constraint fails
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Strict</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set to true, fails if the value being checked is not a correct type
                         </td>
                     </tr>
                 </table>
@@ -4843,6 +4995,14 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
                             when set to true, prevents further validation checks on the property if this constraint fails
                         </td>
                     </tr>
+                    <tr>
+                        <td>
+                            <code>Strict</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set to true, fails if the value being checked is not a correct type
+                        </td>
+                    </tr>
                 </table>
             </details>
         </td>
@@ -4872,6 +5032,14 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
                         </td>
                         <td>
                             when set to true, prevents further validation checks on the property if this constraint fails
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Strict</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set to true, fails if the value being checked is not a correct type
                         </td>
                     </tr>
                 </table>
@@ -4904,6 +5072,14 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
                             when set to true, prevents further validation checks on the property if this constraint fails
                         </td>
                     </tr>
+                    <tr>
+                        <td>
+                            <code>Strict</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set to true, fails if the value being checked is not a correct type
+                        </td>
+                    </tr>
                 </table>
             </details>
         </td>
@@ -4932,6 +5108,14 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
                         </td>
                         <td>
                             when set to true, prevents further validation checks on the property if this constraint fails
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Strict</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set to true, fails if the value being checked is not a correct type
                         </td>
                     </tr>
                 </table>
@@ -4970,6 +5154,14 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
                         </td>
                         <td>
                             when set to true, prevents further validation checks on the property if this constraint fails
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Strict</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set to true, fails if the value being checked is not a correct type
                         </td>
                     </tr>
                 </table>
@@ -5012,6 +5204,14 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
                         </td>
                         <td>
                             when set to true, prevents further validation checks on the property if this constraint fails
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Strict</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set to true, fails if the value being checked is not a correct type
                         </td>
                     </tr>
                 </table>
@@ -5354,6 +5554,14 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
                             when set to true, prevents further validation checks on the property if this constraint fails
                         </td>
                     </tr>
+                    <tr>
+                        <td>
+                            <code>Strict</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set to true, fails if the value being checked is not a correct type
+                        </td>
+                    </tr>
                 </table>
             </details>
         </td>
@@ -5382,6 +5590,14 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
                         </td>
                         <td>
                             when set to true, prevents further validation checks on the property if this constraint fails
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Strict</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set to true, fails if the value being checked is not a correct type
                         </td>
                     </tr>
                 </table>
@@ -5420,6 +5636,14 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
                         </td>
                         <td>
                             when set to true, prevents further validation checks on the property if this constraint fails
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Strict</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set to true, fails if the value being checked is not a correct type
                         </td>
                     </tr>
                 </table>
@@ -5641,6 +5865,14 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
                             when set to true, prevents further validation checks on the property if this constraint fails
                         </td>
                     </tr>
+                    <tr>
+                        <td>
+                            <code>Strict</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set to true, fails if the value being checked is not a correct type
+                        </td>
+                    </tr>
                 </table>
             </details>
         </td>
@@ -5669,6 +5901,14 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
                         </td>
                         <td>
                             when set to true, prevents further validation checks on the property if this constraint fails
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Strict</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set to true, fails if the value being checked is not a correct type
                         </td>
                     </tr>
                 </table>
@@ -5715,6 +5955,14 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
                         </td>
                         <td>
                             when set to true, prevents further validation checks on the property if this constraint fails
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Strict</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set to true, fails if the value being checked is not a correct type
                         </td>
                     </tr>
                 </table>
@@ -5817,6 +6065,14 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
                             when set to true, prevents further validation checks on the property if this constraint fails
                         </td>
                     </tr>
+                    <tr>
+                        <td>
+                            <code>Strict</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set to true, fails if the value being checked is not a correct type
+                        </td>
+                    </tr>
                 </table>
             </details>
         </td>
@@ -5845,6 +6101,14 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
                         </td>
                         <td>
                             when set to true, prevents further validation checks on the property if this constraint fails
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Strict</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set to true, fails if the value being checked is not a correct type
                         </td>
                     </tr>
                 </table>
@@ -5891,6 +6155,14 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
                         </td>
                         <td>
                             when set to true, prevents further validation checks on the property if this constraint fails
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Strict</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set to true, fails if the value being checked is not a correct type
                         </td>
                     </tr>
                 </table>
@@ -5985,6 +6257,14 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
                             when set to true, prevents further validation checks on the property if this constraint fails
                         </td>
                     </tr>
+                    <tr>
+                        <td>
+                            <code>Strict</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set to true, fails if the value being checked is not a correct type
+                        </td>
+                    </tr>
                 </table>
             </details>
         </td>
@@ -6029,6 +6309,14 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
                         </td>
                         <td>
                             when set to true, prevents further validation checks on the property if this constraint fails
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <code>Strict</code> <em>bool</em>
+                        </td>
+                        <td>
+                            when set to true, fails if the value being checked is not a correct type
                         </td>
                     </tr>
                 </table>

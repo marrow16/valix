@@ -32,6 +32,19 @@ func TestStringCharactersConstraint(t *testing.T) {
 	require.True(t, ok)
 }
 
+func TestStringCharacters_Strict(t *testing.T) {
+	c := &StringCharacters{}
+	validator := buildFooValidator(JsonAny, c, false)
+	obj := map[string]interface{}{
+		"foo": 123,
+	}
+	ok, _ := validator.Validate(obj)
+	require.True(t, ok)
+	c.Strict = true
+	ok, _ = validator.Validate(obj)
+	require.False(t, ok)
+}
+
 func TestStringCharactersConstraintWithDisallows(t *testing.T) {
 	validator := buildFooValidator(JsonString,
 		&StringCharacters{
@@ -100,6 +113,19 @@ func TestStringContains(t *testing.T) {
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
 	require.Equal(t, fmt.Sprintf(fmtMsgStringContains, "'_XX_'"), violations[0].Message)
+}
+
+func TestStringContains_Strict(t *testing.T) {
+	c := &StringContains{}
+	validator := buildFooValidator(JsonAny, c, false)
+	obj := map[string]interface{}{
+		"foo": 123,
+	}
+	ok, _ := validator.Validate(obj)
+	require.True(t, ok)
+	c.Strict = true
+	ok, _ = validator.Validate(obj)
+	require.False(t, ok)
 }
 
 func TestStringContainsCaseInsensitive(t *testing.T) {
@@ -281,6 +307,19 @@ func TestStringEndsWith(t *testing.T) {
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
 	require.Equal(t, fmt.Sprintf(fmtMsgStringEndsWith, "'_XX'"), violations[0].Message)
+}
+
+func TestStringEndsWith_Strict(t *testing.T) {
+	c := &StringEndsWith{}
+	validator := buildFooValidator(JsonAny, c, false)
+	obj := map[string]interface{}{
+		"foo": 123,
+	}
+	ok, _ := validator.Validate(obj)
+	require.True(t, ok)
+	c.Strict = true
+	ok, _ = validator.Validate(obj)
+	require.False(t, ok)
 }
 
 func TestStringEndsWithCaseInsensitive(t *testing.T) {
@@ -472,6 +511,19 @@ func TestStringExactLength(t *testing.T) {
 	require.True(t, ok)
 }
 
+func TestStringExactLength_Strict(t *testing.T) {
+	c := &StringExactLength{}
+	validator := buildFooValidator(JsonAny, c, false)
+	obj := map[string]interface{}{
+		"foo": 123,
+	}
+	ok, _ := validator.Validate(obj)
+	require.True(t, ok)
+	c.Strict = true
+	ok, _ = validator.Validate(obj)
+	require.False(t, ok)
+}
+
 func TestStringExactLengthWithRuneLength(t *testing.T) {
 	validator := buildFooValidator(JsonString,
 		&StringExactLength{Value: 2, UseRuneLen: true}, false)
@@ -545,6 +597,19 @@ func TestStringLength(t *testing.T) {
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
 	require.Equal(t, fmt.Sprintf(fmtMsgStringMinLen, 2), violations[0].Message)
+}
+
+func TestStringLength_Strict(t *testing.T) {
+	c := &StringLength{}
+	validator := buildFooValidator(JsonAny, c, false)
+	obj := map[string]interface{}{
+		"foo": 123,
+	}
+	ok, _ := validator.Validate(obj)
+	require.True(t, ok)
+	c.Strict = true
+	ok, _ = validator.Validate(obj)
+	require.False(t, ok)
 }
 
 func TestStringLengthMinOnlyExc(t *testing.T) {
@@ -624,6 +689,19 @@ func TestStringLowercase(t *testing.T) {
 	require.True(t, ok)
 }
 
+func TestStringLowercase_Strict(t *testing.T) {
+	c := &StringLowercase{}
+	validator := buildFooValidator(JsonAny, c, false)
+	obj := map[string]interface{}{
+		"foo": 123,
+	}
+	ok, _ := validator.Validate(obj)
+	require.True(t, ok)
+	c.Strict = true
+	ok, _ = validator.Validate(obj)
+	require.False(t, ok)
+}
+
 func TestStringMaxLength(t *testing.T) {
 	validator := buildFooValidator(JsonString,
 		&StringMaxLength{Value: 2}, false)
@@ -643,6 +721,19 @@ func TestStringMaxLength(t *testing.T) {
 	obj["foo"] = nil
 	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
+}
+
+func TestStringMaxLength_Strict(t *testing.T) {
+	c := &StringMaxLength{}
+	validator := buildFooValidator(JsonAny, c, false)
+	obj := map[string]interface{}{
+		"foo": 123,
+	}
+	ok, _ := validator.Validate(obj)
+	require.True(t, ok)
+	c.Strict = true
+	ok, _ = validator.Validate(obj)
+	require.False(t, ok)
 }
 
 func TestStringMaxLengthExclusive(t *testing.T) {
@@ -705,6 +796,19 @@ func TestStringMinLength(t *testing.T) {
 	require.True(t, ok)
 }
 
+func TestStringMinLength_Strict(t *testing.T) {
+	c := &StringMinLength{}
+	validator := buildFooValidator(JsonAny, c, false)
+	obj := map[string]interface{}{
+		"foo": 123,
+	}
+	ok, _ := validator.Validate(obj)
+	require.True(t, ok)
+	c.Strict = true
+	ok, _ = validator.Validate(obj)
+	require.False(t, ok)
+}
+
 func TestStringMinLengthExclusive(t *testing.T) {
 	validator := buildFooValidator(JsonString,
 		&StringMinLength{Value: 2, ExclusiveMin: true}, false)
@@ -765,6 +869,19 @@ func TestStringNoControlChars(t *testing.T) {
 	require.True(t, ok)
 }
 
+func TestStringNoControlCharacters_Strict(t *testing.T) {
+	c := &StringNoControlCharacters{}
+	validator := buildFooValidator(JsonAny, c, false)
+	obj := map[string]interface{}{
+		"foo": 123,
+	}
+	ok, _ := validator.Validate(obj)
+	require.True(t, ok)
+	c.Strict = true
+	ok, _ = validator.Validate(obj)
+	require.False(t, ok)
+}
+
 func TestStringNotBlank(t *testing.T) {
 	validator := buildFooValidator(JsonString,
 		&StringNotBlank{}, false)
@@ -784,6 +901,19 @@ func TestStringNotBlank(t *testing.T) {
 	obj["foo"] = nil
 	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
+}
+
+func TestStringNotBlank_Strict(t *testing.T) {
+	c := &StringNotBlank{}
+	validator := buildFooValidator(JsonAny, c, false)
+	obj := map[string]interface{}{
+		"foo": 123,
+	}
+	ok, _ := validator.Validate(obj)
+	require.True(t, ok)
+	c.Strict = true
+	ok, _ = validator.Validate(obj)
+	require.False(t, ok)
 }
 
 func TestStringNotEmpty(t *testing.T) {
@@ -807,6 +937,19 @@ func TestStringNotEmpty(t *testing.T) {
 	require.True(t, ok)
 }
 
+func TestStringNotEmpty_Strict(t *testing.T) {
+	c := &StringNotEmpty{}
+	validator := buildFooValidator(JsonAny, c, false)
+	obj := map[string]interface{}{
+		"foo": 123,
+	}
+	ok, _ := validator.Validate(obj)
+	require.True(t, ok)
+	c.Strict = true
+	ok, _ = validator.Validate(obj)
+	require.False(t, ok)
+}
+
 func TestStringPattern(t *testing.T) {
 	validator := buildFooValidator(JsonString,
 		&StringPattern{
@@ -828,6 +971,19 @@ func TestStringPattern(t *testing.T) {
 	obj["foo"] = nil
 	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
+}
+
+func TestStringPattern_Strict(t *testing.T) {
+	c := &StringPattern{}
+	validator := buildFooValidator(JsonAny, c, false)
+	obj := map[string]interface{}{
+		"foo": 123,
+	}
+	ok, _ := validator.Validate(obj)
+	require.True(t, ok)
+	c.Strict = true
+	ok, _ = validator.Validate(obj)
+	require.False(t, ok)
 }
 
 func TestStringPresetPattern(t *testing.T) {
@@ -888,6 +1044,26 @@ func TestStringPresetPattern(t *testing.T) {
 	require.Equal(t, msgValidPattern, violations[0].Message)
 }
 
+func TestStringPresetPattern_Strict(t *testing.T) {
+	c := &StringPresetPattern{}
+	validator := buildFooValidator(JsonAny, c, false)
+	obj := map[string]interface{}{
+		"foo": 123,
+	}
+	ok, _ := validator.Validate(obj)
+	require.True(t, ok)
+	c.Strict = true
+	ok, violations := validator.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, fmt.Sprintf(fmtMsgUnknownPresetPattern, ""), violations[0].Message)
+	c.Preset = presetTokenAlpha
+	ok, violations = validator.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, msgPresetAlpha, violations[0].Message)
+}
+
 func TestStringStartsWith(t *testing.T) {
 	validator := buildFooValidator(JsonString,
 		&StringStartsWith{Value: "XX_"}, false)
@@ -905,6 +1081,19 @@ func TestStringStartsWith(t *testing.T) {
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
 	require.Equal(t, fmt.Sprintf(fmtMsgStringStartsWith, "'XX_'"), violations[0].Message)
+}
+
+func TestStringStartsWith_Strict(t *testing.T) {
+	c := &StringStartsWith{}
+	validator := buildFooValidator(JsonAny, c, false)
+	obj := map[string]interface{}{
+		"foo": 123,
+	}
+	ok, _ := validator.Validate(obj)
+	require.True(t, ok)
+	c.Strict = true
+	ok, _ = validator.Validate(obj)
+	require.False(t, ok)
 }
 
 func TestStringStartsWithCaseInsensitive(t *testing.T) {
@@ -1090,6 +1279,19 @@ func TestStringUppercase(t *testing.T) {
 	require.True(t, ok)
 }
 
+func TestStringUppercase_Strict(t *testing.T) {
+	c := &StringUppercase{}
+	validator := buildFooValidator(JsonAny, c, false)
+	obj := map[string]interface{}{
+		"foo": 123,
+	}
+	ok, _ := validator.Validate(obj)
+	require.True(t, ok)
+	c.Strict = true
+	ok, _ = validator.Validate(obj)
+	require.False(t, ok)
+}
+
 func TestStringValidJson(t *testing.T) {
 	vcx := newValidatorContext(nil, nil, false, nil)
 	c := &StringValidJson{}
@@ -1135,6 +1337,19 @@ func TestStringValidJson(t *testing.T) {
 	require.False(t, ok)
 }
 
+func TestStringValidJson_Strict(t *testing.T) {
+	c := &StringValidJson{}
+	validator := buildFooValidator(JsonAny, c, false)
+	obj := map[string]interface{}{
+		"foo": 123,
+	}
+	ok, _ := validator.Validate(obj)
+	require.True(t, ok)
+	c.Strict = true
+	ok, _ = validator.Validate(obj)
+	require.False(t, ok)
+}
+
 func TestStringValidToken(t *testing.T) {
 	validTokens := []string{"AAA", "BBB", "CCC"}
 	constraint := &StringValidToken{
@@ -1172,6 +1387,19 @@ func TestStringValidToken(t *testing.T) {
 	require.True(t, ok)
 }
 
+func TestStringValidToken_Strict(t *testing.T) {
+	c := &StringValidToken{}
+	validator := buildFooValidator(JsonAny, c, false)
+	obj := map[string]interface{}{
+		"foo": 123,
+	}
+	ok, _ := validator.Validate(obj)
+	require.True(t, ok)
+	c.Strict = true
+	ok, _ = validator.Validate(obj)
+	require.False(t, ok)
+}
+
 func TestStringValidUnicodeNormalization(t *testing.T) {
 	validator := buildFooValidator(JsonString,
 		&StringValidUnicodeNormalization{Form: norm.NFC}, false)
@@ -1195,6 +1423,19 @@ func TestStringValidUnicodeNormalization(t *testing.T) {
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
 	require.Equal(t, msgUnicodeNormalizationNFD, violations[0].Message)
+}
+
+func TestStringValidUnicodeNormalization_Strict(t *testing.T) {
+	c := &StringValidUnicodeNormalization{}
+	validator := buildFooValidator(JsonAny, c, false)
+	obj := map[string]interface{}{
+		"foo": 123,
+	}
+	ok, _ := validator.Validate(obj)
+	require.True(t, ok)
+	c.Strict = true
+	ok, _ = validator.Validate(obj)
+	require.False(t, ok)
 }
 
 func TestStringValidUnicodeNormalizationK(t *testing.T) {

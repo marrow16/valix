@@ -621,7 +621,7 @@ func TestValidatorValidationWithBadJson(t *testing.T) {
 func TestGetConstraintFieldNames(t *testing.T) {
 	constraint := &StringValidUuid{}
 	fields := getConstraintFieldNames(constraint)
-	require.Equal(t, 4, len(fields))
+	require.Equal(t, 5, len(fields))
 }
 
 func TestGetConstraintFieldNamesOnNonStruct(t *testing.T) {

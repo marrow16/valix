@@ -12,6 +12,8 @@ type Maximum struct {
 	Message string
 	// when set to true, Stop prevents further validation checks on the property if this constraint fails
 	Stop bool
+	// when set to true, fails if the value being checked is not a correct type
+	Strict bool
 }
 
 // Check implements Constraint.Check
@@ -21,6 +23,9 @@ func (c *Maximum) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
 			vcx.CeaseFurtherIf(c.Stop)
 			return false, c.GetMessage(vcx)
 		}
+	} else if c.Strict {
+		vcx.CeaseFurtherIf(c.Stop)
+		return false, c.GetMessage(vcx)
 	}
 	return true, ""
 }
@@ -45,6 +50,8 @@ type MaximumInt struct {
 	Message string
 	// when set to true, Stop prevents further validation checks on the property if this constraint fails
 	Stop bool
+	// when set to true, fails if the value being checked is not a correct type
+	Strict bool
 }
 
 // Check implements Constraint.Check
@@ -54,6 +61,9 @@ func (c *MaximumInt) Check(v interface{}, vcx *ValidatorContext) (bool, string) 
 			vcx.CeaseFurtherIf(c.Stop)
 			return false, c.GetMessage(vcx)
 		}
+	} else if c.Strict {
+		vcx.CeaseFurtherIf(c.Stop)
+		return false, c.GetMessage(vcx)
 	}
 	return true, ""
 }
@@ -78,6 +88,8 @@ type Minimum struct {
 	Message string
 	// when set to true, Stop prevents further validation checks on the property if this constraint fails
 	Stop bool
+	// when set to true, fails if the value being checked is not a correct type
+	Strict bool
 }
 
 // Check implements Constraint.Check
@@ -87,6 +99,9 @@ func (c *Minimum) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
 			vcx.CeaseFurtherIf(c.Stop)
 			return false, c.GetMessage(vcx)
 		}
+	} else if c.Strict {
+		vcx.CeaseFurtherIf(c.Stop)
+		return false, c.GetMessage(vcx)
 	}
 	return true, ""
 }
@@ -111,6 +126,8 @@ type MinimumInt struct {
 	Message string
 	// when set to true, Stop prevents further validation checks on the property if this constraint fails
 	Stop bool
+	// when set to true, fails if the value being checked is not a correct type
+	Strict bool
 }
 
 // Check implements Constraint.Check
@@ -120,6 +137,9 @@ func (c *MinimumInt) Check(v interface{}, vcx *ValidatorContext) (bool, string) 
 			vcx.CeaseFurtherIf(c.Stop)
 			return false, c.GetMessage(vcx)
 		}
+	} else if c.Strict {
+		vcx.CeaseFurtherIf(c.Stop)
+		return false, c.GetMessage(vcx)
 	}
 	return true, ""
 }
@@ -145,6 +165,8 @@ type MultipleOf struct {
 	Message string
 	// when set to true, Stop prevents further validation checks on the property if this constraint fails
 	Stop bool
+	// when set to true, fails if the value being checked is not a correct type
+	Strict bool
 }
 
 // Check implements Constraint.Check
@@ -154,6 +176,9 @@ func (c *MultipleOf) Check(v interface{}, vcx *ValidatorContext) (bool, string) 
 			vcx.CeaseFurtherIf(c.Stop)
 			return false, c.GetMessage(vcx)
 		}
+	} else if c.Strict {
+		vcx.CeaseFurtherIf(c.Stop)
+		return false, c.GetMessage(vcx)
 	}
 	return true, ""
 }
@@ -171,11 +196,18 @@ type Negative struct {
 	Message string `v8n:"default"`
 	// when set to true, Stop prevents further validation checks on the property if this constraint fails
 	Stop bool
+	// when set to true, fails if the value being checked is not a correct type
+	Strict bool
 }
 
 // Check implements Constraint.Check
 func (c *Negative) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
-	if f, ok, isNumber := coerceToFloat(v); isNumber && (!ok || f >= 0) {
+	if f, ok, isNumber := coerceToFloat(v); isNumber {
+		if !ok || f >= 0 {
+			vcx.CeaseFurtherIf(c.Stop)
+			return false, c.GetMessage(vcx)
+		}
+	} else if c.Strict {
 		vcx.CeaseFurtherIf(c.Stop)
 		return false, c.GetMessage(vcx)
 	}
@@ -195,11 +227,18 @@ type NegativeOrZero struct {
 	Message string `v8n:"default"`
 	// when set to true, Stop prevents further validation checks on the property if this constraint fails
 	Stop bool
+	// when set to true, fails if the value being checked is not a correct type
+	Strict bool
 }
 
 // Check implements Constraint.Check
 func (c *NegativeOrZero) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
-	if f, ok, isNumber := coerceToFloat(v); isNumber && (!ok || f > 0) {
+	if f, ok, isNumber := coerceToFloat(v); isNumber {
+		if !ok || f > 0 {
+			vcx.CeaseFurtherIf(c.Stop)
+			return false, c.GetMessage(vcx)
+		}
+	} else if c.Strict {
 		vcx.CeaseFurtherIf(c.Stop)
 		return false, c.GetMessage(vcx)
 	}
@@ -219,11 +258,18 @@ type Positive struct {
 	Message string `v8n:"default"`
 	// when set to true, Stop prevents further validation checks on the property if this constraint fails
 	Stop bool
+	// when set to true, fails if the value being checked is not a correct type
+	Strict bool
 }
 
 // Check implements Constraint.Check
 func (c *Positive) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
-	if f, ok, isNumber := coerceToFloat(v); isNumber && (!ok || f <= 0) {
+	if f, ok, isNumber := coerceToFloat(v); isNumber {
+		if !ok || f <= 0 {
+			vcx.CeaseFurtherIf(c.Stop)
+			return false, c.GetMessage(vcx)
+		}
+	} else if c.Strict {
 		vcx.CeaseFurtherIf(c.Stop)
 		return false, c.GetMessage(vcx)
 	}
@@ -243,11 +289,18 @@ type PositiveOrZero struct {
 	Message string `v8n:"default"`
 	// when set to true, Stop prevents further validation checks on the property if this constraint fails
 	Stop bool
+	// when set to true, fails if the value being checked is not a correct type
+	Strict bool
 }
 
 // Check implements Constraint.Check
 func (c *PositiveOrZero) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
-	if f, ok, isNumber := coerceToFloat(v); isNumber && (!ok || f < 0) {
+	if f, ok, isNumber := coerceToFloat(v); isNumber {
+		if !ok || f < 0 {
+			vcx.CeaseFurtherIf(c.Stop)
+			return false, c.GetMessage(vcx)
+		}
+	} else if c.Strict {
 		vcx.CeaseFurtherIf(c.Stop)
 		return false, c.GetMessage(vcx)
 	}
@@ -275,6 +328,8 @@ type Range struct {
 	Message string
 	// when set to true, Stop prevents further validation checks on the property if this constraint fails
 	Stop bool
+	// when set to true, fails if the value being checked is not a correct type
+	Strict bool
 }
 
 // Check implements Constraint.Check
@@ -285,6 +340,9 @@ func (c *Range) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
 			vcx.CeaseFurtherIf(c.Stop)
 			return false, c.GetMessage(vcx)
 		}
+	} else if c.Strict {
+		vcx.CeaseFurtherIf(c.Stop)
+		return false, c.GetMessage(vcx)
 	}
 	return true, ""
 }
@@ -310,6 +368,8 @@ type RangeInt struct {
 	Message string
 	// when set to true, Stop prevents further validation checks on the property if this constraint fails
 	Stop bool
+	// when set to true, fails if the value being checked is not a correct type
+	Strict bool
 }
 
 // Check implements Constraint.Check
@@ -320,6 +380,9 @@ func (c *RangeInt) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
 			vcx.CeaseFurtherIf(c.Stop)
 			return false, c.GetMessage(vcx)
 		}
+	} else if c.Strict {
+		vcx.CeaseFurtherIf(c.Stop)
+		return false, c.GetMessage(vcx)
 	}
 	return true, ""
 }

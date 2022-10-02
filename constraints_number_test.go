@@ -50,6 +50,19 @@ func TestMaximum(t *testing.T) {
 	require.True(t, ok)
 }
 
+func TestMaximum_Strict(t *testing.T) {
+	c := &Maximum{}
+	validator := buildFooValidator(JsonAny, c, false)
+	obj := map[string]interface{}{
+		"foo": "not a number",
+	}
+	ok, _ := validator.Validate(obj)
+	require.True(t, ok)
+	c.Strict = true
+	ok, _ = validator.Validate(obj)
+	require.False(t, ok)
+}
+
 func TestMaximumExc(t *testing.T) {
 	validator := buildFooValidator(JsonNumber,
 		&Maximum{Value: 2, ExclusiveMax: true}, false)
@@ -131,6 +144,19 @@ func TestMaximumInt(t *testing.T) {
 	obj["foo"] = json.Number("2")
 	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
+}
+
+func TestMaximumInt_Strict(t *testing.T) {
+	c := &MaximumInt{}
+	validator := buildFooValidator(JsonAny, c, false)
+	obj := map[string]interface{}{
+		"foo": "not a number",
+	}
+	ok, _ := validator.Validate(obj)
+	require.True(t, ok)
+	c.Strict = true
+	ok, _ = validator.Validate(obj)
+	require.False(t, ok)
 }
 
 func TestMaximumIntExc(t *testing.T) {
@@ -216,6 +242,19 @@ func TestMinimum(t *testing.T) {
 	require.True(t, ok)
 }
 
+func TestMinimum_Strict(t *testing.T) {
+	c := &Minimum{}
+	validator := buildFooValidator(JsonAny, c, false)
+	obj := map[string]interface{}{
+		"foo": "not a number",
+	}
+	ok, _ := validator.Validate(obj)
+	require.True(t, ok)
+	c.Strict = true
+	ok, _ = validator.Validate(obj)
+	require.False(t, ok)
+}
+
 func TestMinimumExc(t *testing.T) {
 	validator := buildFooValidator(JsonNumber,
 		&Minimum{Value: 2, ExclusiveMin: true}, false)
@@ -297,6 +336,19 @@ func TestMinimumInt(t *testing.T) {
 	obj["foo"] = json.Number("2")
 	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
+}
+
+func TestMinimumInt_Strict(t *testing.T) {
+	c := &MinimumInt{}
+	validator := buildFooValidator(JsonAny, c, false)
+	obj := map[string]interface{}{
+		"foo": "not a number",
+	}
+	ok, _ := validator.Validate(obj)
+	require.True(t, ok)
+	c.Strict = true
+	ok, _ = validator.Validate(obj)
+	require.False(t, ok)
 }
 
 func TestMinimumIntExc(t *testing.T) {
@@ -381,6 +433,19 @@ func TestMultipleOf(t *testing.T) {
 	require.True(t, ok)
 }
 
+func TestMultipleOf_Strict(t *testing.T) {
+	c := &MultipleOf{}
+	validator := buildFooValidator(JsonAny, c, false)
+	obj := map[string]interface{}{
+		"foo": "not a number",
+	}
+	ok, _ := validator.Validate(obj)
+	require.True(t, ok)
+	c.Strict = true
+	ok, _ = validator.Validate(obj)
+	require.False(t, ok)
+}
+
 func TestNegative(t *testing.T) {
 	validator := buildFooValidator(JsonNumber,
 		&Negative{}, false)
@@ -428,6 +493,19 @@ func TestNegative(t *testing.T) {
 	require.True(t, ok)
 }
 
+func TestNegative_Strict(t *testing.T) {
+	c := &Negative{}
+	validator := buildFooValidator(JsonAny, c, false)
+	obj := map[string]interface{}{
+		"foo": "not a number",
+	}
+	ok, _ := validator.Validate(obj)
+	require.True(t, ok)
+	c.Strict = true
+	ok, _ = validator.Validate(obj)
+	require.False(t, ok)
+}
+
 func TestNegativeOrZero(t *testing.T) {
 	validator := buildFooValidator(JsonNumber,
 		&NegativeOrZero{}, false)
@@ -471,6 +549,19 @@ func TestNegativeOrZero(t *testing.T) {
 	obj["foo"] = json.Number("0")
 	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
+}
+
+func TestNegativeOrZero_Strict(t *testing.T) {
+	c := &NegativeOrZero{}
+	validator := buildFooValidator(JsonAny, c, false)
+	obj := map[string]interface{}{
+		"foo": "not a number",
+	}
+	ok, _ := validator.Validate(obj)
+	require.True(t, ok)
+	c.Strict = true
+	ok, _ = validator.Validate(obj)
+	require.False(t, ok)
 }
 
 func TestPositive(t *testing.T) {
@@ -520,6 +611,19 @@ func TestPositive(t *testing.T) {
 	require.True(t, ok)
 }
 
+func TestPositive_Strict(t *testing.T) {
+	c := &Positive{}
+	validator := buildFooValidator(JsonAny, c, false)
+	obj := map[string]interface{}{
+		"foo": "not a number",
+	}
+	ok, _ := validator.Validate(obj)
+	require.True(t, ok)
+	c.Strict = true
+	ok, _ = validator.Validate(obj)
+	require.False(t, ok)
+}
+
 func TestPositiveOrZero(t *testing.T) {
 	validator := buildFooValidator(JsonNumber,
 		&PositiveOrZero{}, false)
@@ -563,6 +667,19 @@ func TestPositiveOrZero(t *testing.T) {
 	obj["foo"] = json.Number("0")
 	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
+}
+
+func TestPositiveOrZero_Strict(t *testing.T) {
+	c := &PositiveOrZero{}
+	validator := buildFooValidator(JsonAny, c, false)
+	obj := map[string]interface{}{
+		"foo": "not a number",
+	}
+	ok, _ := validator.Validate(obj)
+	require.True(t, ok)
+	c.Strict = true
+	ok, _ = validator.Validate(obj)
+	require.False(t, ok)
 }
 
 func TestRange(t *testing.T) {
@@ -623,6 +740,19 @@ func TestRange(t *testing.T) {
 	require.True(t, ok)
 }
 
+func TestRange_Strict(t *testing.T) {
+	c := &Range{}
+	validator := buildFooValidator(JsonAny, c, false)
+	obj := map[string]interface{}{
+		"foo": "not a number",
+	}
+	ok, _ := validator.Validate(obj)
+	require.True(t, ok)
+	c.Strict = true
+	ok, _ = validator.Validate(obj)
+	require.False(t, ok)
+}
+
 func TestRangeInt(t *testing.T) {
 	testMsg := "Must be between 2 and 3 (inclusive)"
 	validator := buildFooValidator(JsonNumber,
@@ -679,4 +809,17 @@ func TestRangeInt(t *testing.T) {
 	obj["foo"] = json.Number("2")
 	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
+}
+
+func TestRangeInt_Strict(t *testing.T) {
+	c := &RangeInt{}
+	validator := buildFooValidator(JsonAny, c, false)
+	obj := map[string]interface{}{
+		"foo": "not a number",
+	}
+	ok, _ := validator.Validate(obj)
+	require.True(t, ok)
+	c.Strict = true
+	ok, _ = validator.Validate(obj)
+	require.False(t, ok)
 }

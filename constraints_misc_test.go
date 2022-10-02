@@ -159,6 +159,19 @@ func TestStringValidCardNumberConstraint(t *testing.T) {
 	}
 }
 
+func TestStringValidCardNumber_Strict(t *testing.T) {
+	c := &StringValidCardNumber{}
+	validator := buildFooValidator(JsonAny, c, false)
+	obj := map[string]interface{}{
+		"foo": 1,
+	}
+	ok, _ := validator.Validate(obj)
+	require.True(t, ok)
+	c.Strict = true
+	ok, _ = validator.Validate(obj)
+	require.False(t, ok)
+}
+
 func TestStringValidCountryCode(t *testing.T) {
 	vcx := newValidatorContext(nil, nil, false, nil)
 	c := &StringValidCountryCode{}
@@ -673,6 +686,19 @@ func TestStringValidEmail(t *testing.T) {
 	require.True(t, ok)
 }
 
+func TestStringValidEmail_Strict(t *testing.T) {
+	c := &StringValidEmail{}
+	validator := buildFooValidator(JsonAny, c, false)
+	obj := map[string]interface{}{
+		"foo": 1,
+	}
+	ok, _ := validator.Validate(obj)
+	require.True(t, ok)
+	c.Strict = true
+	ok, _ = validator.Validate(obj)
+	require.False(t, ok)
+}
+
 func TestStringValidLanguageCode(t *testing.T) {
 	vcx := newValidatorContext(nil, nil, false, nil)
 	c := &StringValidLanguageCode{}
@@ -689,6 +715,19 @@ func TestStringValidLanguageCode(t *testing.T) {
 	ok, _ = c.Check("en_", vcx)
 	require.False(t, ok)
 	ok, _ = c.Check("en-.", vcx)
+	require.False(t, ok)
+}
+
+func TestStringValidLanguageCode_Strict(t *testing.T) {
+	c := &StringValidLanguageCode{}
+	validator := buildFooValidator(JsonAny, c, false)
+	obj := map[string]interface{}{
+		"foo": 1,
+	}
+	ok, _ := validator.Validate(obj)
+	require.True(t, ok)
+	c.Strict = true
+	ok, _ = validator.Validate(obj)
 	require.False(t, ok)
 }
 
@@ -729,4 +768,17 @@ func TestStringValidUuid(t *testing.T) {
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
 	require.Equal(t, fmt.Sprintf(msgValidUuid), violations[0].Message)
+}
+
+func TestStringValidUuid_Strict(t *testing.T) {
+	c := &StringValidUuid{}
+	validator := buildFooValidator(JsonAny, c, false)
+	obj := map[string]interface{}{
+		"foo": 1,
+	}
+	ok, _ := validator.Validate(obj)
+	require.True(t, ok)
+	c.Strict = true
+	ok, _ = validator.Validate(obj)
+	require.False(t, ok)
 }

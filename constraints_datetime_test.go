@@ -32,6 +32,20 @@ func TestStringValidISODatetime(t *testing.T) {
 	require.Equal(t, msgValidISODatetimeFormatFull, violations[0].Message)
 }
 
+func TestStringValidISODatetime_Strict(t *testing.T) {
+	c := &StringValidISODatetime{}
+	validator := buildFooValidator(JsonAny, c, false)
+	obj := jsonObject(`{
+		"foo": 1
+	}`)
+	ok, _ := validator.Validate(obj)
+	require.True(t, ok)
+
+	c.Strict = true
+	ok, _ = validator.Validate(obj)
+	require.False(t, ok)
+}
+
 func TestStringValidISODatetimeWithDifferentSettings(t *testing.T) {
 	vFull := buildFooValidator(JsonString,
 		&StringValidISODatetime{}, false)
@@ -137,6 +151,20 @@ func TestStringValidISODate(t *testing.T) {
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
 	require.Equal(t, msgValidISODate, violations[0].Message)
+}
+
+func TestStringValidISODate_Strict(t *testing.T) {
+	c := &StringValidISODate{}
+	validator := buildFooValidator(JsonAny, c, false)
+	obj := jsonObject(`{
+		"foo": 1
+	}`)
+	ok, _ := validator.Validate(obj)
+	require.True(t, ok)
+
+	c.Strict = true
+	ok, _ = validator.Validate(obj)
+	require.False(t, ok)
 }
 
 var variousDatetimeFormats = []string{

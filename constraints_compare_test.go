@@ -310,6 +310,32 @@ func TestEqualsOtherAndNotEqualsOther(t *testing.T) {
 	}
 }
 
+func TestNotEqualsOther_Strict(t *testing.T) {
+	c := &NotEqualsOther{PropertyName: "bar"}
+	v := &Validator{
+		Properties: Properties{
+			"foo": {
+				Type: JsonAny,
+				Constraints: Constraints{
+					c,
+				},
+			},
+			"bar": {
+				Type: JsonAny,
+			},
+		},
+	}
+	obj := jsonObject(`{
+		"foo": 1
+	}`)
+	ok, _ := v.Validate(obj)
+	require.True(t, ok)
+
+	c.Strict = true
+	ok, _ = v.Validate(obj)
+	require.False(t, ok)
+}
+
 func TestGreaterThan(t *testing.T) {
 	validator := buildFooValidator(JsonNumber, &GreaterThan{Value: 2}, false)
 	obj := jsonObject(`{
