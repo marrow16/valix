@@ -22,6 +22,8 @@ type StringCharacters struct {
 	Message string
 	// when set to true, Stop prevents further validation checks on the property if this constraint fails
 	Stop bool
+	// when set to true, fails if the value being checked is not a correct type
+	Strict bool
 }
 
 // Check implements Constraint.Check
@@ -47,6 +49,9 @@ func (c *StringCharacters) Check(v interface{}, vcx *ValidatorContext) (bool, st
 				return false, c.GetMessage(vcx)
 			}
 		}
+	} else if c.Strict {
+		vcx.CeaseFurtherIf(c.Stop)
+		return false, c.GetMessage(vcx)
 	}
 	return true, ""
 }
@@ -72,6 +77,8 @@ type StringContains struct {
 	Message string
 	// when set to true, Stop prevents further validation checks on the property if this constraint fails
 	Stop bool
+	// when set to true, fails if the value being checked is not a correct type
+	Strict bool
 }
 
 // Check implements Constraint.Check
@@ -91,6 +98,9 @@ func (c *StringContains) Check(v interface{}, vcx *ValidatorContext) (bool, stri
 			vcx.CeaseFurtherIf(c.Stop)
 			return false, c.GetMessage(vcx)
 		}
+	} else if c.Strict {
+		vcx.CeaseFurtherIf(c.Stop)
+		return false, c.GetMessage(vcx)
 	}
 	return true, ""
 }
@@ -129,6 +139,8 @@ type StringEndsWith struct {
 	Message string
 	// when set to true, Stop prevents further validation checks on the property if this constraint fails
 	Stop bool
+	// when set to true, fails if the value being checked is not a correct type
+	Strict bool
 }
 
 // Check implements Constraint.Check
@@ -148,6 +160,9 @@ func (c *StringEndsWith) Check(v interface{}, vcx *ValidatorContext) (bool, stri
 			vcx.CeaseFurtherIf(c.Stop)
 			return false, c.GetMessage(vcx)
 		}
+	} else if c.Strict {
+		vcx.CeaseFurtherIf(c.Stop)
+		return false, c.GetMessage(vcx)
 	}
 	return true, ""
 }
@@ -182,6 +197,8 @@ type StringExactLength struct {
 	Message string
 	// when set to true, Stop prevents further validation checks on the property if this constraint fails
 	Stop bool
+	// when set to true, fails if the value being checked is not a correct type
+	Strict bool
 }
 
 // Check implements Constraint.Check
@@ -195,6 +212,9 @@ func (c *StringExactLength) Check(v interface{}, vcx *ValidatorContext) (bool, s
 			vcx.CeaseFurtherIf(c.Stop)
 			return false, c.GetMessage(vcx)
 		}
+	} else if c.Strict {
+		vcx.CeaseFurtherIf(c.Stop)
+		return false, c.GetMessage(vcx)
 	}
 	return true, ""
 }
@@ -222,6 +242,8 @@ type StringLength struct {
 	Message string
 	// when set to true, Stop prevents further validation checks on the property if this constraint fails
 	Stop bool
+	// when set to true, fails if the value being checked is not a correct type
+	Strict bool
 }
 
 // Check implements Constraint.Check
@@ -238,6 +260,9 @@ func (c *StringLength) Check(v interface{}, vcx *ValidatorContext) (bool, string
 			vcx.CeaseFurtherIf(c.Stop)
 			return false, c.GetMessage(vcx)
 		}
+	} else if c.Strict {
+		vcx.CeaseFurtherIf(c.Stop)
+		return false, c.GetMessage(vcx)
 	}
 	return true, ""
 }
@@ -260,6 +285,8 @@ type StringLowercase struct {
 	Message string `v8n:"default"`
 	// when set to true, Stop prevents further validation checks on the property if this constraint fails
 	Stop bool
+	// when set to true, fails if the value being checked is not a correct type
+	Strict bool
 }
 
 // Check implements Constraint.Check
@@ -269,6 +296,9 @@ func (c *StringLowercase) Check(v interface{}, vcx *ValidatorContext) (bool, str
 			vcx.CeaseFurtherIf(c.Stop)
 			return false, c.GetMessage(vcx)
 		}
+	} else if c.Strict {
+		vcx.CeaseFurtherIf(c.Stop)
+		return false, c.GetMessage(vcx)
 	}
 	return true, ""
 }
@@ -292,6 +322,8 @@ type StringMaxLength struct {
 	Message string
 	// when set to true, Stop prevents further validation checks on the property if this constraint fails
 	Stop bool
+	// when set to true, fails if the value being checked is not a correct type
+	Strict bool
 }
 
 // Check implements Constraint.Check
@@ -305,6 +337,9 @@ func (c *StringMaxLength) Check(v interface{}, vcx *ValidatorContext) (bool, str
 			vcx.CeaseFurtherIf(c.Stop)
 			return false, c.GetMessage(vcx)
 		}
+	} else if c.Strict {
+		vcx.CeaseFurtherIf(c.Stop)
+		return false, c.GetMessage(vcx)
 	}
 	return true, ""
 }
@@ -331,6 +366,8 @@ type StringMinLength struct {
 	Message string
 	// when set to true, Stop prevents further validation checks on the property if this constraint fails
 	Stop bool
+	// when set to true, fails if the value being checked is not a correct type
+	Strict bool
 }
 
 // Check implements Constraint.Check
@@ -344,6 +381,9 @@ func (c *StringMinLength) Check(v interface{}, vcx *ValidatorContext) (bool, str
 			vcx.CeaseFurtherIf(c.Stop)
 			return false, c.GetMessage(vcx)
 		}
+	} else if c.Strict {
+		vcx.CeaseFurtherIf(c.Stop)
+		return false, c.GetMessage(vcx)
 	}
 	return true, ""
 }
@@ -364,6 +404,8 @@ type StringNoControlCharacters struct {
 	Message string `v8n:"default"`
 	// when set to true, Stop prevents further validation checks on the property if this constraint fails
 	Stop bool
+	// when set to true, fails if the value being checked is not a correct type
+	Strict bool
 }
 
 // Check implements Constraint.Check
@@ -375,6 +417,9 @@ func (c *StringNoControlCharacters) Check(v interface{}, vcx *ValidatorContext) 
 				return false, c.GetMessage(vcx)
 			}
 		}
+	} else if c.Strict {
+		vcx.CeaseFurtherIf(c.Stop)
+		return false, c.GetMessage(vcx)
 	}
 	return true, ""
 }
@@ -393,6 +438,8 @@ type StringNotBlank struct {
 	Message string `v8n:"default"`
 	// when set to true, Stop prevents further validation checks on the property if this constraint fails
 	Stop bool
+	// when set to true, fails if the value being checked is not a correct type
+	Strict bool
 }
 
 // Check implements Constraint.Check
@@ -402,6 +449,9 @@ func (c *StringNotBlank) Check(v interface{}, vcx *ValidatorContext) (bool, stri
 			vcx.CeaseFurtherIf(c.Stop)
 			return false, c.GetMessage(vcx)
 		}
+	} else if c.Strict {
+		vcx.CeaseFurtherIf(c.Stop)
+		return false, c.GetMessage(vcx)
 	}
 	return true, ""
 }
@@ -419,6 +469,8 @@ type StringNotEmpty struct {
 	Message string `v8n:"default"`
 	// when set to true, Stop prevents further validation checks on the property if this constraint fails
 	Stop bool
+	// when set to true, fails if the value being checked is not a correct type
+	Strict bool
 }
 
 // Check implements Constraint.Check
@@ -428,6 +480,9 @@ func (c *StringNotEmpty) Check(v interface{}, vcx *ValidatorContext) (bool, stri
 			vcx.CeaseFurtherIf(c.Stop)
 			return false, c.GetMessage(vcx)
 		}
+	} else if c.Strict {
+		vcx.CeaseFurtherIf(c.Stop)
+		return false, c.GetMessage(vcx)
 	}
 	return true, ""
 }
@@ -447,6 +502,8 @@ type StringPattern struct {
 	Message string
 	// when set to true, Stop prevents further validation checks on the property if this constraint fails
 	Stop bool
+	// when set to true, fails if the value being checked is not a correct type
+	Strict bool
 }
 
 // Check implements Constraint.Check
@@ -456,6 +513,9 @@ func (c *StringPattern) Check(v interface{}, vcx *ValidatorContext) (bool, strin
 			vcx.CeaseFurtherIf(c.Stop)
 			return false, c.GetMessage(vcx)
 		}
+	} else if c.Strict {
+		vcx.CeaseFurtherIf(c.Stop)
+		return false, c.GetMessage(vcx)
 	}
 	return true, ""
 }
@@ -484,6 +544,8 @@ type StringPresetPattern struct {
 	Message string
 	// when set to true, Stop prevents further validation checks on the property if this constraint fails
 	Stop bool
+	// when set to true, fails if the value being checked is not a correct type
+	Strict bool
 }
 
 // Check implements Constraint.Check
@@ -494,6 +556,14 @@ func (c *StringPresetPattern) Check(v interface{}, vcx *ValidatorContext) (bool,
 				vcx.CeaseFurtherIf(c.Stop)
 				return false, c.getMessage(vcx, p.GetMessage())
 			}
+		} else {
+			vcx.CeaseFurtherIf(c.Stop)
+			return false, vcx.TranslateFormat(fmtMsgUnknownPresetPattern, c.Preset)
+		}
+	} else if c.Strict {
+		if p, ok := presetsRegistry.get(c.Preset); ok {
+			vcx.CeaseFurtherIf(c.Stop)
+			return false, c.getMessage(vcx, p.GetMessage())
 		} else {
 			vcx.CeaseFurtherIf(c.Stop)
 			return false, vcx.TranslateFormat(fmtMsgUnknownPresetPattern, c.Preset)
@@ -540,6 +610,8 @@ type StringStartsWith struct {
 	Message string
 	// when set to true, Stop prevents further validation checks on the property if this constraint fails
 	Stop bool
+	// when set to true, fails if the value being checked is not a correct type
+	Strict bool
 }
 
 // Check implements Constraint.Check
@@ -559,6 +631,9 @@ func (c *StringStartsWith) Check(v interface{}, vcx *ValidatorContext) (bool, st
 			vcx.CeaseFurtherIf(c.Stop)
 			return false, c.GetMessage(vcx)
 		}
+	} else if c.Strict {
+		vcx.CeaseFurtherIf(c.Stop)
+		return false, c.GetMessage(vcx)
 	}
 	return true, ""
 }
@@ -589,6 +664,8 @@ type StringUppercase struct {
 	Message string `v8n:"default"`
 	// when set to true, Stop prevents further validation checks on the property if this constraint fails
 	Stop bool
+	// when set to true, fails if the value being checked is not a correct type
+	Strict bool
 }
 
 // Check implements Constraint.Check
@@ -598,6 +675,9 @@ func (c *StringUppercase) Check(v interface{}, vcx *ValidatorContext) (bool, str
 			vcx.CeaseFurtherIf(c.Stop)
 			return false, c.GetMessage(vcx)
 		}
+	} else if c.Strict {
+		vcx.CeaseFurtherIf(c.Stop)
+		return false, c.GetMessage(vcx)
 	}
 	return true, ""
 }
@@ -619,6 +699,8 @@ type StringValidJson struct {
 	Message string `v8n:"default"`
 	// when set to true, Stop prevents further validation checks on the property if this constraint fails
 	Stop bool
+	// when set to true, fails if the value being checked is not a correct type
+	Strict bool
 }
 
 // Check implements Constraint.Check
@@ -642,6 +724,9 @@ func (c *StringValidJson) Check(v interface{}, vcx *ValidatorContext) (bool, str
 			vcx.CeaseFurtherIf(c.Stop)
 			return false, c.GetMessage(vcx)
 		}
+	} else if c.Strict {
+		vcx.CeaseFurtherIf(c.Stop)
+		return false, c.GetMessage(vcx)
 	}
 	return true, ""
 }
@@ -663,6 +748,8 @@ type StringValidToken struct {
 	Message string
 	// when set to true, Stop prevents further validation checks on the property if this constraint fails
 	Stop bool
+	// when set to true, fails if the value being checked is not a correct type
+	Strict bool
 }
 
 // Check implements Constraint.Check
@@ -674,6 +761,9 @@ func (c *StringValidToken) Check(v interface{}, vcx *ValidatorContext) (bool, st
 				return true, ""
 			}
 		}
+		vcx.CeaseFurtherIf(c.Stop)
+		return false, c.GetMessage(vcx)
+	} else if c.Strict {
 		vcx.CeaseFurtherIf(c.Stop)
 		return false, c.GetMessage(vcx)
 	}
@@ -697,6 +787,8 @@ type StringValidUnicodeNormalization struct {
 	Message string
 	// when set to true, Stop prevents further validation checks on the property if this constraint fails
 	Stop bool
+	// when set to true, fails if the value being checked is not a correct type
+	Strict bool
 }
 
 // Check implements Constraint.Check
@@ -706,6 +798,9 @@ func (c *StringValidUnicodeNormalization) Check(v interface{}, vcx *ValidatorCon
 			vcx.CeaseFurtherIf(c.Stop)
 			return false, c.GetMessage(vcx)
 		}
+	} else if c.Strict {
+		vcx.CeaseFurtherIf(c.Stop)
+		return false, c.GetMessage(vcx)
 	}
 	return true, ""
 }

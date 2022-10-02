@@ -19,6 +19,8 @@ type StringValidCardNumber struct {
 	Message string `v8n:"default"`
 	// when set to true, Stop prevents further validation checks on the property if this constraint fails
 	Stop bool
+	// when set to true, fails if the value being checked is not a correct type
+	Strict bool
 }
 
 // Check implements Constraint.Check
@@ -28,6 +30,9 @@ func (c *StringValidCardNumber) Check(v interface{}, vcx *ValidatorContext) (boo
 			vcx.CeaseFurtherIf(c.Stop)
 			return false, c.GetMessage(vcx)
 		}
+	} else if c.Strict {
+		vcx.CeaseFurtherIf(c.Stop)
+		return false, c.GetMessage(vcx)
 	}
 	return true, ""
 }
@@ -348,6 +353,8 @@ type StringValidEmail struct {
 	Message string `v8n:"default"`
 	// when set to true, Stop prevents further validation checks on the property if this constraint fails
 	Stop bool
+	// when set to true, fails if the value being checked is not a correct type
+	Strict bool
 }
 
 // Check implements Constraint.Check
@@ -423,6 +430,9 @@ func (c *StringValidEmail) Check(v interface{}, vcx *ValidatorContext) (bool, st
 		}
 		vcx.CeaseFurtherIf(c.Stop)
 		return false, c.GetMessage(vcx)
+	} else if c.Strict {
+		vcx.CeaseFurtherIf(c.Stop)
+		return false, c.GetMessage(vcx)
 	}
 	return true, ""
 }
@@ -442,6 +452,8 @@ type StringValidLanguageCode struct {
 	Message string `v8n:"default"`
 	// when set to true, Stop prevents further validation checks on the property if this constraint fails
 	Stop bool
+	// when set to true, fails if the value being checked is not a correct type
+	Strict bool
 }
 
 // Check implements Constraint.Check
@@ -451,6 +463,9 @@ func (c *StringValidLanguageCode) Check(v interface{}, vcx *ValidatorContext) (b
 			vcx.CeaseFurtherIf(c.Stop)
 			return false, c.GetMessage(vcx)
 		}
+	} else if c.Strict {
+		vcx.CeaseFurtherIf(c.Stop)
+		return false, c.GetMessage(vcx)
 	}
 	return true, ""
 }
@@ -472,6 +487,8 @@ type StringValidUuid struct {
 	Message string `v8n:"default"`
 	// when set to true, Stop prevents further validation checks on the property if this constraint fails
 	Stop bool
+	// when set to true, fails if the value being checked is not a correct type
+	Strict bool
 }
 
 // Check implements Constraint.Check
@@ -490,6 +507,9 @@ func (c *StringValidUuid) Check(v interface{}, vcx *ValidatorContext) (bool, str
 			vcx.CeaseFurtherIf(c.Stop)
 			return false, c.GetMessage(vcx)
 		}
+	} else if c.Strict {
+		vcx.CeaseFurtherIf(c.Stop)
+		return false, c.GetMessage(vcx)
 	}
 	return true, ""
 }

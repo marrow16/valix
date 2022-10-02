@@ -19,6 +19,8 @@ type StringValidISODatetime struct {
 	Message string `v8n:"default"`
 	// when set to true, Stop prevents further validation checks on the property if this constraint fails
 	Stop bool
+	// when set to true, fails if the value being checked is not a correct type
+	Strict bool
 }
 
 // Check implements Constraint.Check
@@ -55,6 +57,9 @@ func (c *StringValidISODatetime) Check(v interface{}, vcx *ValidatorContext) (bo
 				return false, c.GetMessage(vcx)
 			}
 		}
+	} else if c.Strict {
+		vcx.CeaseFurtherIf(c.Stop)
+		return false, c.GetMessage(vcx)
 	}
 	return true, ""
 }
@@ -79,6 +84,8 @@ type StringValidISODate struct {
 	Message string `v8n:"default"`
 	// when set to true, Stop prevents further validation checks on the property if this constraint fails
 	Stop bool
+	// when set to true, fails if the value being checked is not a correct type
+	Strict bool
 }
 
 // Check implements Constraint.Check
@@ -93,6 +100,9 @@ func (c *StringValidISODate) Check(v interface{}, vcx *ValidatorContext) (bool, 
 			vcx.CeaseFurtherIf(c.Stop)
 			return false, c.GetMessage(vcx)
 		}
+	} else if c.Strict {
+		vcx.CeaseFurtherIf(c.Stop)
+		return false, c.GetMessage(vcx)
 	}
 	return true, ""
 }

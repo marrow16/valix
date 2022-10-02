@@ -50,6 +50,8 @@ type NotEqualsOther struct {
 	Message string
 	// when set to true, Stop prevents further validation checks on the property if this constraint fails
 	Stop bool
+	// when set to true, fails if the other property is not present (even though the not equals would technically be ok)
+	Strict bool
 }
 
 // Check implements Constraint.Check
@@ -59,6 +61,9 @@ func (c *NotEqualsOther) Check(v interface{}, vcx *ValidatorContext) (bool, stri
 			vcx.CeaseFurtherIf(c.Stop)
 			return false, c.GetMessage(vcx)
 		}
+	} else if c.Strict {
+		vcx.CeaseFurtherIf(c.Stop)
+		return false, c.GetMessage(vcx)
 	}
 	return true, ""
 }
