@@ -8,10 +8,12 @@ import (
 )
 
 const (
+	// CodeRequestQueryParamMultiNotAllowed is the violation code when a query param is specified more than once but may not be
 	CodeRequestQueryParamMultiNotAllowed = 40010
 	msgQueryParamMultiNotAllowed         = "Query param may not be specified more than once"
-	CodeRequestQueryParamInvalidType     = 40011
-	fmtMsgQueryParamType                 = "Query param must be of type %[1]s"
+	// CodeRequestQueryParamInvalidType is the violation code when a query param value is an incorrect type
+	CodeRequestQueryParamInvalidType = 40011
+	fmtMsgQueryParamType             = "Query param must be of type %[1]s"
 )
 
 // RequestQueryValidate Performs validation on the request query (http.Request.URL.Query) of the supplied http.Request

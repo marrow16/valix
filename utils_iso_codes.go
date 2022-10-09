@@ -7,7 +7,7 @@ const (
 	ISO4217NoCurrencyCodeNumeric   = "999"
 )
 
-var ISO4217CurrencyCodes = map[string]bool{
+var iSO4217CurrencyCodes = map[string]bool{
 	"AED": true, // United Arab Emirates dirham
 	"AFN": true, // Afghan afghani
 	"ALL": true, // Albanian lek
@@ -191,7 +191,7 @@ var ISO4217CurrencyCodes = map[string]bool{
 	//"XXX": true, // No currency
 }
 
-var ISO4217CurrencyCodesNumeric = map[string]bool{
+var iSO4217CurrencyCodesNumeric = map[string]bool{
 	"008": true, // ALL Albanian lek
 	"012": true, // DZD Algerian dinar
 	"032": true, // ARS Argentine peso
@@ -375,7 +375,7 @@ var ISO4217CurrencyCodesNumeric = map[string]bool{
 	//"999": true, // XXX No currency
 }
 
-var ISO4217CurrencyCodesHistorical = map[string]bool{
+var iSO4217CurrencyCodesHistorical = map[string]bool{
 	"ADP": true, // Andorran peseta
 	"AFA": true, // Afghan afghani
 	"ALK": true, // Old Albanian lek
@@ -500,7 +500,7 @@ var ISO4217CurrencyCodesHistorical = map[string]bool{
 	"ZWR": true, // Zimbabwean dollar
 }
 
-var ISO4217CurrencyCodesNumericHistorical = map[string]bool{
+var iSO4217CurrencyCodesNumericHistorical = map[string]bool{
 	"004": true, // Afghan afghani
 	"020": true, // Andorran peseta
 	"024": true, // Angolan kwanza
@@ -577,7 +577,7 @@ var ISO4217CurrencyCodesNumericHistorical = map[string]bool{
 	"998": true, // United States dollar (same day) (funds code)[59]
 }
 
-var UnofficialCurrencyCodes = map[string]bool{
+var unofficialCurrencyCodes = map[string]bool{
 	"ADF": true, // Andorran franc
 	"ARL": true, // Argentine peso ley
 	"BDS": true, // (BBD) Barbados dollar
@@ -605,7 +605,7 @@ var UnofficialCurrencyCodes = map[string]bool{
 	"ZWB": true, // Zimbabwean bonds
 }
 
-var CryptoCurrencyCodes = map[string]bool{
+var cryptoCurrencyCodes = map[string]bool{
 	"ADA":  true, // Ada	Currency on the Cardano platform
 	"BCH":  true, // Bitcoin Cash
 	"BNB":  true, // Binance	BNB
@@ -626,7 +626,7 @@ var CryptoCurrencyCodes = map[string]bool{
 	"ZEC":  true, // Zcash
 }
 
-var ISO3166_2_CountryCodes = map[string]map[string]bool{
+var iSO3166_2_CountryCodes = map[string]map[string]bool{
 	"AD": { // Andorra
 		"02": true, "03": true, "04": true, "05": true, "06": true, "07": true, "08": true,
 	},
@@ -4846,7 +4846,7 @@ var ISO3166_2_CountryCodes = map[string]map[string]bool{
 	},
 }
 
-var ISO3166_1_NumericCodes = map[string]bool{
+var iSO3166_1_NumericCodes = map[string]bool{
 	"004": true, // Afghanistan
 	"008": true, // Albania
 	"010": true, // Antarctica
@@ -5098,7 +5098,7 @@ var ISO3166_1_NumericCodes = map[string]bool{
 	"894": true, // Zambia
 }
 
-var ISO3166_2_ObsoleteCodes = map[string]bool{
+var iSO3166_2_ObsoleteCodes = map[string]bool{
 	"AL-BR": true, "AL-BU": true, "AL-DI": true, "AL-DL": true, "AL-DR": true, "AL-DV": true, "AL-EL": true, "AL-ER": true,
 	"AL-FR": true, "AL-GJ": true, "AL-GR": true, "AL-HA": true, "AL-KA": true, "AL-KB": true, "AL-KC": true, "AL-KO": true,
 	"AL-KR": true, "AL-KU": true, "AL-LB": true, "AL-LE": true, "AL-LU": true, "AL-MK": true, "AL-MM": true, "AL-MR": true,

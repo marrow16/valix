@@ -25,19 +25,10 @@ type StringValidCardNumber struct {
 
 // Check implements Constraint.Check
 func (c *StringValidCardNumber) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
-	if str, ok := v.(string); ok {
-		if !c.check(str) {
-			vcx.CeaseFurtherIf(c.Stop)
-			return false, c.GetMessage(vcx)
-		}
-	} else if c.Strict {
-		vcx.CeaseFurtherIf(c.Stop)
-		return false, c.GetMessage(vcx)
-	}
-	return true, ""
+	return checkStringConstraint(v, vcx, c, c.Strict, c.Stop)
 }
 
-func (c *StringValidCardNumber) check(str string) bool {
+func (c *StringValidCardNumber) checkString(str string, vcx *ValidatorContext) bool {
 	const digitMinChar = '0'
 	const digitMaxChar = '9'
 	buffer := []byte(str)
@@ -120,7 +111,7 @@ func (c *StringValidCountryCode) Check(v interface{}, vcx *ValidatorContext) (bo
 
 func (c *StringValidCountryCode) checkAll(v interface{}) bool {
 	if str, ok := v.(string); ok {
-		return c.checkString(str)
+		return c.checkStringOnly(str)
 	} else if c.Allow3166_1_Numeric {
 		if iv, ok, isNumber := coerceToInt(v); ok && isNumber {
 			return c.checkNumeric(iv)
@@ -129,12 +120,12 @@ func (c *StringValidCountryCode) checkAll(v interface{}) bool {
 	return false
 }
 
-func (c *StringValidCountryCode) checkString(str string) bool {
+func (c *StringValidCountryCode) checkStringOnly(str string) bool {
 	if strings.Contains(str, "-") {
 		return c.isOk31662(str)
-	} else if _, ok := ISO3166_2_CountryCodes[str]; ok {
+	} else if _, ok := iSO3166_2_CountryCodes[str]; ok {
 		return true
-	} else if c.Allow3166_1_Numeric && ISO3166_1_NumericCodes[str] {
+	} else if c.Allow3166_1_Numeric && iSO3166_1_NumericCodes[str] {
 		return true
 	} else if len(str) == 2 {
 		return c.isOk31661(str)
@@ -165,12 +156,12 @@ func (c *StringValidCountryCode) isOk31661(str string) bool {
 func (c *StringValidCountryCode) isOk31662(str string) bool {
 	if c.Allow3166_2 {
 		if parts := strings.Split(str, "-"); len(parts) == 2 {
-			if rs, ok := ISO3166_2_CountryCodes[parts[0]]; ok {
+			if rs, ok := iSO3166_2_CountryCodes[parts[0]]; ok {
 				if rs[parts[1]] {
 					return true
 				}
 			}
-			if c.Allow3166_2_Obsoletes && ISO3166_2_ObsoleteCodes[str] {
+			if c.Allow3166_2_Obsoletes && iSO3166_2_ObsoleteCodes[str] {
 				return true
 			}
 		}
@@ -180,7 +171,7 @@ func (c *StringValidCountryCode) isOk31662(str string) bool {
 
 func (c *StringValidCountryCode) checkNumericOnly(v interface{}) bool {
 	if str, ok := v.(string); ok {
-		if ISO3166_1_NumericCodes[str] {
+		if iSO3166_1_NumericCodes[str] {
 			return true
 		} else if c.AllowUserAssigned {
 			if iv, err := strconv.Atoi(str); err == nil && iv >= 900 && iv <= 999 {
@@ -198,7 +189,7 @@ func (c *StringValidCountryCode) checkNumeric(iv int64) bool {
 		return true
 	}
 	ic := fmt.Sprintf("%03d", iv)
-	if ISO3166_1_NumericCodes[ic] {
+	if iSO3166_1_NumericCodes[ic] {
 		return true
 	}
 	return false
@@ -257,7 +248,7 @@ func (c *StringValidCurrencyCode) checkEither(v interface{}) bool {
 }
 
 func (c *StringValidCurrencyCode) isOkRegular(str string) bool {
-	return ISO4217CurrencyCodes[str] || (c.AllowNumeric && ISO4217CurrencyCodesNumeric[str])
+	return iSO4217CurrencyCodes[str] || (c.AllowNumeric && iSO4217CurrencyCodesNumeric[str])
 }
 
 func (c *StringValidCurrencyCode) isOkTest(str string) bool {
@@ -269,19 +260,19 @@ func (c *StringValidCurrencyCode) isOkNoCode(str string) bool {
 }
 
 func (c *StringValidCurrencyCode) isOkHistorical(str string) bool {
-	return c.AllowHistorical && (ISO4217CurrencyCodesHistorical[str] || (c.AllowNumeric && ISO4217CurrencyCodesNumericHistorical[str]))
+	return c.AllowHistorical && (iSO4217CurrencyCodesHistorical[str] || (c.AllowNumeric && iSO4217CurrencyCodesNumericHistorical[str]))
 }
 
 func (c *StringValidCurrencyCode) isOkOther(str string) bool {
-	return (c.AllowUnofficial && UnofficialCurrencyCodes[str]) || (c.AllowCrypto && CryptoCurrencyCodes[str])
+	return (c.AllowUnofficial && unofficialCurrencyCodes[str]) || (c.AllowCrypto && cryptoCurrencyCodes[str])
 }
 
 func (c *StringValidCurrencyCode) checkNumericOnly(v interface{}) bool {
 	if str, ok := v.(string); ok {
 		if (c.AllowTestCode && str == ISO4217TestCurrencyCodeNumeric) ||
 			(c.AllowNoCode && str == ISO4217NoCurrencyCodeNumeric) ||
-			ISO4217CurrencyCodesNumeric[str] ||
-			(c.AllowHistorical && ISO4217CurrencyCodesNumericHistorical[str]) {
+			iSO4217CurrencyCodesNumeric[str] ||
+			(c.AllowHistorical && iSO4217CurrencyCodesNumericHistorical[str]) {
 			return true
 		}
 	} else if iv, ok, isNumber := coerceToInt(v); ok && isNumber {
@@ -294,8 +285,8 @@ func (c *StringValidCurrencyCode) checkNumeric(iv int64) bool {
 	ic := fmt.Sprintf("%03d", iv)
 	if (c.AllowTestCode && ic == ISO4217TestCurrencyCodeNumeric) ||
 		(c.AllowNoCode && ic == ISO4217NoCurrencyCodeNumeric) ||
-		ISO4217CurrencyCodesNumeric[ic] ||
-		(c.AllowHistorical && ISO4217CurrencyCodesNumericHistorical[ic]) {
+		iSO4217CurrencyCodesNumeric[ic] ||
+		(c.AllowHistorical && iSO4217CurrencyCodesNumericHistorical[ic]) {
 		return true
 	}
 	return false
@@ -359,8 +350,35 @@ type StringValidEmail struct {
 
 // Check implements Constraint.Check
 func (c *StringValidEmail) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
-	if str, ok := v.(string); ok {
-		if c.DisallowRFC5322 {
+	return checkStringConstraint(v, vcx, c, c.Strict, c.Stop)
+}
+
+func (c *StringValidEmail) checkString(str string, vcx *ValidatorContext) bool {
+	if c.DisallowRFC5322 {
+		if isValidEmail(str, domainOptions{
+			allowIPAddress:      c.AllowIPAddress,
+			allowIPV6:           c.AllowIPV6,
+			allowLocal:          c.AllowLocal,
+			allowTldOnly:        c.AllowTldOnly,
+			allowGeographicTlds: c.AllowGeographicTlds,
+			allowGenericTlds:    c.AllowGenericTlds,
+			allowBrandTlds:      c.AllowBrandTlds,
+			allowInfraTlds:      c.AllowInfraTlds,
+			allowTestTlds:       c.AllowTestTlds,
+			addCountryCodeTlds:  c.AddCountryCodeTlds,
+			excCountryCodeTlds:  c.ExcCountryCodeTlds,
+			addGenericTlds:      c.AddGenericTlds,
+			excGenericTlds:      c.ExcGenericTlds,
+			addBrandTlds:        c.AddBrandTlds,
+			excBrandTlds:        c.ExcBrandTlds,
+			addLocalTlds:        c.AddLocalTlds,
+			excLocalTlds:        c.ExcLocalTlds,
+		}) {
+			return true
+		}
+	} else if a, err := mail.ParseAddress(str); err != nil {
+		// fails to parse addresses with IPv6 - so try directly...
+		if c.AllowIPAddress {
 			if isValidEmail(str, domainOptions{
 				allowIPAddress:      c.AllowIPAddress,
 				allowIPV6:           c.AllowIPV6,
@@ -380,61 +398,31 @@ func (c *StringValidEmail) Check(v interface{}, vcx *ValidatorContext) (bool, st
 				addLocalTlds:        c.AddLocalTlds,
 				excLocalTlds:        c.ExcLocalTlds,
 			}) {
-				return true, ""
+				return true
 			}
-		} else if a, err := mail.ParseAddress(str); err != nil {
-			// fails to parse addresses with IPv6 - so try directly...
-			if c.AllowIPAddress {
-				if isValidEmail(str, domainOptions{
-					allowIPAddress:      c.AllowIPAddress,
-					allowIPV6:           c.AllowIPV6,
-					allowLocal:          c.AllowLocal,
-					allowTldOnly:        c.AllowTldOnly,
-					allowGeographicTlds: c.AllowGeographicTlds,
-					allowGenericTlds:    c.AllowGenericTlds,
-					allowBrandTlds:      c.AllowBrandTlds,
-					allowInfraTlds:      c.AllowInfraTlds,
-					allowTestTlds:       c.AllowTestTlds,
-					addCountryCodeTlds:  c.AddCountryCodeTlds,
-					excCountryCodeTlds:  c.ExcCountryCodeTlds,
-					addGenericTlds:      c.AddGenericTlds,
-					excGenericTlds:      c.ExcGenericTlds,
-					addBrandTlds:        c.AddBrandTlds,
-					excBrandTlds:        c.ExcBrandTlds,
-					addLocalTlds:        c.AddLocalTlds,
-					excLocalTlds:        c.ExcLocalTlds,
-				}) {
-					return true, ""
-				}
-			}
-		} else if isValidEmail(a.Address, domainOptions{
-			allowIPAddress:      c.AllowIPAddress,
-			allowIPV6:           c.AllowIPV6,
-			allowLocal:          c.AllowLocal,
-			allowTldOnly:        c.AllowTldOnly,
-			allowGeographicTlds: c.AllowGeographicTlds,
-			allowGenericTlds:    c.AllowGenericTlds,
-			allowBrandTlds:      c.AllowBrandTlds,
-			allowInfraTlds:      c.AllowInfraTlds,
-			allowTestTlds:       c.AllowTestTlds,
-			addCountryCodeTlds:  c.AddCountryCodeTlds,
-			excCountryCodeTlds:  c.ExcCountryCodeTlds,
-			addGenericTlds:      c.AddGenericTlds,
-			excGenericTlds:      c.ExcGenericTlds,
-			addBrandTlds:        c.AddBrandTlds,
-			excBrandTlds:        c.ExcBrandTlds,
-			addLocalTlds:        c.AddLocalTlds,
-			excLocalTlds:        c.ExcLocalTlds,
-		}) {
-			return true, ""
 		}
-		vcx.CeaseFurtherIf(c.Stop)
-		return false, c.GetMessage(vcx)
-	} else if c.Strict {
-		vcx.CeaseFurtherIf(c.Stop)
-		return false, c.GetMessage(vcx)
+	} else if isValidEmail(a.Address, domainOptions{
+		allowIPAddress:      c.AllowIPAddress,
+		allowIPV6:           c.AllowIPV6,
+		allowLocal:          c.AllowLocal,
+		allowTldOnly:        c.AllowTldOnly,
+		allowGeographicTlds: c.AllowGeographicTlds,
+		allowGenericTlds:    c.AllowGenericTlds,
+		allowBrandTlds:      c.AllowBrandTlds,
+		allowInfraTlds:      c.AllowInfraTlds,
+		allowTestTlds:       c.AllowTestTlds,
+		addCountryCodeTlds:  c.AddCountryCodeTlds,
+		excCountryCodeTlds:  c.ExcCountryCodeTlds,
+		addGenericTlds:      c.AddGenericTlds,
+		excGenericTlds:      c.ExcGenericTlds,
+		addBrandTlds:        c.AddBrandTlds,
+		excBrandTlds:        c.ExcBrandTlds,
+		addLocalTlds:        c.AddLocalTlds,
+		excLocalTlds:        c.ExcLocalTlds,
+	}) {
+		return true
 	}
-	return true, ""
+	return false
 }
 
 // GetMessage implements the Constraint.GetMessage
@@ -458,16 +446,14 @@ type StringValidLanguageCode struct {
 
 // Check implements Constraint.Check
 func (c *StringValidLanguageCode) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
-	if str, ok := v.(string); ok {
-		if _, err := language.Parse(str); err != nil {
-			vcx.CeaseFurtherIf(c.Stop)
-			return false, c.GetMessage(vcx)
-		}
-	} else if c.Strict {
-		vcx.CeaseFurtherIf(c.Stop)
-		return false, c.GetMessage(vcx)
+	return checkStringConstraint(v, vcx, c, c.Strict, c.Stop)
+}
+
+func (c *StringValidLanguageCode) checkString(str string, vcx *ValidatorContext) bool {
+	if _, err := language.Parse(str); err != nil {
+		return false
 	}
-	return true, ""
+	return true
 }
 
 // GetMessage implements the Constraint.GetMessage
@@ -493,25 +479,18 @@ type StringValidUuid struct {
 
 // Check implements Constraint.Check
 func (c *StringValidUuid) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
-	if str, ok := v.(string); ok {
-		if !uuidRegexp.MatchString(str) {
-			vcx.CeaseFurtherIf(c.Stop)
-			return false, c.GetMessage(vcx)
-		}
-		var version = str[14] - 48
-		if c.MinVersion > 0 && version < c.MinVersion {
-			vcx.CeaseFurtherIf(c.Stop)
-			return false, c.GetMessage(vcx)
-		}
-		if c.SpecificVersion > 0 && version != c.SpecificVersion {
-			vcx.CeaseFurtherIf(c.Stop)
-			return false, c.GetMessage(vcx)
-		}
-	} else if c.Strict {
-		vcx.CeaseFurtherIf(c.Stop)
-		return false, c.GetMessage(vcx)
+	return checkStringConstraint(v, vcx, c, c.Strict, c.Stop)
+}
+
+func (c *StringValidUuid) checkString(str string, vcx *ValidatorContext) bool {
+	if !uuidRegexp.MatchString(str) {
+		return false
 	}
-	return true, ""
+	var version = str[14] - 48
+	if (c.MinVersion > 0 && version < c.MinVersion) || (c.SpecificVersion > 0 && version != c.SpecificVersion) {
+		return false
+	}
+	return true
 }
 
 // GetMessage implements the Constraint.GetMessage

@@ -1077,7 +1077,7 @@ func TestSafeSet_OtherUnknown(t *testing.T) {
 }
 
 func TestItemsToSlice_String(t *testing.T) {
-	sampleArr := []string{}
+	sampleArr := make([]string, 0)
 	itemType := reflect.TypeOf(sampleArr)
 
 	v, ok := itemsToSlice(itemType, "['foo','bar', 'baz']")
@@ -1102,7 +1102,7 @@ func TestItemsToSlice_String(t *testing.T) {
 }
 
 func TestItemsToSlice_Int(t *testing.T) {
-	sampleArr := []int{}
+	sampleArr := make([]int, 0)
 	itemType := reflect.TypeOf(sampleArr)
 
 	v, ok := itemsToSlice(itemType, "[1,2, 3]")
@@ -1122,7 +1122,7 @@ func TestItemsToSlice_Int(t *testing.T) {
 }
 
 func TestItemsToSlice_UInt(t *testing.T) {
-	sampleArr := []uint{}
+	sampleArr := make([]uint, 0)
 	itemType := reflect.TypeOf(sampleArr)
 
 	v, ok := itemsToSlice(itemType, "[1,2, 3]")
@@ -1146,7 +1146,7 @@ func TestItemsToSlice_UInt(t *testing.T) {
 }
 
 func TestItemsToSlice_Float(t *testing.T) {
-	sampleArr := []float64{}
+	sampleArr := make([]float64, 0)
 	itemType := reflect.TypeOf(sampleArr)
 
 	v, ok := itemsToSlice(itemType, "[1.1,2.2, 3.3]")
@@ -1166,7 +1166,7 @@ func TestItemsToSlice_Float(t *testing.T) {
 }
 
 func TestItemsToSlice_Bool(t *testing.T) {
-	sampleArr := []bool{}
+	sampleArr := make([]bool, 0)
 	itemType := reflect.TypeOf(sampleArr)
 
 	v, ok := itemsToSlice(itemType, "[1,t,T,TRUE,true,True, 0,f,F,FALSE,false,False]")
@@ -1364,13 +1364,33 @@ func TestAbbreviateName(t *testing.T) {
 }
 
 func TestCamelToWords(t *testing.T) {
-	w := camelToWords("EMI")
+	w := camelToWords("eMi")
+	require.Equal(t, 2, len(w))
+	require.Equal(t, "e", w[0])
+	require.Equal(t, "mi", w[1])
+
+	w = camelToWords("EMI")
 	require.Equal(t, 1, len(w))
 	require.Equal(t, "emi", w[0])
 
 	w = camelToWords("Emi")
 	require.Equal(t, 1, len(w))
 	require.Equal(t, "emi", w[0])
+
+	w = camelToWords("EmI")
+	require.Equal(t, 2, len(w))
+	require.Equal(t, "em", w[0])
+	require.Equal(t, "i", w[1])
+
+	w = camelToWords("emI")
+	require.Equal(t, 2, len(w))
+	require.Equal(t, "em", w[0])
+	require.Equal(t, "i", w[1])
+
+	w = camelToWords("eMI")
+	require.Equal(t, 2, len(w))
+	require.Equal(t, "e", w[0])
+	require.Equal(t, "mi", w[1])
 
 	w = camelToWords("EmiEmi")
 	require.Equal(t, 2, len(w))
@@ -1421,4 +1441,19 @@ func TestTagParsingComplex(t *testing.T) {
 	require.Equal(t, 2, len(c0.When))
 	require.Equal(t, "FOO", c0.When[0])
 	require.Equal(t, "BAR", c0.When[1])
+}
+
+func TestTagParsingStructFields(t *testing.T) {
+	pv, err := NewPropertyValidator("&strchars{allow:[{\"R16\": [{\"Lo\":32,\"Hi\":512}]}]}")
+	require.Nil(t, err)
+	require.NotNil(t, pv)
+	require.Equal(t, 1, len(pv.Constraints))
+	c := pv.Constraints[0].(*StringCharacters)
+	require.Equal(t, 1, len(c.AllowRanges))
+	ar0 := c.AllowRanges[0]
+	require.Equal(t, uint16(32), ar0.R16[0].Lo)
+	require.Equal(t, uint16(512), ar0.R16[0].Hi)
+
+	_, err = NewPropertyValidator("&strchars{allow:[{\"R16\": [{\"Lo\":true,\"Hi\":false}]}]}")
+	require.NotNil(t, err)
 }

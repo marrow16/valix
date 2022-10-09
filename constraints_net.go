@@ -124,31 +124,29 @@ type NetIsHostname struct {
 
 // Check implements Constraint.Check
 func (c *NetIsHostname) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
-	if str, ok := v.(string); ok {
-		if len(str) > 0 && isValidDomain(str, domainOptions{
-			allowIPAddress:      c.AllowIPAddress,
-			allowIPV6:           c.AllowIPV6,
-			allowLocal:          c.AllowLocal,
-			allowTldOnly:        c.AllowTldOnly,
-			allowGeographicTlds: c.AllowGeographicTlds,
-			allowGenericTlds:    c.AllowGenericTlds,
-			allowBrandTlds:      c.AllowBrandTlds,
-			allowInfraTlds:      c.AllowInfraTlds,
-			allowTestTlds:       c.AllowTestTlds,
-			addCountryCodeTlds:  c.AddCountryCodeTlds,
-			excCountryCodeTlds:  c.ExcCountryCodeTlds,
-			addGenericTlds:      c.AddGenericTlds,
-			excGenericTlds:      c.ExcGenericTlds,
-			addBrandTlds:        c.AddBrandTlds,
-			excBrandTlds:        c.ExcBrandTlds,
-			addLocalTlds:        c.AddLocalTlds,
-			excLocalTlds:        c.ExcLocalTlds,
-		}) {
-			return true, ""
-		}
-	}
-	vcx.CeaseFurtherIf(c.Stop)
-	return false, c.GetMessage(vcx)
+	return checkStringConstraint(v, vcx, c, true, c.Stop)
+}
+
+func (c *NetIsHostname) checkString(str string, vcx *ValidatorContext) bool {
+	return len(str) > 0 && isValidDomain(str, domainOptions{
+		allowIPAddress:      c.AllowIPAddress,
+		allowIPV6:           c.AllowIPV6,
+		allowLocal:          c.AllowLocal,
+		allowTldOnly:        c.AllowTldOnly,
+		allowGeographicTlds: c.AllowGeographicTlds,
+		allowGenericTlds:    c.AllowGenericTlds,
+		allowBrandTlds:      c.AllowBrandTlds,
+		allowInfraTlds:      c.AllowInfraTlds,
+		allowTestTlds:       c.AllowTestTlds,
+		addCountryCodeTlds:  c.AddCountryCodeTlds,
+		excCountryCodeTlds:  c.ExcCountryCodeTlds,
+		addGenericTlds:      c.AddGenericTlds,
+		excGenericTlds:      c.ExcGenericTlds,
+		addBrandTlds:        c.AddBrandTlds,
+		excBrandTlds:        c.ExcBrandTlds,
+		addLocalTlds:        c.AddLocalTlds,
+		excLocalTlds:        c.ExcLocalTlds,
+	})
 }
 
 // GetMessage implements the Constraint.GetMessage
@@ -228,13 +226,14 @@ type NetIsMac struct {
 
 // Check implements Constraint.Check
 func (c *NetIsMac) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
-	if str, ok := v.(string); ok {
-		if _, err := net.ParseMAC(str); err == nil {
-			return true, ""
-		}
+	return checkStringConstraint(v, vcx, c, true, c.Stop)
+}
+
+func (c *NetIsMac) checkString(str string, vcx *ValidatorContext) bool {
+	if _, err := net.ParseMAC(str); err == nil {
+		return true
 	}
-	vcx.CeaseFurtherIf(c.Stop)
-	return false, c.GetMessage(vcx)
+	return false
 }
 
 // GetMessage implements the Constraint.GetMessage
@@ -308,23 +307,21 @@ type NetIsTld struct {
 
 // Check implements Constraint.Check
 func (c *NetIsTld) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
-	if str, ok := v.(string); ok {
-		if tld(str).isValid(domainOptions{
-			allowGeographicTlds: c.AllowGeographicTlds,
-			allowGenericTlds:    c.AllowGenericTlds,
-			allowBrandTlds:      c.AllowBrandTlds,
-			addCountryCodeTlds:  c.AddCountryCodeTlds,
-			excCountryCodeTlds:  c.ExcCountryCodeTlds,
-			addGenericTlds:      c.AddGenericTlds,
-			excGenericTlds:      c.ExcGenericTlds,
-			addBrandTlds:        c.AddBrandTlds,
-			excBrandTlds:        c.ExcBrandTlds,
-		}) {
-			return true, ""
-		}
-	}
-	vcx.CeaseFurtherIf(c.Stop)
-	return false, c.GetMessage(vcx)
+	return checkStringConstraint(v, vcx, c, true, c.Stop)
+}
+
+func (c *NetIsTld) checkString(str string, vcx *ValidatorContext) bool {
+	return tld(str).isValid(domainOptions{
+		allowGeographicTlds: c.AllowGeographicTlds,
+		allowGenericTlds:    c.AllowGenericTlds,
+		allowBrandTlds:      c.AllowBrandTlds,
+		addCountryCodeTlds:  c.AddCountryCodeTlds,
+		excCountryCodeTlds:  c.ExcCountryCodeTlds,
+		addGenericTlds:      c.AddGenericTlds,
+		excGenericTlds:      c.ExcGenericTlds,
+		addBrandTlds:        c.AddBrandTlds,
+		excBrandTlds:        c.ExcBrandTlds,
+	})
 }
 
 // GetMessage implements the Constraint.GetMessage
@@ -434,42 +431,43 @@ type NetIsURI struct {
 
 // Check implements Constraint.Check
 func (c *NetIsURI) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
-	if str, ok := v.(string); ok {
-		if hat := strings.Index(str, "#"); hat != -1 {
-			str = str[:hat]
-		}
-		if len(str) > 0 {
-			if u, err := url.ParseRequestURI(str); err == nil {
-				if c.CheckHost {
-					if isValidDomain(u.Hostname(), domainOptions{
-						allowIPAddress:      c.AllowIPAddress,
-						allowIPV6:           c.AllowIPV6,
-						allowLocal:          c.AllowLocal,
-						allowTldOnly:        c.AllowTldOnly,
-						allowGeographicTlds: c.AllowGeographicTlds,
-						allowGenericTlds:    c.AllowGenericTlds,
-						allowBrandTlds:      c.AllowBrandTlds,
-						allowInfraTlds:      c.AllowInfraTlds,
-						allowTestTlds:       c.AllowTestTlds,
-						addCountryCodeTlds:  c.AddCountryCodeTlds,
-						excCountryCodeTlds:  c.ExcCountryCodeTlds,
-						addGenericTlds:      c.AddGenericTlds,
-						excGenericTlds:      c.ExcGenericTlds,
-						addBrandTlds:        c.AddBrandTlds,
-						excBrandTlds:        c.ExcBrandTlds,
-						addLocalTlds:        c.AddLocalTlds,
-						excLocalTlds:        c.ExcLocalTlds,
-					}) {
-						return true, ""
-					}
-				} else {
-					return true, ""
+	return checkStringConstraint(v, vcx, c, true, c.Stop)
+}
+
+func (c *NetIsURI) checkString(str string, vcx *ValidatorContext) bool {
+	if hat := strings.Index(str, "#"); hat != -1 {
+		str = str[:hat]
+	}
+	if len(str) > 0 {
+		if u, err := url.ParseRequestURI(str); err == nil {
+			if c.CheckHost {
+				if isValidDomain(u.Hostname(), domainOptions{
+					allowIPAddress:      c.AllowIPAddress,
+					allowIPV6:           c.AllowIPV6,
+					allowLocal:          c.AllowLocal,
+					allowTldOnly:        c.AllowTldOnly,
+					allowGeographicTlds: c.AllowGeographicTlds,
+					allowGenericTlds:    c.AllowGenericTlds,
+					allowBrandTlds:      c.AllowBrandTlds,
+					allowInfraTlds:      c.AllowInfraTlds,
+					allowTestTlds:       c.AllowTestTlds,
+					addCountryCodeTlds:  c.AddCountryCodeTlds,
+					excCountryCodeTlds:  c.ExcCountryCodeTlds,
+					addGenericTlds:      c.AddGenericTlds,
+					excGenericTlds:      c.ExcGenericTlds,
+					addBrandTlds:        c.AddBrandTlds,
+					excBrandTlds:        c.ExcBrandTlds,
+					addLocalTlds:        c.AddLocalTlds,
+					excLocalTlds:        c.ExcLocalTlds,
+				}) {
+					return true
 				}
+			} else {
+				return true
 			}
 		}
 	}
-	vcx.CeaseFurtherIf(c.Stop)
-	return false, c.GetMessage(vcx)
+	return false
 }
 
 // GetMessage implements the Constraint.GetMessage
@@ -525,42 +523,43 @@ type NetIsURL struct {
 
 // Check implements Constraint.Check
 func (c *NetIsURL) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
-	if str, ok := v.(string); ok {
-		if hat := strings.Index(str, "#"); hat != -1 {
-			str = str[:hat]
-		}
-		if len(str) > 0 {
-			if u, err := url.ParseRequestURI(str); err == nil && u.Scheme != "" && u.Host != "" {
-				if c.CheckHost {
-					if isValidDomain(u.Hostname(), domainOptions{
-						allowIPAddress:      c.AllowIPAddress,
-						allowIPV6:           c.AllowIPV6,
-						allowLocal:          c.AllowLocal,
-						allowTldOnly:        c.AllowTldOnly,
-						allowGeographicTlds: c.AllowGeographicTlds,
-						allowGenericTlds:    c.AllowGenericTlds,
-						allowBrandTlds:      c.AllowBrandTlds,
-						allowInfraTlds:      c.AllowInfraTlds,
-						allowTestTlds:       c.AllowTestTlds,
-						addCountryCodeTlds:  c.AddCountryCodeTlds,
-						excCountryCodeTlds:  c.ExcCountryCodeTlds,
-						addGenericTlds:      c.AddGenericTlds,
-						excGenericTlds:      c.ExcGenericTlds,
-						addBrandTlds:        c.AddBrandTlds,
-						excBrandTlds:        c.ExcBrandTlds,
-						addLocalTlds:        c.AddLocalTlds,
-						excLocalTlds:        c.ExcLocalTlds,
-					}) {
-						return true, ""
-					}
-				} else {
-					return true, ""
+	return checkStringConstraint(v, vcx, c, true, c.Stop)
+}
+
+func (c *NetIsURL) checkString(str string, vcx *ValidatorContext) bool {
+	if hat := strings.Index(str, "#"); hat != -1 {
+		str = str[:hat]
+	}
+	if len(str) > 0 {
+		if u, err := url.ParseRequestURI(str); err == nil && u.Scheme != "" && u.Host != "" {
+			if c.CheckHost {
+				if isValidDomain(u.Hostname(), domainOptions{
+					allowIPAddress:      c.AllowIPAddress,
+					allowIPV6:           c.AllowIPV6,
+					allowLocal:          c.AllowLocal,
+					allowTldOnly:        c.AllowTldOnly,
+					allowGeographicTlds: c.AllowGeographicTlds,
+					allowGenericTlds:    c.AllowGenericTlds,
+					allowBrandTlds:      c.AllowBrandTlds,
+					allowInfraTlds:      c.AllowInfraTlds,
+					allowTestTlds:       c.AllowTestTlds,
+					addCountryCodeTlds:  c.AddCountryCodeTlds,
+					excCountryCodeTlds:  c.ExcCountryCodeTlds,
+					addGenericTlds:      c.AddGenericTlds,
+					excGenericTlds:      c.ExcGenericTlds,
+					addBrandTlds:        c.AddBrandTlds,
+					excBrandTlds:        c.ExcBrandTlds,
+					addLocalTlds:        c.AddLocalTlds,
+					excLocalTlds:        c.ExcLocalTlds,
+				}) {
+					return true
 				}
+			} else {
+				return true
 			}
 		}
 	}
-	vcx.CeaseFurtherIf(c.Stop)
-	return false, c.GetMessage(vcx)
+	return false
 }
 
 // GetMessage implements the Constraint.GetMessage

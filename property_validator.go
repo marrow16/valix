@@ -8,19 +8,26 @@ import (
 )
 
 const (
-	msgValueCannotBeNull             = "Value cannot be null"
-	CodeValueCannotBeNull            = 42211
-	fmtMsgValueExpectedType          = "Value expected to be of type %[1]s"
-	CodeValueExpectedType            = 42212
-	msgValueMustBeObject             = "Value must be an object"
-	CodeValueMustBeObject            = 42213
-	msgValueMustBeArray              = "Value must be an array"
-	CodeValueMustBeArray             = 42214
-	msgValueMustBeObjectOrArray      = "Value must be an object or array"
-	CodeValueMustBeObjectOrArray     = 42215
-	msgPropertyObjectValidatorError  = "Object validator error - does not allow object or array!"
+	msgValueCannotBeNull = "Value cannot be null"
+	// CodeValueCannotBeNull is the violation code when a value is null
+	CodeValueCannotBeNull   = 42211
+	fmtMsgValueExpectedType = "Value expected to be of type %[1]s"
+	// CodeValueExpectedType is the violation code when a value is of the incorrect type
+	CodeValueExpectedType = 42212
+	msgValueMustBeObject  = "Value must be an object"
+	// CodeValueMustBeObject is the violation code when a value is expected to be an object but is not
+	CodeValueMustBeObject = 42213
+	msgValueMustBeArray   = "Value must be an array"
+	// CodeValueMustBeArray is the violation code when a value is expected to be an array but is not
+	CodeValueMustBeArray        = 42214
+	msgValueMustBeObjectOrArray = "Value must be an object or array"
+	// CodeValueMustBeObjectOrArray is the violation code when a value is expected to be an object or array but is neither
+	CodeValueMustBeObjectOrArray    = 42215
+	msgPropertyObjectValidatorError = "Object validator error - does not allow object or array!"
+	// CodePropertyObjectValidatorError is the violation code when an object validator disallows both arrays and objects
 	CodePropertyObjectValidatorError = 42216
-	CodePropertyConstraintFail       = 42299
+	// CodePropertyConstraintFail is the violation code when a value fails a constraint
+	CodePropertyConstraintFail = 42299
 )
 
 // JsonType is the type for JSON values

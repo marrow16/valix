@@ -411,14 +411,14 @@ func TestPropertyValidator_MarshalJSON_FailsWithCustomConstraints(t *testing.T) 
 
 func TestConstraint_StringCharacters_MarshalJSON(t *testing.T) {
 	c := &StringCharacters{
-		AllowRanges: []*unicode.RangeTable{
+		AllowRanges: []unicode.RangeTable{
 			UnicodeBMP,
 			UnicodeSMP,
 			UnicodeSIP,
 		},
-		DisallowRanges: []*unicode.RangeTable{
-			unicode.Upper,
-			unicode.Title,
+		DisallowRanges: []unicode.RangeTable{
+			*unicode.Upper,
+			*unicode.Title,
 		},
 		Message: "test message",
 	}

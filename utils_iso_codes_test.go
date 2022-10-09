@@ -37,13 +37,13 @@ func TestISO3166_1_CountryCodesMatrix(t *testing.T) {
 			if v2 == ccAs || v2 == ccRa {
 				assignedCount++
 				cc := string([]byte{k1, k2})
-				_, exists := ISO3166_2_CountryCodes[cc]
+				_, exists := iSO3166_2_CountryCodes[cc]
 				require.True(t, exists)
 			}
 		}
 	}
 	assert.Equal(t, 676, totalCount)
-	assert.Equal(t, len(ISO3166_2_CountryCodes), assignedCount)
+	assert.Equal(t, len(iSO3166_2_CountryCodes), assignedCount)
 	for k, v := range expectedCounts {
 		t.Run(fmt.Sprintf("CC3166[%d]=%d", k, v), func(t *testing.T) {
 			actual := actualCounts[k]
@@ -57,7 +57,7 @@ func TestISO3166_2(t *testing.T) {
 		for k2, v2 := range v1 {
 			if v2 == ccAs || v2 == ccRa {
 				cc := []byte{k1, k2}
-				_, ok := ISO3166_2_CountryCodes[string(cc)]
+				_, ok := iSO3166_2_CountryCodes[string(cc)]
 				require.True(t, ok)
 			}
 		}
@@ -67,7 +67,7 @@ func TestISO3166_2(t *testing.T) {
 func TestISO3166_2_CheckCounts(t *testing.T) {
 	for k, cnt := range iso3166_2_checks {
 		t.Run(fmt.Sprintf("Regions[%s]=%d", k, cnt), func(t *testing.T) {
-			rs, ok := ISO3166_2_CountryCodes[k]
+			rs, ok := iSO3166_2_CountryCodes[k]
 			require.True(t, ok)
 			require.Equal(t, cnt, len(rs))
 		})

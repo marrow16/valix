@@ -378,7 +378,7 @@ func TestCoerceJsonNumberToFloat(t *testing.T) {
 }
 
 func TestIsUniqueCompare(t *testing.T) {
-	distinctList := []interface{}{}
+	distinctList := make([]interface{}, 0)
 	unique := isUniqueCompare("foo", true, &distinctList)
 	require.True(t, unique)
 	unique = isUniqueCompare("Foo", true, &distinctList)
@@ -386,7 +386,7 @@ func TestIsUniqueCompare(t *testing.T) {
 	unique = isUniqueCompare("Foo", false, &distinctList)
 	require.True(t, unique)
 
-	distinctList = []interface{}{}
+	distinctList = make([]interface{}, 0)
 	unique = isUniqueCompare(1.0, false, &distinctList)
 	require.True(t, unique)
 	unique = isUniqueCompare(json.Number("1"), false, &distinctList)

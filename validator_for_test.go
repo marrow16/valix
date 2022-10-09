@@ -555,7 +555,7 @@ type itemInSlice struct {
 var itemsValidator = MustCompileValidatorFor(itemInSlice{}, &ValidatorForOptions{AllowArray: true})
 
 func TestValidatorForWithSlice(t *testing.T) {
-	s := []itemInSlice{}
+	s := make([]itemInSlice, 0)
 	json := `[
 			{
 				"foo": null

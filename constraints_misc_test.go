@@ -175,7 +175,7 @@ func TestStringValidCardNumber_Strict(t *testing.T) {
 func TestStringValidCountryCode(t *testing.T) {
 	vcx := newValidatorContext(nil, nil, false, nil)
 	c := &StringValidCountryCode{}
-	for cc := range ISO3166_2_CountryCodes {
+	for cc := range iSO3166_2_CountryCodes {
 		ok, _ := c.Check(cc, vcx)
 		require.True(t, ok)
 	}
@@ -237,7 +237,7 @@ func TestStringValidCountryCodeAssignmentTypes(t *testing.T) {
 func TestStringValidCountryCodeAndRegion(t *testing.T) {
 	vcx := newValidatorContext(nil, nil, false, nil)
 	c := &StringValidCountryCode{}
-	gb := ISO3166_2_CountryCodes["GB"]
+	gb := iSO3166_2_CountryCodes["GB"]
 	for r := range gb {
 		c.Allow3166_2 = false
 		ok, _ := c.Check("GB-"+r, vcx)
@@ -257,7 +257,7 @@ func TestStringValidCountryCodeAndRegion(t *testing.T) {
 func TestStringValidCountryCodeAndRegion_ObsoleteISO3166_2_Codes(t *testing.T) {
 	vcx := newValidatorContext(nil, nil, false, nil)
 	c := &StringValidCountryCode{Allow3166_2: true}
-	for cc := range ISO3166_2_ObsoleteCodes {
+	for cc := range iSO3166_2_ObsoleteCodes {
 		c.Allow3166_2_Obsoletes = false
 		ok, _ := c.Check(cc, vcx)
 		require.False(t, ok)
@@ -271,7 +271,7 @@ func TestStringValidCountryCodeAndRegion_ObsoleteISO3166_2_Codes(t *testing.T) {
 func TestTestStringValidCountryCodeNumericOnly(t *testing.T) {
 	vcx := newValidatorContext(nil, nil, false, nil)
 	c := &StringValidCountryCode{}
-	for v := range ISO3166_1_NumericCodes {
+	for v := range iSO3166_1_NumericCodes {
 		iv, _ := strconv.Atoi(v)
 		c.NumericOnly = false
 		c.Allow3166_1_Numeric = false
@@ -390,7 +390,7 @@ func TestStringValidCurrencyCode(t *testing.T) {
 	ok, _ = c.Check(ISO4217NoCurrencyCodeNumeric, vcx)
 	require.True(t, ok)
 	// regular currency codes...
-	for code := range ISO4217CurrencyCodes {
+	for code := range iSO4217CurrencyCodes {
 		ok, _ = c.Check(code, vcx)
 		require.True(t, ok)
 	}
@@ -398,7 +398,7 @@ func TestStringValidCurrencyCode(t *testing.T) {
 	require.False(t, ok)
 	require.Equal(t, msgValidCurrencyCode, msg)
 	// regular numerics...
-	for code := range ISO4217CurrencyCodesNumeric {
+	for code := range iSO4217CurrencyCodesNumeric {
 		c.AllowNumeric = false
 		ok, _ = c.Check(code, vcx)
 		require.False(t, ok)
@@ -413,7 +413,7 @@ func TestStringValidCurrencyCode(t *testing.T) {
 		require.True(t, ok)
 	}
 	// historical...
-	for code := range ISO4217CurrencyCodesHistorical {
+	for code := range iSO4217CurrencyCodesHistorical {
 		c.AllowHistorical = false
 		ok, _ = c.Check(code, vcx)
 		require.False(t, ok)
@@ -423,7 +423,7 @@ func TestStringValidCurrencyCode(t *testing.T) {
 	}
 	// historical numerics...
 	c.AllowNumeric = true
-	for code := range ISO4217CurrencyCodesNumericHistorical {
+	for code := range iSO4217CurrencyCodesNumericHistorical {
 		c.AllowHistorical = false
 		ok, _ = c.Check(code, vcx)
 		require.False(t, ok)
@@ -432,7 +432,7 @@ func TestStringValidCurrencyCode(t *testing.T) {
 		require.True(t, ok)
 	}
 	// unofficial...
-	for code := range UnofficialCurrencyCodes {
+	for code := range unofficialCurrencyCodes {
 		c.AllowUnofficial = false
 		ok, _ = c.Check(code, vcx)
 		require.False(t, ok)
@@ -441,7 +441,7 @@ func TestStringValidCurrencyCode(t *testing.T) {
 		require.True(t, ok)
 	}
 	// cryptos...
-	for code := range CryptoCurrencyCodes {
+	for code := range cryptoCurrencyCodes {
 		c.AllowCrypto = false
 		ok, _ = c.Check(code, vcx)
 		require.False(t, ok)
@@ -455,12 +455,12 @@ func TestStringValidCurrencyCodeNumericOnly(t *testing.T) {
 	vcx := newValidatorContext(nil, nil, false, nil)
 	c := &StringValidCurrencyCode{NumericOnly: true}
 	// alphas all fail...
-	for code := range ISO4217CurrencyCodes {
+	for code := range iSO4217CurrencyCodes {
 		ok, _ := c.Check(code, vcx)
 		require.False(t, ok)
 	}
 	// numerics...
-	for code := range ISO4217CurrencyCodesNumeric {
+	for code := range iSO4217CurrencyCodesNumeric {
 		ok, _ := c.Check(code, vcx)
 		require.True(t, ok)
 
