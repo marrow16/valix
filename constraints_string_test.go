@@ -14,8 +14,8 @@ import (
 func TestStringCharactersConstraint(t *testing.T) {
 	validator := buildFooValidator(JsonString,
 		&StringCharacters{
-			AllowRanges: []*unicode.RangeTable{
-				unicode.Upper,
+			AllowRanges: []unicode.RangeTable{
+				*unicode.Upper,
 			},
 		}, false)
 	obj := jsonObject(`{
@@ -48,11 +48,11 @@ func TestStringCharacters_Strict(t *testing.T) {
 func TestStringCharactersConstraintWithDisallows(t *testing.T) {
 	validator := buildFooValidator(JsonString,
 		&StringCharacters{
-			AllowRanges: []*unicode.RangeTable{
-				unicode.Upper,
+			AllowRanges: []unicode.RangeTable{
+				*unicode.Upper,
 			},
-			DisallowRanges: []*unicode.RangeTable{
-				unicode.Hex_Digit,
+			DisallowRanges: []unicode.RangeTable{
+				*unicode.Hex_Digit,
 			},
 		}, false)
 	obj := jsonObject(`{
@@ -72,7 +72,7 @@ func TestStringCharactersConstraintWithDisallows(t *testing.T) {
 func TestStringCharactersConstraintWithPlanes(t *testing.T) {
 	validator := buildFooValidator(JsonString,
 		&StringCharacters{
-			AllowRanges: []*unicode.RangeTable{
+			AllowRanges: []unicode.RangeTable{
 				UnicodeBMP, UnicodeSMP,
 			},
 		}, false)
@@ -88,7 +88,7 @@ func TestStringCharactersConstraintWithPlanes(t *testing.T) {
 	// now try again by allowing SIP (Supplementary Ideographic Plane)...
 	validator = buildFooValidator(JsonString,
 		&StringCharacters{
-			AllowRanges: []*unicode.RangeTable{
+			AllowRanges: []unicode.RangeTable{
 				UnicodeBMP, UnicodeSMP, UnicodeSIP,
 			},
 		}, false)
@@ -1057,7 +1057,7 @@ func TestStringPresetPattern_Strict(t *testing.T) {
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
 	require.Equal(t, fmt.Sprintf(fmtMsgUnknownPresetPattern, ""), violations[0].Message)
-	c.Preset = presetTokenAlpha
+	c.Preset = PresetAlpha
 	ok, violations = validator.Validate(obj)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))

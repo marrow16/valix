@@ -311,7 +311,7 @@ func TestValidationMessagesTranslated(t *testing.T) {
 			"foo": {
 				NotNull: true,
 				Constraints: Constraints{
-					&StringPresetPattern{Preset: presetTokenRgb},
+					&StringPresetPattern{Preset: PresetRgb},
 				},
 			},
 		},

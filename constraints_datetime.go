@@ -25,43 +25,39 @@ type StringValidISODatetime struct {
 
 // Check implements Constraint.Check
 func (c *StringValidISODatetime) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
-	if str, ok := v.(string); ok {
-		useRegex := iso8601FullRegex
-		useLayout := iso8601FullLayout
-		if c.NoOffset && c.NoMillis {
-			useRegex = iso8601MinRegex
-			useLayout = iso8601MinLayout
-		} else if c.NoOffset {
-			useRegex = iso8601NoOffsRegex
-			useLayout = iso8601NoOffLayout
-		} else if c.NoMillis {
-			useRegex = iso8601NoMillisRegex
-			useLayout = iso8601NoMillisLayout
-		}
-		if !useRegex.MatchString(str) {
-			vcx.CeaseFurtherIf(c.Stop)
-			return false, c.GetMessage(vcx)
-		}
-		// and attempt to parse it (it may match regex but datetime could still be invalid)...
-		if _, err := time.Parse(useLayout, str); err != nil {
-			if pErr, ok := err.(*time.ParseError); ok && pErr.Message == "" && strings.HasSuffix(useLayout, pErr.LayoutElem) {
-				// time.Parse is pretty dumb when it comes to timezones - if it's in the layout but not the string it fails
-				// so remove the bit it doesn't like (in the layout) and try again...
-				useLayout = useLayout[0 : len(useLayout)-len(pErr.LayoutElem)]
-				if _, err := time.Parse(useLayout, str); err != nil {
-					vcx.CeaseFurtherIf(c.Stop)
-					return false, c.GetMessage(vcx)
-				}
-			} else {
-				vcx.CeaseFurtherIf(c.Stop)
-				return false, c.GetMessage(vcx)
-			}
-		}
-	} else if c.Strict {
-		vcx.CeaseFurtherIf(c.Stop)
-		return false, c.GetMessage(vcx)
+	return checkStringConstraint(v, vcx, c, c.Strict, c.Stop)
+}
+
+func (c *StringValidISODatetime) checkString(str string, vcx *ValidatorContext) bool {
+	useRegex := iso8601FullRegex
+	useLayout := iso8601FullLayout
+	if c.NoOffset && c.NoMillis {
+		useRegex = iso8601MinRegex
+		useLayout = iso8601MinLayout
+	} else if c.NoOffset {
+		useRegex = iso8601NoOffsRegex
+		useLayout = iso8601NoOffLayout
+	} else if c.NoMillis {
+		useRegex = iso8601NoMillisRegex
+		useLayout = iso8601NoMillisLayout
 	}
-	return true, ""
+	if !useRegex.MatchString(str) {
+		return false
+	}
+	// and attempt to parse it (it may match regex but datetime could still be invalid)...
+	if _, err := time.Parse(useLayout, str); err != nil {
+		if pErr, ok := err.(*time.ParseError); ok && pErr.Message == "" && strings.HasSuffix(useLayout, pErr.LayoutElem) {
+			// time.Parse is pretty dumb when it comes to timezones - if it's in the layout but not the string it fails
+			// so remove the bit it doesn't like (in the layout) and try again...
+			useLayout = useLayout[0 : len(useLayout)-len(pErr.LayoutElem)]
+			if _, err := time.Parse(useLayout, str); err != nil {
+				return false
+			}
+		} else {
+			return false
+		}
+	}
+	return true
 }
 
 // GetMessage implements the Constraint.GetMessage
@@ -90,21 +86,18 @@ type StringValidISODate struct {
 
 // Check implements Constraint.Check
 func (c *StringValidISODate) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
-	if str, ok := v.(string); ok {
-		if !iso8601DateOnlyRegex.MatchString(str) {
-			vcx.CeaseFurtherIf(c.Stop)
-			return false, c.GetMessage(vcx)
-		}
-		// and attempt to parse it (it may match regex but date could still be invalid)...
-		if _, err := time.Parse(iso8601DateOnlyLayout, str); err != nil {
-			vcx.CeaseFurtherIf(c.Stop)
-			return false, c.GetMessage(vcx)
-		}
-	} else if c.Strict {
-		vcx.CeaseFurtherIf(c.Stop)
-		return false, c.GetMessage(vcx)
+	return checkStringConstraint(v, vcx, c, c.Strict, c.Stop)
+}
+
+func (c *StringValidISODate) checkString(str string, vcx *ValidatorContext) bool {
+	if !iso8601DateOnlyRegex.MatchString(str) {
+		return false
 	}
-	return true, ""
+	// and attempt to parse it (it may match regex but date could still be invalid)...
+	if _, err := time.Parse(iso8601DateOnlyLayout, str); err != nil {
+		return false
+	}
+	return true
 }
 
 // GetMessage implements the Constraint.GetMessage
@@ -622,13 +615,12 @@ type StringValidISODuration struct {
 
 // Check implements Constraint.Check
 func (c *StringValidISODuration) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
-	if str, ok := v.(string); ok {
-		if dur, ok := ParseDuration(str); ok && (!c.DisallowNegative || !dur.Negative) {
-			return true, ""
-		}
-	}
-	vcx.CeaseFurtherIf(c.Stop)
-	return false, c.GetMessage(vcx)
+	return checkStringConstraint(v, vcx, c, true, c.Stop)
+}
+
+func (c *StringValidISODuration) checkString(str string, vcx *ValidatorContext) bool {
+	dur, ok := ParseDuration(str)
+	return ok && (!c.DisallowNegative || !dur.Negative)
 }
 
 // GetMessage implements the Constraint.GetMessage

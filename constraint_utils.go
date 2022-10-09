@@ -184,34 +184,31 @@ func truncateTime(t time.Time, truncTime bool) time.Time {
 	return t
 }
 
-var _Bmp = &unicode.RangeTable{
-	R16: []unicode.Range16{
-		{0x0000, 0xffff, 1},
-	},
-}
-var _Smp = &unicode.RangeTable{
-	R32: []unicode.Range32{
-		{0x10000, 0x1ffff, 1},
-	},
-}
-var _Sip = &unicode.RangeTable{
-	R32: []unicode.Range32{
-		{0x20000, 0x2ffff, 1},
-	},
-}
 var (
 	// UnicodeBMP is a unicode.RangeTable that represents the Unicode BMP (Basic Multilingual Plane)
 	//
 	// For use with StringCharacters constraint
-	UnicodeBMP = _Bmp
+	UnicodeBMP = unicode.RangeTable{
+		R16: []unicode.Range16{
+			{0x0000, 0xffff, 1},
+		},
+	}
 	// UnicodeSMP is a unicode.RangeTable that represents the Unicode SMP (Supplementary Multilingual Plane)
 	//
 	// For use with StringCharacters constraint
-	UnicodeSMP = _Smp
+	UnicodeSMP = unicode.RangeTable{
+		R32: []unicode.Range32{
+			{0x10000, 0x1ffff, 1},
+		},
+	}
 	// UnicodeSIP is a unicode.RangeTable that represents the Unicode SIP (Supplementary Ideographic Plane)
 	//
 	// For use with StringCharacters constraint
-	UnicodeSIP = _Sip
+	UnicodeSIP = unicode.RangeTable{
+		R32: []unicode.Range32{
+			{0x20000, 0x2ffff, 1},
+		},
+	}
 )
 
 var (
@@ -584,4 +581,47 @@ func parseDurationNumber(str string) (fv *float64, result bool) {
 		}
 	}
 	return
+}
+
+type stringConstraint interface {
+	Constraint
+	checkString(str string, vcx *ValidatorContext) bool
+}
+
+func checkStringConstraint(v interface{}, vcx *ValidatorContext, c stringConstraint, strict bool, stop bool) (bool, string) {
+	if str, ok := v.(string); ok {
+		if !c.checkString(str, vcx) {
+			vcx.CeaseFurtherIf(stop)
+			return false, c.GetMessage(vcx)
+		}
+	} else if strict {
+		vcx.CeaseFurtherIf(stop)
+		return false, c.GetMessage(vcx)
+	}
+	return true, ""
+}
+
+type dateCompareConstraint interface {
+	Constraint
+	compareDates(value time.Time, other time.Time) bool
+}
+
+func checkDateCompareConstraint(value string, other interface{}, vcx *ValidatorContext, c dateCompareConstraint, excTime bool, stop bool) (bool, string) {
+	if cdt, ok := stringToDatetime(value, excTime); ok {
+		if dt, ok := isTime(other, excTime); ok && c.compareDates(*cdt, dt) {
+			return true, ""
+		}
+	}
+	vcx.CeaseFurtherIf(stop)
+	return false, c.GetMessage(vcx)
+}
+
+func checkDateCompareOtherPropertyConstraint(v interface{}, otherPtyName string, vcx *ValidatorContext, c dateCompareConstraint, excTime bool, stop bool) (bool, string) {
+	if other, ok := getOtherPropertyDatetime(otherPtyName, vcx, excTime, false); ok {
+		if dt, ok := isTime(v, excTime); ok && c.compareDates(dt, *other) {
+			return true, ""
+		}
+	}
+	vcx.CeaseFurtherIf(stop)
+	return false, c.GetMessage(vcx)
 }

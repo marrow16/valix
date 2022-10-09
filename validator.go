@@ -64,59 +64,86 @@ type Validator struct {
 }
 
 const (
-	msgUnableToDecode                 = "Unable to decode as JSON"
-	CodeUnableToDecode                = 40001
-	msgNotJsonNull                    = "JSON must not be JSON null"
-	CodeNotJsonNull                   = 40002
-	msgNotJsonArray                   = "JSON must not be JSON array"
-	CodeNotJsonArray                  = 42200
-	msgNotJsonObject                  = "JSON must not be JSON object"
-	CodeNotJsonObject                 = 42201
-	msgExpectedJsonArray              = "JSON expected to be JSON array"
-	CodeExpectedJsonArray             = 42202
-	msgExpectedJsonObject             = "JSON expected to be JSON object"
-	CodeExpectedJsonObject            = 40003
-	msgErrorReading                   = "Unexpected error reading reader"
-	CodeErrorReading                  = 40004
-	msgErrorUnmarshall                = "Unexpected error during unmarshalling"
-	CodeErrorUnmarshall               = 40005
-	msgRequestBodyEmpty               = "Request body is empty"
-	CodeRequestBodyEmpty              = 40006
-	msgUnableToDecodeRequest          = "Unable to decode request body as JSON"
-	CodeUnableToDecodeRequest         = 40007
-	msgRequestBodyNotJsonNull         = "Request body must not be JSON null"
-	CodeRequestBodyNotJsonNull        = 40008
-	msgRequestBodyNotJsonArray        = "Request body must not be JSON array"
-	CodeRequestBodyNotJsonArray       = 42203
-	msgRequestBodyNotJsonObject       = "Request body must not be JSON object"
-	CodeRequestBodyNotJsonObject      = 42204
-	msgRequestBodyExpectedJsonArray   = "Request body expected to be JSON array"
-	CodeRequestBodyExpectedJsonArray  = 42205
-	msgRequestBodyExpectedJsonObject  = "Request body expected to be JSON object"
+	msgUnableToDecode = "Unable to decode as JSON"
+	// CodeUnableToDecode is the violation code when the validator is unable to decode the JSON
+	CodeUnableToDecode = 40001
+	msgNotJsonNull     = "JSON must not be JSON null"
+	// CodeNotJsonNull is the violation code when the validator finds JSON null but Validator.AllowNullJson is false
+	CodeNotJsonNull = 40002
+	msgNotJsonArray = "JSON must not be JSON array"
+	// CodeNotJsonArray is the violation code when the validator is expecting a JSON array but the JSON is not an array
+	CodeNotJsonArray = 42200
+	msgNotJsonObject = "JSON must not be JSON object"
+	// CodeNotJsonObject is the violation code when the validator is expecting a JSON object but the JSON is not an object
+	CodeNotJsonObject    = 42201
+	msgExpectedJsonArray = "JSON expected to be JSON array"
+	// CodeExpectedJsonArray is the violation code when the validator is expecting a JSON array but the JSON is an object
+	CodeExpectedJsonArray = 42202
+	msgExpectedJsonObject = "JSON expected to be JSON object"
+	// CodeExpectedJsonObject is the violation code when the validator is expecting a JSON object but the JSON is an array
+	CodeExpectedJsonObject = 40003
+	msgErrorReading        = "Unexpected error reading reader"
+	// CodeErrorReading is the violation code when the validator errors trying to read a request (or reader)
+	CodeErrorReading   = 40004
+	msgErrorUnmarshall = "Unexpected error during unmarshalling"
+	// CodeErrorUnmarshall is the violation code when the validator errors trying to unmarshal successfully validated data into a target struct (check your validator matches the struct!)
+	CodeErrorUnmarshall = 40005
+	msgRequestBodyEmpty = "Request body is empty"
+	// CodeRequestBodyEmpty is the violation code when the validator attempts to read an empty request (or reader)
+	CodeRequestBodyEmpty     = 40006
+	msgUnableToDecodeRequest = "Unable to decode request body as JSON"
+	// CodeUnableToDecodeRequest is the violation code when the validator errors trying to decode a request JSON
+	CodeUnableToDecodeRequest = 40007
+	msgRequestBodyNotJsonNull = "Request body must not be JSON null"
+	// CodeRequestBodyNotJsonNull is the violation code when the validator finds a JSON null request but Validator.AllowNullJson is false
+	CodeRequestBodyNotJsonNull = 40008
+	msgRequestBodyNotJsonArray = "Request body must not be JSON array"
+	// CodeRequestBodyNotJsonArray is the violation code when the validator is expecting a JSON array request but the JSON is not an array
+	CodeRequestBodyNotJsonArray = 42203
+	msgRequestBodyNotJsonObject = "Request body must not be JSON object"
+	// CodeRequestBodyNotJsonObject is the violation code when the validator is expecting a JSON object request but the JSON is not an object
+	CodeRequestBodyNotJsonObject    = 42204
+	msgRequestBodyExpectedJsonArray = "Request body expected to be JSON array"
+	// CodeRequestBodyExpectedJsonArray is the violation code when the validator is expecting a JSON array request but the JSON is an object
+	CodeRequestBodyExpectedJsonArray = 42205
+	msgRequestBodyExpectedJsonObject = "Request body expected to be JSON object"
+	// CodeRequestBodyExpectedJsonObject is the violation code when the validator is expecting a JSON object request but the JSON is an array
 	CodeRequestBodyExpectedJsonObject = 40009
 	msgArrayElementMustBeObject       = "JSON array element must be an object"
-	CodeArrayElementMustBeObject      = 42206
-	msgMissingProperty                = "Missing property"
-	CodeMissingProperty               = 42207
-	msgUnwantedProperty               = "Property must not be present"
-	CodeUnwantedProperty              = 42208
-	msgUnknownProperty                = "Unknown property"
-	CodeUnknownProperty               = 42209
-	msgInvalidProperty                = "Invalid property"
-	CodeInvalidProperty               = 42210
-	msgInvalidPropertyName            = "Invalid property name"
-	CodeInvalidPropertyName           = 42217
-	msgPropertyValueMustBeObject      = "Property value must be an object"
-	CodePropertyValueMustBeObject     = 42218
-	msgPropertyRequiredWhen           = "Property is required under certain criteria"
-	CodePropertyRequiredWhen          = 42219
-	msgPropertyUnwantedWhen           = "Property must not be present under certain criteria"
-	CodePropertyUnwantedWhen          = 42220
-	msgArrayElementMustNotBeNull      = "JSON array element must not be null"
-	CodeArrayElementMustNotBeNull     = 42221
-	msgOnlyProperty                   = "Property cannot be present with other properties"
-	CodeOnlyProperty                  = 42222
-	CodeValidatorConstraintFail       = 42298
+	// CodeArrayElementMustBeObject is the violation code when the validator is expecting a JSON array element to be an object
+	CodeArrayElementMustBeObject = 42206
+	msgMissingProperty           = "Missing property"
+	// CodeMissingProperty is the violation code when the validator detects a missing property
+	CodeMissingProperty = 42207
+	msgUnwantedProperty = "Property must not be present"
+	// CodeUnwantedProperty is the violation code when the validator detects a property that is unwanted (i.e the property is known but should not be present under current conditions)
+	CodeUnwantedProperty = 42208
+	msgUnknownProperty   = "Unknown property"
+	// CodeUnknownProperty is the violation code when the validator detects an unknown property (and Validator.IgnoreUnknownProperties is false)
+	CodeUnknownProperty = 42209
+	msgInvalidProperty  = "Invalid property"
+	// CodeInvalidProperty is the violation code when the validator detects an known property that is invalid under current conditions (e.g. with specified other properties present)
+	CodeInvalidProperty    = 42210
+	msgInvalidPropertyName = "Invalid property name"
+	// CodeInvalidPropertyName is the violation code when the validator detects a variable property with an invalid name
+	CodeInvalidPropertyName      = 42217
+	msgPropertyValueMustBeObject = "Property value must be an object"
+	// CodePropertyValueMustBeObject is the violation code when the validator detects property value that is ecpected to be an object but is not
+	CodePropertyValueMustBeObject = 42218
+	msgPropertyRequiredWhen       = "Property is required under certain criteria"
+	// CodePropertyRequiredWhen is the violation code when the validator detects a missing property that is required under current conditions
+	CodePropertyRequiredWhen = 42219
+	msgPropertyUnwantedWhen  = "Property must not be present under certain criteria"
+	// CodePropertyUnwantedWhen is the violation code when the validator detects a property present that is unwanted under current conditions
+	CodePropertyUnwantedWhen     = 42220
+	msgArrayElementMustNotBeNull = "JSON array element must not be null"
+	// CodeArrayElementMustNotBeNull is the violation code when the validator detects a null array element but is null is not allowed (i.e Validator.AllowNullItems is false)
+	CodeArrayElementMustNotBeNull = 42221
+	msgOnlyProperty               = "Property cannot be present with other properties"
+	// CodeOnlyProperty is the violation code when the validator detects a property that is specified as being an only property but has other properties present
+	CodeOnlyProperty = 42222
+	// CodeValidatorConstraintFail is the violation code when the validator fails one of its Validator.Constraints
+	CodeValidatorConstraintFail = 42298
 )
 
 // Properties type used by Validator.Properties

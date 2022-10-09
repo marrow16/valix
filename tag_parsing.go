@@ -1,6 +1,7 @@
 package valix
 
 import (
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"regexp"
@@ -428,7 +429,7 @@ func camelToWords(str string) []string {
 	}
 	buf := []byte(str)
 	lastCap := 0
-	onCap := true
+	onCap := buf[0] >= 'A' && buf[0] <= 'Z'
 	result := make([]string, 0, len(str)/3)
 	for i := 1; i < len(buf); i++ {
 		ch := buf[i]
@@ -509,7 +510,7 @@ func safeSetFloat(fv reflect.Value, valueStr string) (result bool) {
 
 func safeSetBool(fv reflect.Value, valueStr string, hasValue bool) (result bool) {
 	result = false
-	if !hasValue {
+	if !hasValue && valueStr != "false" {
 		fv.SetBool(true)
 		result = true
 	} else if b, err := strconv.ParseBool(valueStr); err == nil {
@@ -576,7 +577,25 @@ func itemsToSlice(itemType reflect.Type, arrayStr string) (result reflect.Value,
 			result, ok = itemsToSliceOfBools(strItems, itemType)
 		case constraintKind:
 			result, ok = itemsToSliceOfConstraints(strItems, itemType)
+		default:
+			result, ok = itemsToSliceOther(strItems, itemType)
 		}
+	}
+	return
+}
+
+func itemsToSliceOther(arrayItems []string, itemType reflect.Type) (result reflect.Value, ok bool) {
+	result = reflect.MakeSlice(itemType, len(arrayItems), len(arrayItems))
+	ok = true
+	for i, vu := range arrayItems {
+		v := strings.Trim(vu, " ")
+		itm := reflect.New(itemType.Elem())
+		itmI := itm.Interface()
+		if err := json.Unmarshal([]byte(v), &itmI); err != nil {
+			ok = false
+			break
+		}
+		result.Index(i).Set(reflect.ValueOf(itmI).Elem())
 	}
 	return
 }
@@ -710,7 +729,7 @@ func firstValidColonAt(str string) int {
 }
 
 func parseCommas(str string) ([]string, error) {
-	result := make([]string, 0, len(str)/2)
+	result := make([]string, 0, len(str)/4)
 	runes := []rune(str)
 	stk := &delimiterStack{current: nil, stack: []*delimiter{}}
 	lastTokenAt := 0
@@ -721,12 +740,10 @@ func parseCommas(str string) ([]string, error) {
 				result = append(result, strings.Trim(string(runes[lastTokenAt:i]), " "))
 				lastTokenAt = i + 1
 			}
-			break
 		case '"', '\'', '[', ']', '(', ')', '{', '}':
 			if err := stk.delimiter(r, i); err != nil {
 				return nil, err
 			}
-			break
 		}
 	}
 	if stk.inAny() {

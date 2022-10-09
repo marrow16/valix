@@ -160,225 +160,225 @@ func (pp *patternPreset) GetMessage() string {
 
 func getBuiltInPresets() map[string]Preset {
 	return map[string]Preset{
-		presetTokenAlpha: &patternPreset{
+		PresetAlpha: &patternPreset{
 			regex: regexp.MustCompile("^[a-zA-Z]+$"),
 			msg:   msgPresetAlpha,
 		},
-		presetTokenAlphaNumeric: &patternPreset{
+		PresetAlphaNumeric: &patternPreset{
 			regex: regexp.MustCompile("^[a-zA-Z0-9]+$"),
 			msg:   msgPresetAlphaNumeric,
 		},
-		presetTokenCMYK: &patternPreset{
+		PresetCMYK: &patternPreset{
 			regex:       cmykRegexp,
 			postChecker: cmyk{400},
 			msg:         msgPresetCMYK,
 		},
-		presetTokenCMYK300: &patternPreset{
+		PresetCMYK300: &patternPreset{
 			regex:       cmykRegexp,
 			postChecker: cmyk{300},
 			msg:         msgPresetCMYK300,
 		},
-		presetTokenBarcode: &patternPreset{
+		PresetBarcode: &patternPreset{
 			regex:       regexp.MustCompile("^[0-9X()]{8,22}$"),
 			postChecker: barcode{},
 			msg:         msgPresetBarcode,
 		},
-		presetTokenBase64: &patternPreset{
+		PresetBase64: &patternPreset{
 			regex: regexp.MustCompile("^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{4})$"),
 			msg:   msgPresetBase64,
 		},
-		presetTokenBase64URL: &patternPreset{
+		PresetBase64URL: &patternPreset{
 			regex: regexp.MustCompile("^(?:[A-Za-z0-9-_]{4})*(?:[A-Za-z0-9-_]{2}==|[A-Za-z0-9-_]{3}=|[A-Za-z0-9-_]{4})$"),
 			msg:   msgPresetBase64URL,
 		},
-		presetTokenCard: &patternPreset{
+		PresetCard: &patternPreset{
 			regex:       regexp.MustCompile("^(([0-9]{10,19})|([0-9]{4} [0-9]{4} [0-9]{2,4})|([0-9]{4} [0-9]{4} [0-9]{4} [0-9]{1,4})|([0-9]{4} [0-9]{4} [0-9]{4} [0-9]{4} [0-9]{1,3}))$"),
 			postChecker: cardNumber{},
 			msg:         msgValidCardNumber,
 		},
-		presetTokenE164: &patternPreset{
+		PresetE164: &patternPreset{
 			regex: regexp.MustCompile("^\\+[1-9]?[0-9]{7,14}$"),
 			msg:   msgPresetE164,
 		},
-		presetTokenEAN: &patternPreset{
+		PresetEAN: &patternPreset{
 			regex:       regexp.MustCompile("^(([0-9]{8,18})|(\\(01\\)[0-9]{14})|(\\(00\\)[0-9]{18}))$"),
 			postChecker: &ean{},
 			msg:         msgPresetEAN,
 		},
-		presetTokenEAN8: &patternPreset{
+		PresetEAN8: &patternPreset{
 			regex:       ean8Regexp,
 			postChecker: ean8,
 			msg:         msgPresetEAN8,
 		},
-		presetTokenEAN13: &patternPreset{
+		PresetEAN13: &patternPreset{
 			regex:       ean13Regexp,
 			postChecker: ean13,
 			msg:         msgPresetEAN13,
 		},
-		presetTokenDUN14: &patternPreset{
+		PresetDUN14: &patternPreset{
 			regex:       regexp.MustCompile("^(([0-9]{14})|(\\(01\\)[0-9]{14}))$"),
 			postChecker: ean14,
 			msg:         msgPresetDUN14,
 		},
-		presetTokenEAN14: &patternPreset{
+		PresetEAN14: &patternPreset{
 			regex:       ean14Regexp,
 			postChecker: ean14,
 			msg:         msgPresetEAN14,
 		},
-		presetTokenEAN18: &patternPreset{
+		PresetEAN18: &patternPreset{
 			regex:       ean18Regexp,
 			postChecker: ean18,
 			msg:         msgPresetEAN18,
 		},
-		presetTokenEAN99: &patternPreset{
+		PresetEAN99: &patternPreset{
 			regex:       ean99Regexp,
 			postChecker: ean13,
 			msg:         msgPresetEAN99,
 		},
-		presetTokenHexadecimal: &patternPreset{
+		PresetHexadecimal: &patternPreset{
 			regex: regexp.MustCompile("^(0[xX])?[0-9a-fA-F]+$"),
 			msg:   msgPresetHexadecimal,
 		},
-		presetTokenHsl: &patternPreset{
+		PresetHsl: &patternPreset{
 			regex: regexp.MustCompile("^hsl\\(\\s*(?:0|[1-9]\\d?|[12]\\d\\d|3[0-5]\\d|360)\\s*,\\s*(?:0|[1-9]\\d?|100)%\\s*,\\s*(?:0|[1-9]\\d?|100)%\\s*\\)$"),
 			msg:   msgPresetHsl,
 		},
-		presetTokenHsla: &patternPreset{
+		PresetHsla: &patternPreset{
 			regex: regexp.MustCompile("^hsla\\(\\s*(?:0|[1-9]\\d?|[12]\\d\\d|3[0-5]\\d|360)\\s*,\\s*(?:0|[1-9]\\d?|100)%\\s*,\\s*(?:0|[1-9]\\d?|100)%\\s*,\\s*(?:0.[1-9]*|[01])\\s*\\)$"),
 			msg:   msgPresetHsla,
 		},
-		presetTokenHtmlColor: &patternPreset{
+		PresetHtmlColor: &patternPreset{
 			regex: regexp.MustCompile("^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$"),
 			msg:   msgPresetHtmlColor,
 		},
-		presetTokenInteger: &patternPreset{
+		PresetInteger: &patternPreset{
 			regex: regexp.MustCompile("^[0-9]+$"),
 			msg:   msgPresetInteger,
 		},
-		presetTokenISBN: &patternPreset{
+		PresetISBN: &patternPreset{
 			regex:       regexp.MustCompile("^((97[89][0-9]{10})|(?:[0-9]{9}X|[0-9]{10}))$"),
 			postChecker: isbn{},
 			msg:         msgPresetISBN,
 		},
-		presetTokenISBN10: &patternPreset{
+		PresetISBN10: &patternPreset{
 			regex:       isbn10Regexp,
 			postChecker: isbn10,
 			msg:         msgPresetISBN10,
 		},
-		presetTokenISBN13: &patternPreset{
+		PresetISBN13: &patternPreset{
 			regex:       isbn13Regexp,
 			postChecker: isbn13,
 			msg:         msgPresetISBN13,
 		},
-		presetTokenISSN: &patternPreset{
+		PresetISSN: &patternPreset{
 			regex:       regexp.MustCompile("^((977[0-9]{10})|(?:[0-9]{7}X|[0-9]{8}))$"),
 			postChecker: issn{},
 			msg:         msgPresetISSN,
 		},
-		presetTokenISSN8: &patternPreset{
+		PresetISSN8: &patternPreset{
 			regex:       issn8Regexp,
 			postChecker: issn8,
 			msg:         msgPresetISSN8,
 		},
-		presetTokenISSN13: &patternPreset{
+		PresetISSN13: &patternPreset{
 			regex:       issn13Regexp,
 			postChecker: isbn13,
 			msg:         msgPresetISSN13,
 		},
-		presetTokenNumeric: &patternPreset{
+		PresetNumeric: &patternPreset{
 			regex: regexp.MustCompile(numericPattern),
 			msg:   msgPresetNumeric,
 		},
-		presetTokenNumericE: &patternPreset{
+		PresetNumericE: &patternPreset{
 			regex: regexp.MustCompile(numericWithScientific),
 			msg:   msgPresetNumeric,
 		},
-		presetTokenNumericX: &patternPreset{
+		PresetNumericX: &patternPreset{
 			regex: regexp.MustCompile(numericFull),
 			msg:   msgPresetNumeric,
 		},
-		presetTokenPublication: &patternPreset{
+		PresetPublication: &patternPreset{
 			regex:       regexp.MustCompile("^((97[789][0-9]{10})|(?:[0-9]{9}X|[0-9]{10})|(?:[0-9]{7}X|[0-9]{8}))$"),
 			postChecker: publication{},
 			msg:         msgPresetPublication,
 		},
-		presetTokenRgb: &patternPreset{
+		PresetRgb: &patternPreset{
 			regex: regexp.MustCompile("^rgb\\(\\s*(?:(?:0|[1-9]\\d?|1\\d\\d?|2[0-4]\\d|25[0-5])\\s*,\\s*(?:0|[1-9]\\d?|1\\d\\d?|2[0-4]\\d|25[0-5])\\s*,\\s*(?:0|[1-9]\\d?|1\\d\\d?|2[0-4]\\d|25[0-5])|(?:0|[1-9]\\d?|1\\d\\d?|2[0-4]\\d|25[0-5])%\\s*,\\s*(?:0|[1-9]\\d?|1\\d\\d?|2[0-4]\\d|25[0-5])%\\s*,\\s*(?:0|[1-9]\\d?|1\\d\\d?|2[0-4]\\d|25[0-5])%)\\s*\\)$"),
 			msg:   msgPresetRgb,
 		},
-		presetTokenRgba: &patternPreset{
+		PresetRgba: &patternPreset{
 			regex: regexp.MustCompile("^rgba\\(\\s*(?:(?:0|[1-9]\\d?|1\\d\\d?|2[0-4]\\d|25[0-5])\\s*,\\s*(?:0|[1-9]\\d?|1\\d\\d?|2[0-4]\\d|25[0-5])\\s*,\\s*(?:0|[1-9]\\d?|1\\d\\d?|2[0-4]\\d|25[0-5])|(?:0|[1-9]\\d?|1\\d\\d?|2[0-4]\\d|25[0-5])%\\s*,\\s*(?:0|[1-9]\\d?|1\\d\\d?|2[0-4]\\d|25[0-5])%\\s*,\\s*(?:0|[1-9]\\d?|1\\d\\d?|2[0-4]\\d|25[0-5])%)\\s*,\\s*(?:0.[1-9]*|[01])\\s*\\)$"),
 			msg:   msgPresetRgba,
 		},
-		presetTokenRgbIcc: &patternPreset{
+		PresetRgbIcc: &patternPreset{
 			regex:       rgbIccRegexp,
 			postChecker: rgbIcc{},
 			msg:         msgPresetRgbIcc,
 		},
-		presetTokenULID: &patternPreset{
+		PresetULID: &patternPreset{
 			regex: regexp.MustCompile("^[01234567][0123456789ABCDEFGHJKMNPQRSTVWXYZ]{25}$"),
 			msg:   msgPresetULID,
 		},
-		presetTokenUPC: &patternPreset{
+		PresetUPC: &patternPreset{
 			regex:       regexp.MustCompile("^(([0-9]{12})|(0[0-9]{7}))$"),
 			postChecker: upc{},
 			msg:         msgPresetUPC,
 		},
-		presetTokenUPCA: &patternPreset{
+		PresetUPCA: &patternPreset{
 			regex:       upcARegexp,
 			postChecker: upcA,
 			msg:         msgPresetUPCA,
 		},
-		presetTokenUPCE: &patternPreset{
+		PresetUPCE: &patternPreset{
 			regex:       upcERegexp,
 			postChecker: upcE,
 			msg:         msgPresetUPCE,
 		},
-		presetTokenUuid: &patternPreset{
+		PresetUuid: &patternPreset{
 			regex: regexp.MustCompile("^([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})$"),
 			msg:   msgValidUuid,
 		},
-		presetTokenUUID: &patternPreset{
+		PresetUUID: &patternPreset{
 			regex: regexp.MustCompile("^([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})$"),
 			msg:   msgValidUuid,
 		},
-		presetTokenUuid1: &patternPreset{
+		PresetUuid1: &patternPreset{
 			regex: regexp.MustCompile("^[0-9a-f]{8}-[0-9a-f]{4}-1[0-9a-f]{3}-[0-9a-f]{4}-[0-9a-f]{12}$"),
 			msg:   msgPresetUuid1,
 		},
-		presetTokenUUID1: &patternPreset{
+		PresetUUID1: &patternPreset{
 			regex: regexp.MustCompile("^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-1[0-9A-Fa-f]{3}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}$"),
 			msg:   msgPresetUuid1,
 		},
-		presetTokenUuid2: &patternPreset{
+		PresetUuid2: &patternPreset{
 			regex: regexp.MustCompile("^[0-9a-f]{8}-[0-9a-f]{4}-2[0-9a-f]{3}-[0-9a-f]{4}-[0-9a-f]{12}$"),
 			msg:   msgPresetUuid2,
 		},
-		presetTokenUUID2: &patternPreset{
+		PresetUUID2: &patternPreset{
 			regex: regexp.MustCompile("^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-2[0-9A-Fa-f]{3}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}$"),
 			msg:   msgPresetUuid2,
 		},
-		presetTokenUuid3: &patternPreset{
+		PresetUuid3: &patternPreset{
 			regex: regexp.MustCompile("^[0-9a-f]{8}-[0-9a-f]{4}-3[0-9a-f]{3}-[0-9a-f]{4}-[0-9a-f]{12}$"),
 			msg:   msgPresetUuid3,
 		},
-		presetTokenUUID3: &patternPreset{
+		PresetUUID3: &patternPreset{
 			regex: regexp.MustCompile("^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-3[0-9A-Fa-f]{3}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}$"),
 			msg:   msgPresetUuid3,
 		},
-		presetTokenUuid4: &patternPreset{
+		PresetUuid4: &patternPreset{
 			regex: regexp.MustCompile("^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"),
 			msg:   msgPresetUuid4,
 		},
-		presetTokenUUID4: &patternPreset{
+		PresetUUID4: &patternPreset{
 			regex: regexp.MustCompile("^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-4[0-9A-Fa-f]{3}-[89abAB][0-9A-Fa-f]{3}-[0-9A-Fa-f]{12}$"),
 			msg:   msgPresetUuid4,
 		},
-		presetTokenUuid5: &patternPreset{
+		PresetUuid5: &patternPreset{
 			regex: regexp.MustCompile("^[0-9a-f]{8}-[0-9a-f]{4}-5[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"),
 			msg:   msgPresetUuid5,
 		},
-		presetTokenUUID5: &patternPreset{
+		PresetUUID5: &patternPreset{
 			regex: regexp.MustCompile("^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-5[0-9A-Fa-f]{3}-[89abAB][0-9A-Fa-f]{3}-[0-9A-Fa-f]{12}$"),
 			msg:   msgPresetUuid5,
 		},
@@ -871,54 +871,104 @@ const (
 )
 
 const (
-	presetTokenAlpha        = "alpha"
-	presetTokenAlphaNumeric = "alphaNumeric"
-	presetTokenBarcode      = "barcode"
-	presetTokenBase64       = "base64"
-	presetTokenBase64URL    = "base64URL"
-	presetTokenCard         = "card"
-	presetTokenCMYK         = "cmyk"
-	presetTokenCMYK300      = "cmyk300"
-	presetTokenE164         = "e164"
-	presetTokenEAN          = "EAN"
-	presetTokenEAN8         = "EAN8"
-	presetTokenEAN13        = "EAN13"
-	presetTokenDUN14        = "DUN14"
-	presetTokenEAN14        = "EAN14"
-	presetTokenEAN18        = "EAN18"
-	presetTokenEAN99        = "EAN99"
-	presetTokenHexadecimal  = "hexadecimal"
-	presetTokenHsl          = "hsl"
-	presetTokenHsla         = "hsla"
-	presetTokenHtmlColor    = "htmlColor"
-	presetTokenInteger      = "integer"
-	presetTokenISBN         = "ISBN"
-	presetTokenISBN10       = "ISBN10"
-	presetTokenISBN13       = "ISBN13"
-	presetTokenISSN         = "ISSN"
-	presetTokenISSN8        = "ISSN8"
-	presetTokenISSN13       = "ISSN13"
-	presetTokenNumeric      = "numeric"
-	presetTokenNumericE     = "numeric+e"
-	presetTokenNumericX     = "numeric+x"
-	presetTokenPublication  = "publication"
-	presetTokenRgb          = "rgb"
-	presetTokenRgba         = "rgba"
-	presetTokenRgbIcc       = "rgb-icc"
-	presetTokenULID         = "ULID"
-	presetTokenUPC          = "UPC"
-	presetTokenUPCA         = "UPC-A"
-	presetTokenUPCE         = "UPC-E"
-	presetTokenUuid         = "uuid"
-	presetTokenUUID         = "UUID"
-	presetTokenUuid1        = "uuid1"
-	presetTokenUUID1        = "UUID1"
-	presetTokenUuid2        = "uuid2"
-	presetTokenUUID2        = "UUID2"
-	presetTokenUuid3        = "uuid3"
-	presetTokenUUID3        = "UUID3"
-	presetTokenUuid4        = "uuid4"
-	presetTokenUUID4        = "UUID4"
-	presetTokenUuid5        = "uuid5"
-	presetTokenUUID5        = "UUID5"
+	// PresetAlpha checks for only alpha characters (use with StringPresetPattern)
+	PresetAlpha = "alpha"
+	// PresetAlphaNumeric checks for only alphanumeric characters (use with StringPresetPattern)
+	PresetAlphaNumeric = "alphaNumeric"
+	// PresetBarcode checks for a valid barcode (EAN, ISBN, ISSN, UPC) (use with StringPresetPattern)
+	PresetBarcode = "barcode"
+	// PresetBase64 checks for valid base64 encoded string (use with StringPresetPattern)
+	PresetBase64 = "base64"
+	// PresetBase64URL checks for valid base64 URL encoded string (use with StringPresetPattern)
+	PresetBase64URL = "base64URL"
+	// PresetCMYK checks for valid cmyk() color string (use with StringPresetPattern)
+	PresetCMYK = "cmyk"
+	// PresetCMYK300 checks for valid cmyk() color string (maximum 300%) (use with StringPresetPattern)
+	PresetCMYK300 = "cmyk300"
+	// PresetCard checks for valid card number (use with StringPresetPattern)
+	PresetCard = "card"
+	// PresetDUN14 checks for valid DUN-14 barcode (use with StringPresetPattern)
+	PresetDUN14 = "DUN14"
+	// PresetE164 checks for valid E.164 code (use with StringPresetPattern)
+	PresetE164 = "e164"
+	// PresetEAN checks for valid EAN barcode (EAN-8, 13, 14, 18 or 99) (use with StringPresetPattern)
+	PresetEAN = "EAN"
+	// PresetEAN13 checks for valid EAN-13 barcode (use with StringPresetPattern)
+	PresetEAN13 = "EAN13"
+	// PresetEAN14 checks for valid EAN-14 barcode (use with StringPresetPattern)
+	PresetEAN14 = "EAN14"
+	// PresetEAN18 checks for valid EAN-18 barcode (use with StringPresetPattern)
+	PresetEAN18 = "EAN18"
+	// PresetEAN8 checks for valid EAN-8 barcode (use with StringPresetPattern)
+	PresetEAN8 = "EAN8"
+	// PresetEAN99 checks for valid EAN-99 barcode (use with StringPresetPattern)
+	PresetEAN99 = "EAN99"
+	// PresetHexadecimal checks for valid hexadecimal string (use with StringPresetPattern)
+	PresetHexadecimal = "hexadecimal"
+	// PresetHsl checks for valid hsl() color string (use with StringPresetPattern)
+	PresetHsl = "hsl"
+	// PresetHsla checks for valid hsla() color string (use with StringPresetPattern)
+	PresetHsla = "hsla"
+	// PresetHtmlColor checks for valid HTML color string (use with StringPresetPattern)
+	PresetHtmlColor = "htmlColor"
+	// PresetISBN checks for valid ISBN barcode (ISBN-10 or 13) (use with StringPresetPattern)
+	PresetISBN = "ISBN"
+	// PresetISBN10 checks for valid ISBN-10 barcode (use with StringPresetPattern)
+	PresetISBN10 = "ISBN10"
+	// PresetISBN13 checks for valid ISBN-13 barcode (use with StringPresetPattern)
+	PresetISBN13 = "ISBN13"
+	// PresetISSN checks for valid ISSN barcode (ISSN-8 or 13) (use with StringPresetPattern)
+	PresetISSN = "ISSN"
+	// PresetISSN13 checks for valid ISSN-13 barcode (use with StringPresetPattern)
+	PresetISSN13 = "ISSN13"
+	// PresetISSN8 checks for valid ISSN-8 barcode (use with StringPresetPattern)
+	PresetISSN8 = "ISSN8"
+	// PresetInteger checks for valid integer string (chars 0-9) (use with StringPresetPattern)
+	PresetInteger = "integer"
+	// PresetNumeric checks for valid numeric string (use with StringPresetPattern)
+	PresetNumeric = "numeric"
+	// PresetNumericE checks for valid numeric string allowing scientific notation (use with StringPresetPattern)
+	PresetNumericE = "numeric+e"
+	// PresetNumericX checks for valid numeric string allowing scientific notation plus "Inf" and "NaN" (use with StringPresetPattern)
+	PresetNumericX = "numeric+x"
+	// PresetPublication checks for valid publication barcode (ISBN or ISSN) (use with StringPresetPattern)
+	PresetPublication = "publication"
+	// PresetRgb checks for valid rgb() color string (use with StringPresetPattern)
+	PresetRgb = "rgb"
+	// PresetRgbIcc checks for valid rgb-icc() color string (use with StringPresetPattern)
+	PresetRgbIcc = "rgb-icc"
+	// PresetRgba checks for valid rgba() color string (use with StringPresetPattern)
+	PresetRgba = "rgba"
+	// PresetULID checks for valid ULID code (use with StringPresetPattern)
+	PresetULID = "ULID"
+	// PresetUPC checks for valid UPC barcode (UPC-A or UPC-E) (use with StringPresetPattern)
+	PresetUPC = "UPC"
+	// PresetUPCA checks for valid UPC-A barcode (use with StringPresetPattern)
+	PresetUPCA = "UPC-A"
+	// PresetUPCE checks for valid UPC-E barcode (use with StringPresetPattern)
+	PresetUPCE = "UPC-E"
+	// PresetUUID checks for valid UUID (upper or lower hex chars) (use with StringPresetPattern)
+	PresetUUID = "UUID"
+	// PresetUUID1 checks for valid UUID Version 1 (upper or lower hex chars) (use with StringPresetPattern)
+	PresetUUID1 = "UUID1"
+	// PresetUUID2 checks for valid UUID Version 2 (upper or lower hex chars) (use with StringPresetPattern)
+	PresetUUID2 = "UUID2"
+	// PresetUUID3 checks for valid UUID Version 3 (upper or lower hex chars) (use with StringPresetPattern)
+	PresetUUID3 = "UUID3"
+	// PresetUUID4 checks for valid UUID Version 4 (upper or lower hex chars) (use with StringPresetPattern)
+	PresetUUID4 = "UUID4"
+	// PresetUUID5 checks for valid UUID Version 5 (upper or lower hex chars) (use with StringPresetPattern)
+	PresetUUID5 = "UUID5"
+	// PresetUuid checks for valid UUID (lower hex chars only) (use with StringPresetPattern)
+	PresetUuid = "uuid"
+	// PresetUuid1 checks for valid UUID Version 1 (lower hex chars only) (use with StringPresetPattern)
+	PresetUuid1 = "uuid1"
+	// PresetUuid2 checks for valid UUID Version 2 (lower hex chars only) (use with StringPresetPattern)
+	PresetUuid2 = "uuid2"
+	// PresetUuid3 checks for valid UUID Version 3 (lower hex chars only) (use with StringPresetPattern)
+	PresetUuid3 = "uuid3"
+	// PresetUuid4 checks for valid UUID Version 4 (lower hex chars only) (use with StringPresetPattern)
+	PresetUuid4 = "uuid4"
+	// PresetUuid5 checks for valid UUID Version 5 (lower hex chars only) (use with StringPresetPattern)
+	PresetUuid5 = "uuid5"
 )

@@ -4151,7 +4151,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
                 <table>
                     <tr>
                         <td>
-                            <code>AllowRanges</code> <em>[]*unicode.RangeTable</em>
+                            <code>AllowRanges</code> <em>[]unicode.RangeTable</em>
                         </td>
                         <td>
                             the ranges of characters (runes) that are allowed - each character must be in at least one of these
@@ -4159,7 +4159,7 @@ Valix provides a rich set of pre-defined common constraints - listed here for re
                     </tr>
                     <tr>
                         <td>
-                            <code>DisallowRanges</code> <em>[]*unicode.RangeTable</em>
+                            <code>DisallowRanges</code> <em>[]unicode.RangeTable</em>
                         </td>
                         <td>
                             the ranges of characters (runes) that are not allowed - if any character is in any of these ranges then the constraint is violated
@@ -6366,10 +6366,10 @@ var MySet = &valix.ConstraintSet{
             return true, ""
         }, ""),
         &valix.StringCharacters{
-            AllowRanges: []*unicode.RangeTable{
+            AllowRanges: []unicode.RangeTable{
                 {R16: []unicode.Range16{{'0', 'z', 1}}},
             },
-            DisallowRanges: []*unicode.RangeTable{
+            DisallowRanges: []unicode.RangeTable{
                 {R16: []unicode.Range16{{0x003a, 0x0040, 1}}},
                 {R16: []unicode.Range16{{0x005b, 0x005e, 1}}},
                 {R16: []unicode.Range16{{0x0060, 0x0060, 1}}},

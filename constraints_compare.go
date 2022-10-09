@@ -473,13 +473,14 @@ type StringGreaterThanOther struct {
 
 // Check implements Constraint.Check
 func (c *StringGreaterThanOther) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
-	if str, ok := v.(string); ok {
-		if other, ok := getOtherPropertyString(c.PropertyName, vcx); ok && stringCompare(str, other, c.CaseInsensitive) > 0 {
-			return true, ""
-		}
+	return checkStringConstraint(v, vcx, c, true, c.Stop)
+}
+
+func (c *StringGreaterThanOther) checkString(str string, vcx *ValidatorContext) bool {
+	if other, ok := getOtherPropertyString(c.PropertyName, vcx); ok && stringCompare(str, other, c.CaseInsensitive) > 0 {
+		return true
 	}
-	vcx.CeaseFurtherIf(c.Stop)
-	return false, c.GetMessage(vcx)
+	return false
 }
 
 // GetMessage implements the Constraint.GetMessage
@@ -509,13 +510,14 @@ type StringGreaterThanOrEqualOther struct {
 
 // Check implements Constraint.Check
 func (c *StringGreaterThanOrEqualOther) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
-	if str, ok := v.(string); ok {
-		if other, ok := getOtherPropertyString(c.PropertyName, vcx); ok && stringCompare(str, other, c.CaseInsensitive) >= 0 {
-			return true, ""
-		}
+	return checkStringConstraint(v, vcx, c, true, c.Stop)
+}
+
+func (c *StringGreaterThanOrEqualOther) checkString(str string, vcx *ValidatorContext) bool {
+	if other, ok := getOtherPropertyString(c.PropertyName, vcx); ok && stringCompare(str, other, c.CaseInsensitive) >= 0 {
+		return true
 	}
-	vcx.CeaseFurtherIf(c.Stop)
-	return false, c.GetMessage(vcx)
+	return false
 }
 
 // GetMessage implements the Constraint.GetMessage
@@ -545,13 +547,14 @@ type StringLessThanOther struct {
 
 // Check implements Constraint.Check
 func (c *StringLessThanOther) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
-	if str, ok := v.(string); ok {
-		if other, ok := getOtherPropertyString(c.PropertyName, vcx); ok && stringCompare(str, other, c.CaseInsensitive) < 0 {
-			return true, ""
-		}
+	return checkStringConstraint(v, vcx, c, true, c.Stop)
+}
+
+func (c *StringLessThanOther) checkString(str string, vcx *ValidatorContext) bool {
+	if other, ok := getOtherPropertyString(c.PropertyName, vcx); ok && stringCompare(str, other, c.CaseInsensitive) < 0 {
+		return true
 	}
-	vcx.CeaseFurtherIf(c.Stop)
-	return false, c.GetMessage(vcx)
+	return false
 }
 
 // GetMessage implements the Constraint.GetMessage
@@ -581,13 +584,14 @@ type StringLessThanOrEqualOther struct {
 
 // Check implements Constraint.Check
 func (c *StringLessThanOrEqualOther) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
-	if str, ok := v.(string); ok {
-		if other, ok := getOtherPropertyString(c.PropertyName, vcx); ok && stringCompare(str, other, c.CaseInsensitive) <= 0 {
-			return true, ""
-		}
+	return checkStringConstraint(v, vcx, c, true, c.Stop)
+}
+
+func (c *StringLessThanOrEqualOther) checkString(str string, vcx *ValidatorContext) bool {
+	if other, ok := getOtherPropertyString(c.PropertyName, vcx); ok && stringCompare(str, other, c.CaseInsensitive) <= 0 {
+		return true
 	}
-	vcx.CeaseFurtherIf(c.Stop)
-	return false, c.GetMessage(vcx)
+	return false
 }
 
 // GetMessage implements the Constraint.GetMessage
@@ -616,13 +620,11 @@ type DatetimeGreaterThan struct {
 
 // Check implements Constraint.Check
 func (c *DatetimeGreaterThan) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
-	if cdt, ok := stringToDatetime(c.Value, c.ExcTime); ok {
-		if dt, ok := isTime(v, c.ExcTime); ok && dt.After(*cdt) {
-			return true, ""
-		}
-	}
-	vcx.CeaseFurtherIf(c.Stop)
-	return false, c.GetMessage(vcx)
+	return checkDateCompareConstraint(c.Value, v, vcx, c, c.ExcTime, c.Stop)
+}
+
+func (c *DatetimeGreaterThan) compareDates(value time.Time, other time.Time) bool {
+	return other.After(value)
 }
 
 // GetMessage implements the Constraint.GetMessage
@@ -651,13 +653,11 @@ type DatetimeGreaterThanOrEqual struct {
 
 // Check implements Constraint.Check
 func (c *DatetimeGreaterThanOrEqual) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
-	if cdt, ok := stringToDatetime(c.Value, c.ExcTime); ok {
-		if dt, ok := isTime(v, c.ExcTime); ok && (dt.After(*cdt) || dt.Equal(*cdt)) {
-			return true, ""
-		}
-	}
-	vcx.CeaseFurtherIf(c.Stop)
-	return false, c.GetMessage(vcx)
+	return checkDateCompareConstraint(c.Value, v, vcx, c, c.ExcTime, c.Stop)
+}
+
+func (c *DatetimeGreaterThanOrEqual) compareDates(value time.Time, other time.Time) bool {
+	return other.After(value) || other.Equal(value)
 }
 
 // GetMessage implements the Constraint.GetMessage
@@ -686,13 +686,11 @@ type DatetimeLessThan struct {
 
 // Check implements Constraint.Check
 func (c *DatetimeLessThan) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
-	if cdt, ok := stringToDatetime(c.Value, c.ExcTime); ok {
-		if dt, ok := isTime(v, c.ExcTime); ok && dt.Before(*cdt) {
-			return true, ""
-		}
-	}
-	vcx.CeaseFurtherIf(c.Stop)
-	return false, c.GetMessage(vcx)
+	return checkDateCompareConstraint(c.Value, v, vcx, c, c.ExcTime, c.Stop)
+}
+
+func (c *DatetimeLessThan) compareDates(value time.Time, other time.Time) bool {
+	return other.Before(value)
 }
 
 // GetMessage implements the Constraint.GetMessage
@@ -721,13 +719,11 @@ type DatetimeLessThanOrEqual struct {
 
 // Check implements Constraint.Check
 func (c *DatetimeLessThanOrEqual) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
-	if cdt, ok := stringToDatetime(c.Value, c.ExcTime); ok {
-		if dt, ok := isTime(v, c.ExcTime); ok && (dt.Before(*cdt) || dt.Equal(*cdt)) {
-			return true, ""
-		}
-	}
-	vcx.CeaseFurtherIf(c.Stop)
-	return false, c.GetMessage(vcx)
+	return checkDateCompareConstraint(c.Value, v, vcx, c, c.ExcTime, c.Stop)
+}
+
+func (c *DatetimeLessThanOrEqual) compareDates(value time.Time, other time.Time) bool {
+	return other.Before(value) || other.Equal(value)
 }
 
 // GetMessage implements the Constraint.GetMessage
@@ -760,13 +756,11 @@ type DatetimeGreaterThanOther struct {
 
 // Check implements Constraint.Check
 func (c *DatetimeGreaterThanOther) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
-	if other, ok := getOtherPropertyDatetime(c.PropertyName, vcx, c.ExcTime, false); ok {
-		if dt, ok := isTime(v, c.ExcTime); ok && dt.After(*other) {
-			return true, ""
-		}
-	}
-	vcx.CeaseFurtherIf(c.Stop)
-	return false, c.GetMessage(vcx)
+	return checkDateCompareOtherPropertyConstraint(v, c.PropertyName, vcx, c, c.ExcTime, c.Stop)
+}
+
+func (c *DatetimeGreaterThanOther) compareDates(value time.Time, other time.Time) bool {
+	return value.After(other)
 }
 
 // GetMessage implements the Constraint.GetMessage
@@ -799,13 +793,11 @@ type DatetimeGreaterThanOrEqualOther struct {
 
 // Check implements Constraint.Check
 func (c *DatetimeGreaterThanOrEqualOther) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
-	if other, ok := getOtherPropertyDatetime(c.PropertyName, vcx, c.ExcTime, false); ok {
-		if dt, ok := isTime(v, c.ExcTime); ok && (dt.After(*other) || dt.Equal(*other)) {
-			return true, ""
-		}
-	}
-	vcx.CeaseFurtherIf(c.Stop)
-	return false, c.GetMessage(vcx)
+	return checkDateCompareOtherPropertyConstraint(v, c.PropertyName, vcx, c, c.ExcTime, c.Stop)
+}
+
+func (c *DatetimeGreaterThanOrEqualOther) compareDates(value time.Time, other time.Time) bool {
+	return value.After(other) || value.Equal(other)
 }
 
 // GetMessage implements the Constraint.GetMessage
@@ -838,13 +830,11 @@ type DatetimeLessThanOther struct {
 
 // Check implements Constraint.Check
 func (c *DatetimeLessThanOther) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
-	if other, ok := getOtherPropertyDatetime(c.PropertyName, vcx, c.ExcTime, false); ok {
-		if dt, ok := isTime(v, c.ExcTime); ok && dt.Before(*other) {
-			return true, ""
-		}
-	}
-	vcx.CeaseFurtherIf(c.Stop)
-	return false, c.GetMessage(vcx)
+	return checkDateCompareOtherPropertyConstraint(v, c.PropertyName, vcx, c, c.ExcTime, c.Stop)
+}
+
+func (c *DatetimeLessThanOther) compareDates(value time.Time, other time.Time) bool {
+	return value.Before(other)
 }
 
 // GetMessage implements the Constraint.GetMessage
@@ -877,13 +867,11 @@ type DatetimeLessThanOrEqualOther struct {
 
 // Check implements Constraint.Check
 func (c *DatetimeLessThanOrEqualOther) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
-	if other, ok := getOtherPropertyDatetime(c.PropertyName, vcx, c.ExcTime, false); ok {
-		if dt, ok := isTime(v, c.ExcTime); ok && (dt.Before(*other) || dt.Equal(*other)) {
-			return true, ""
-		}
-	}
-	vcx.CeaseFurtherIf(c.Stop)
-	return false, c.GetMessage(vcx)
+	return checkDateCompareOtherPropertyConstraint(v, c.PropertyName, vcx, c, c.ExcTime, c.Stop)
+}
+
+func (c *DatetimeLessThanOrEqualOther) compareDates(value time.Time, other time.Time) bool {
+	return value.Before(other) || value.Equal(other)
 }
 
 // GetMessage implements the Constraint.GetMessage

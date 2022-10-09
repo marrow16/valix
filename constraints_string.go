@@ -12,10 +12,10 @@ import (
 type StringCharacters struct {
 	// the ranges of characters (runes) that are allowed - each character
 	// must be in at least one of these
-	AllowRanges []*unicode.RangeTable
+	AllowRanges []unicode.RangeTable
 	// the ranges of characters (runes) that are not allowed - if any character
 	// is in any of these ranges then the constraint is violated
-	DisallowRanges []*unicode.RangeTable
+	DisallowRanges []unicode.RangeTable
 	// the violation message to be used if the constraint fails (see Violation.Message)
 	//
 	// (if the Message is an empty string then the default violation message is used)
@@ -28,32 +28,29 @@ type StringCharacters struct {
 
 // Check implements Constraint.Check
 func (c *StringCharacters) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
-	if str, ok := v.(string); ok {
-		runes := []rune(str)
-		allowedCount := -1
-		for i, r := range runes {
-			for _, dr := range c.DisallowRanges {
-				if unicode.Is(dr, r) {
-					vcx.CeaseFurtherIf(c.Stop)
-					return false, c.GetMessage(vcx)
-				}
-			}
-			for _, ar := range c.AllowRanges {
-				if unicode.Is(ar, r) {
-					allowedCount++
-					break
-				}
-			}
-			if i != allowedCount {
-				vcx.CeaseFurtherIf(c.Stop)
-				return false, c.GetMessage(vcx)
+	return checkStringConstraint(v, vcx, c, c.Strict, c.Stop)
+}
+
+func (c *StringCharacters) checkString(str string, vcx *ValidatorContext) bool {
+	runes := []rune(str)
+	allowedCount := -1
+	for i, r := range runes {
+		for _, dr := range c.DisallowRanges {
+			if unicode.Is(&dr, r) {
+				return false
 			}
 		}
-	} else if c.Strict {
-		vcx.CeaseFurtherIf(c.Stop)
-		return false, c.GetMessage(vcx)
+		for _, ar := range c.AllowRanges {
+			if unicode.Is(&ar, r) {
+				allowedCount++
+				break
+			}
+		}
+		if i != allowedCount {
+			return false
+		}
 	}
-	return true, ""
+	return true
 }
 
 // GetMessage implements the Constraint.GetMessage
@@ -83,26 +80,21 @@ type StringContains struct {
 
 // Check implements Constraint.Check
 func (c *StringContains) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
-	if str, ok := v.(string); ok {
-		ckStr := caseInsensitive(str, c.CaseInsensitive)
-		contains := c.Value != "" && strings.Contains(ckStr, caseInsensitive(c.Value, c.CaseInsensitive))
-		if !contains {
-			for _, s := range c.Values {
-				contains = s != "" && strings.Contains(ckStr, caseInsensitive(s, c.CaseInsensitive))
-				if contains {
-					break
-				}
+	return checkStringConstraint(v, vcx, c, c.Strict, c.Stop)
+}
+
+func (c *StringContains) checkString(str string, vcx *ValidatorContext) bool {
+	ckStr := caseInsensitive(str, c.CaseInsensitive)
+	contains := c.Value != "" && strings.Contains(ckStr, caseInsensitive(c.Value, c.CaseInsensitive))
+	if !contains {
+		for _, s := range c.Values {
+			contains = s != "" && strings.Contains(ckStr, caseInsensitive(s, c.CaseInsensitive))
+			if contains {
+				break
 			}
 		}
-		if (c.Not && contains) || (!c.Not && !contains) {
-			vcx.CeaseFurtherIf(c.Stop)
-			return false, c.GetMessage(vcx)
-		}
-	} else if c.Strict {
-		vcx.CeaseFurtherIf(c.Stop)
-		return false, c.GetMessage(vcx)
 	}
-	return true, ""
+	return (!c.Not && contains) || (c.Not && !contains)
 }
 
 // GetMessage implements the Constraint.GetMessage
@@ -145,26 +137,21 @@ type StringEndsWith struct {
 
 // Check implements Constraint.Check
 func (c *StringEndsWith) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
-	if str, ok := v.(string); ok {
-		ckStr := caseInsensitive(str, c.CaseInsensitive)
-		endsWith := c.Value != "" && strings.HasSuffix(ckStr, caseInsensitive(c.Value, c.CaseInsensitive))
-		if !endsWith {
-			for _, s := range c.Values {
-				endsWith = s != "" && strings.HasSuffix(ckStr, caseInsensitive(s, c.CaseInsensitive))
-				if endsWith {
-					break
-				}
+	return checkStringConstraint(v, vcx, c, c.Strict, c.Stop)
+}
+
+func (c *StringEndsWith) checkString(str string, vcx *ValidatorContext) bool {
+	ckStr := caseInsensitive(str, c.CaseInsensitive)
+	endsWith := c.Value != "" && strings.HasSuffix(ckStr, caseInsensitive(c.Value, c.CaseInsensitive))
+	if !endsWith {
+		for _, s := range c.Values {
+			endsWith = s != "" && strings.HasSuffix(ckStr, caseInsensitive(s, c.CaseInsensitive))
+			if endsWith {
+				break
 			}
 		}
-		if (c.Not && endsWith) || (!c.Not && !endsWith) {
-			vcx.CeaseFurtherIf(c.Stop)
-			return false, c.GetMessage(vcx)
-		}
-	} else if c.Strict {
-		vcx.CeaseFurtherIf(c.Stop)
-		return false, c.GetMessage(vcx)
 	}
-	return true, ""
+	return (!c.Not && endsWith) || (c.Not && !endsWith)
 }
 
 // GetMessage implements the Constraint.GetMessage
@@ -203,20 +190,15 @@ type StringExactLength struct {
 
 // Check implements Constraint.Check
 func (c *StringExactLength) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
-	if str, ok := v.(string); ok {
-		l := len(str)
-		if c.UseRuneLen {
-			l = len([]rune(str))
-		}
-		if l != c.Value {
-			vcx.CeaseFurtherIf(c.Stop)
-			return false, c.GetMessage(vcx)
-		}
-	} else if c.Strict {
-		vcx.CeaseFurtherIf(c.Stop)
-		return false, c.GetMessage(vcx)
+	return checkStringConstraint(v, vcx, c, c.Strict, c.Stop)
+}
+
+func (c *StringExactLength) checkString(str string, vcx *ValidatorContext) bool {
+	l := len(str)
+	if c.UseRuneLen {
+		l = len([]rune(str))
 	}
-	return true, ""
+	return l == c.Value
 }
 
 // GetMessage implements the Constraint.GetMessage
@@ -248,23 +230,16 @@ type StringLength struct {
 
 // Check implements Constraint.Check
 func (c *StringLength) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
-	if str, ok := v.(string); ok {
-		l := len(str)
-		if c.UseRuneLen {
-			l = len([]rune(str))
-		}
-		if l < c.Minimum || (c.ExclusiveMin && l == c.Minimum) {
-			vcx.CeaseFurtherIf(c.Stop)
-			return false, c.GetMessage(vcx)
-		} else if c.Maximum > 0 && (l > c.Maximum || (c.ExclusiveMax && l == c.Maximum)) {
-			vcx.CeaseFurtherIf(c.Stop)
-			return false, c.GetMessage(vcx)
-		}
-	} else if c.Strict {
-		vcx.CeaseFurtherIf(c.Stop)
-		return false, c.GetMessage(vcx)
+	return checkStringConstraint(v, vcx, c, c.Strict, c.Stop)
+}
+
+func (c *StringLength) checkString(str string, vcx *ValidatorContext) bool {
+	l := len(str)
+	if c.UseRuneLen {
+		l = len([]rune(str))
 	}
-	return true, ""
+	return (l > c.Minimum || (!c.ExclusiveMin && l == c.Minimum)) &&
+		(c.Maximum <= 0 || l < c.Maximum || (!c.ExclusiveMax && l == c.Maximum))
 }
 
 // GetMessage implements the Constraint.GetMessage
@@ -291,16 +266,11 @@ type StringLowercase struct {
 
 // Check implements Constraint.Check
 func (c *StringLowercase) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
-	if str, ok := v.(string); ok {
-		if str != strings.ToLower(str) {
-			vcx.CeaseFurtherIf(c.Stop)
-			return false, c.GetMessage(vcx)
-		}
-	} else if c.Strict {
-		vcx.CeaseFurtherIf(c.Stop)
-		return false, c.GetMessage(vcx)
-	}
-	return true, ""
+	return checkStringConstraint(v, vcx, c, c.Strict, c.Stop)
+}
+
+func (c *StringLowercase) checkString(str string, vcx *ValidatorContext) bool {
+	return str == strings.ToLower(str)
 }
 
 // GetMessage implements the Constraint.GetMessage
@@ -328,20 +298,15 @@ type StringMaxLength struct {
 
 // Check implements Constraint.Check
 func (c *StringMaxLength) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
-	if str, ok := v.(string); ok {
-		l := len(str)
-		if c.UseRuneLen {
-			l = len([]rune(str))
-		}
-		if l > c.Value || (c.ExclusiveMax && l == c.Value) {
-			vcx.CeaseFurtherIf(c.Stop)
-			return false, c.GetMessage(vcx)
-		}
-	} else if c.Strict {
-		vcx.CeaseFurtherIf(c.Stop)
-		return false, c.GetMessage(vcx)
+	return checkStringConstraint(v, vcx, c, c.Strict, c.Stop)
+}
+
+func (c *StringMaxLength) checkString(str string, vcx *ValidatorContext) bool {
+	l := len(str)
+	if c.UseRuneLen {
+		l = len([]rune(str))
 	}
-	return true, ""
+	return l < c.Value || (!c.ExclusiveMax && l == c.Value)
 }
 
 // GetMessage implements the Constraint.GetMessage
@@ -372,20 +337,15 @@ type StringMinLength struct {
 
 // Check implements Constraint.Check
 func (c *StringMinLength) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
-	if str, ok := v.(string); ok {
-		l := len(str)
-		if c.UseRuneLen {
-			l = len([]rune(str))
-		}
-		if l < c.Value || (c.ExclusiveMin && l == c.Value) {
-			vcx.CeaseFurtherIf(c.Stop)
-			return false, c.GetMessage(vcx)
-		}
-	} else if c.Strict {
-		vcx.CeaseFurtherIf(c.Stop)
-		return false, c.GetMessage(vcx)
+	return checkStringConstraint(v, vcx, c, c.Strict, c.Stop)
+}
+
+func (c *StringMinLength) checkString(str string, vcx *ValidatorContext) bool {
+	l := len(str)
+	if c.UseRuneLen {
+		l = len([]rune(str))
 	}
-	return true, ""
+	return l > c.Value || (!c.ExclusiveMin && l == c.Value)
 }
 
 // GetMessage implements the Constraint.GetMessage
@@ -410,18 +370,16 @@ type StringNoControlCharacters struct {
 
 // Check implements Constraint.Check
 func (c *StringNoControlCharacters) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
-	if str, ok := v.(string); ok {
-		for _, ch := range str {
-			if ch < 32 {
-				vcx.CeaseFurtherIf(c.Stop)
-				return false, c.GetMessage(vcx)
-			}
+	return checkStringConstraint(v, vcx, c, c.Strict, c.Stop)
+}
+
+func (c *StringNoControlCharacters) checkString(str string, vcx *ValidatorContext) bool {
+	for _, ch := range str {
+		if ch < 32 {
+			return false
 		}
-	} else if c.Strict {
-		vcx.CeaseFurtherIf(c.Stop)
-		return false, c.GetMessage(vcx)
 	}
-	return true, ""
+	return true
 }
 
 // GetMessage implements the Constraint.GetMessage
@@ -444,16 +402,11 @@ type StringNotBlank struct {
 
 // Check implements Constraint.Check
 func (c *StringNotBlank) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
-	if str, ok := v.(string); ok {
-		if len(strings.Trim(str, " \t\n\r")) == 0 {
-			vcx.CeaseFurtherIf(c.Stop)
-			return false, c.GetMessage(vcx)
-		}
-	} else if c.Strict {
-		vcx.CeaseFurtherIf(c.Stop)
-		return false, c.GetMessage(vcx)
-	}
-	return true, ""
+	return checkStringConstraint(v, vcx, c, c.Strict, c.Stop)
+}
+
+func (c *StringNotBlank) checkString(str string, vcx *ValidatorContext) bool {
+	return len(strings.Trim(str, " \t\n\r")) != 0
 }
 
 // GetMessage implements the Constraint.GetMessage
@@ -475,16 +428,11 @@ type StringNotEmpty struct {
 
 // Check implements Constraint.Check
 func (c *StringNotEmpty) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
-	if str, ok := v.(string); ok {
-		if len(str) == 0 {
-			vcx.CeaseFurtherIf(c.Stop)
-			return false, c.GetMessage(vcx)
-		}
-	} else if c.Strict {
-		vcx.CeaseFurtherIf(c.Stop)
-		return false, c.GetMessage(vcx)
-	}
-	return true, ""
+	return checkStringConstraint(v, vcx, c, c.Strict, c.Stop)
+}
+
+func (c *StringNotEmpty) checkString(str string, vcx *ValidatorContext) bool {
+	return len(str) > 0
 }
 
 // GetMessage implements the Constraint.GetMessage
@@ -508,16 +456,11 @@ type StringPattern struct {
 
 // Check implements Constraint.Check
 func (c *StringPattern) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
-	if str, ok := v.(string); ok {
-		if !c.Regexp.MatchString(str) {
-			vcx.CeaseFurtherIf(c.Stop)
-			return false, c.GetMessage(vcx)
-		}
-	} else if c.Strict {
-		vcx.CeaseFurtherIf(c.Stop)
-		return false, c.GetMessage(vcx)
-	}
-	return true, ""
+	return checkStringConstraint(v, vcx, c, c.Strict, c.Stop)
+}
+
+func (c *StringPattern) checkString(str string, vcx *ValidatorContext) bool {
+	return c.Regexp.MatchString(str)
 }
 
 // GetMessage implements the Constraint.GetMessage
@@ -616,26 +559,21 @@ type StringStartsWith struct {
 
 // Check implements Constraint.Check
 func (c *StringStartsWith) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
-	if str, ok := v.(string); ok {
-		ckStr := caseInsensitive(str, c.CaseInsensitive)
-		startsWith := c.Value != "" && strings.HasPrefix(ckStr, caseInsensitive(c.Value, c.CaseInsensitive))
-		if !startsWith {
-			for _, s := range c.Values {
-				startsWith = s != "" && strings.HasPrefix(ckStr, caseInsensitive(s, c.CaseInsensitive))
-				if startsWith {
-					break
-				}
+	return checkStringConstraint(v, vcx, c, c.Strict, c.Stop)
+}
+
+func (c *StringStartsWith) checkString(str string, vcx *ValidatorContext) bool {
+	ckStr := caseInsensitive(str, c.CaseInsensitive)
+	startsWith := c.Value != "" && strings.HasPrefix(ckStr, caseInsensitive(c.Value, c.CaseInsensitive))
+	if !startsWith {
+		for _, s := range c.Values {
+			startsWith = s != "" && strings.HasPrefix(ckStr, caseInsensitive(s, c.CaseInsensitive))
+			if startsWith {
+				break
 			}
 		}
-		if (c.Not && startsWith) || (!c.Not && !startsWith) {
-			vcx.CeaseFurtherIf(c.Stop)
-			return false, c.GetMessage(vcx)
-		}
-	} else if c.Strict {
-		vcx.CeaseFurtherIf(c.Stop)
-		return false, c.GetMessage(vcx)
 	}
-	return true, ""
+	return (!c.Not && startsWith) || (c.Not && !startsWith)
 }
 
 // GetMessage implements the Constraint.GetMessage
@@ -670,16 +608,11 @@ type StringUppercase struct {
 
 // Check implements Constraint.Check
 func (c *StringUppercase) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
-	if str, ok := v.(string); ok {
-		if str != strings.ToUpper(str) {
-			vcx.CeaseFurtherIf(c.Stop)
-			return false, c.GetMessage(vcx)
-		}
-	} else if c.Strict {
-		vcx.CeaseFurtherIf(c.Stop)
-		return false, c.GetMessage(vcx)
-	}
-	return true, ""
+	return checkStringConstraint(v, vcx, c, c.Strict, c.Stop)
+}
+
+func (c *StringUppercase) checkString(str string, vcx *ValidatorContext) bool {
+	return str == strings.ToUpper(str)
 }
 
 // GetMessage implements the Constraint.GetMessage
@@ -705,30 +638,25 @@ type StringValidJson struct {
 
 // Check implements Constraint.Check
 func (c *StringValidJson) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
-	if str, ok := v.(string); ok {
-		var v interface{}
-		fail := true
-		if err := json.Unmarshal([]byte(str), &v); err == nil {
-			switch v.(type) {
-			case map[string]interface{}:
-				fail = c.DisallowObject
-			case []interface{}:
-				fail = c.DisallowArray
-			case nil:
-				fail = c.DisallowNullJson
-			default:
-				fail = c.DisallowValue
-			}
+	return checkStringConstraint(v, vcx, c, c.Strict, c.Stop)
+}
+
+func (c *StringValidJson) checkString(str string, vcx *ValidatorContext) bool {
+	var v interface{}
+	fail := true
+	if err := json.Unmarshal([]byte(str), &v); err == nil {
+		switch v.(type) {
+		case map[string]interface{}:
+			fail = c.DisallowObject
+		case []interface{}:
+			fail = c.DisallowArray
+		case nil:
+			fail = c.DisallowNullJson
+		default:
+			fail = c.DisallowValue
 		}
-		if fail {
-			vcx.CeaseFurtherIf(c.Stop)
-			return false, c.GetMessage(vcx)
-		}
-	} else if c.Strict {
-		vcx.CeaseFurtherIf(c.Stop)
-		return false, c.GetMessage(vcx)
 	}
-	return true, ""
+	return !fail
 }
 
 // GetMessage implements the Constraint.GetMessage
@@ -754,20 +682,17 @@ type StringValidToken struct {
 
 // Check implements Constraint.Check
 func (c *StringValidToken) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
-	if str, ok := v.(string); ok {
-		lstr := strings.ToLower(str)
-		for _, t := range c.Tokens {
-			if str == t || (c.IgnoreCase && lstr == strings.ToLower(t)) {
-				return true, ""
-			}
+	return checkStringConstraint(v, vcx, c, c.Strict, c.Stop)
+}
+
+func (c *StringValidToken) checkString(str string, vcx *ValidatorContext) bool {
+	lstr := strings.ToLower(str)
+	for _, t := range c.Tokens {
+		if str == t || (c.IgnoreCase && lstr == strings.ToLower(t)) {
+			return true
 		}
-		vcx.CeaseFurtherIf(c.Stop)
-		return false, c.GetMessage(vcx)
-	} else if c.Strict {
-		vcx.CeaseFurtherIf(c.Stop)
-		return false, c.GetMessage(vcx)
 	}
-	return true, ""
+	return false
 }
 
 // GetMessage implements the Constraint.GetMessage
@@ -793,16 +718,11 @@ type StringValidUnicodeNormalization struct {
 
 // Check implements Constraint.Check
 func (c *StringValidUnicodeNormalization) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
-	if str, ok := v.(string); ok {
-		if !c.Form.IsNormalString(str) {
-			vcx.CeaseFurtherIf(c.Stop)
-			return false, c.GetMessage(vcx)
-		}
-	} else if c.Strict {
-		vcx.CeaseFurtherIf(c.Stop)
-		return false, c.GetMessage(vcx)
-	}
-	return true, ""
+	return checkStringConstraint(v, vcx, c, c.Strict, c.Stop)
+}
+
+func (c *StringValidUnicodeNormalization) checkString(str string, vcx *ValidatorContext) bool {
+	return c.Form.IsNormalString(str)
 }
 
 // GetMessage implements the Constraint.GetMessage

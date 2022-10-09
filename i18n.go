@@ -15,7 +15,11 @@ var (
 //
 // Languages provided are "de", "en", "es", "fr" & "it"
 var DefaultLanguage = "en"
+
+// DefaultRegion is the default region used by the default I18nProvider
 var DefaultRegion = ""
+
+// DefaultFallbackLanguages is a map of language codes with their fallback language code
 var DefaultFallbackLanguages = map[string]string{}
 
 // I18n interface for supporting i18n (internationalisation) in valix -

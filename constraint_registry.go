@@ -239,56 +239,56 @@ func defaultConstraints() map[string]Constraint {
 		"iso4217-numeric":   &StringValidCurrencyCode{NumericOnly: true},
 		"lang":              &StringValidLanguageCode{},
 		// preset patterns...
-		presetTokenAlpha:        &StringPresetPattern{Preset: presetTokenAlpha},
-		presetTokenAlphaNumeric: &StringPresetPattern{Preset: presetTokenAlphaNumeric},
-		presetTokenBarcode:      &StringPresetPattern{Preset: presetTokenBarcode},
-		presetTokenBase64:       &StringPresetPattern{Preset: presetTokenBase64},
-		presetTokenBase64URL:    &StringPresetPattern{Preset: presetTokenBase64URL},
-		presetTokenCard:         &StringPresetPattern{Preset: presetTokenCard},
-		presetTokenCMYK:         &StringPresetPattern{Preset: presetTokenCMYK},
-		presetTokenCMYK300:      &StringPresetPattern{Preset: presetTokenCMYK300},
-		presetTokenE164:         &StringPresetPattern{Preset: presetTokenE164},
-		presetTokenEAN:          &StringPresetPattern{Preset: presetTokenEAN},
-		presetTokenEAN8:         &StringPresetPattern{Preset: presetTokenEAN8},
-		presetTokenEAN13:        &StringPresetPattern{Preset: presetTokenEAN13},
-		presetTokenDUN14:        &StringPresetPattern{Preset: presetTokenDUN14},
-		presetTokenEAN14:        &StringPresetPattern{Preset: presetTokenEAN14},
-		presetTokenEAN18:        &StringPresetPattern{Preset: presetTokenEAN18},
-		presetTokenEAN99:        &StringPresetPattern{Preset: presetTokenEAN99},
-		presetTokenHexadecimal:  &StringPresetPattern{Preset: presetTokenHexadecimal},
-		presetTokenHsl:          &StringPresetPattern{Preset: presetTokenHsl},
-		presetTokenHsla:         &StringPresetPattern{Preset: presetTokenHsla},
-		presetTokenHtmlColor:    &StringPresetPattern{Preset: presetTokenHtmlColor},
-		presetTokenInteger:      &StringPresetPattern{Preset: presetTokenInteger},
-		presetTokenISBN:         &StringPresetPattern{Preset: presetTokenISBN},
-		presetTokenISBN10:       &StringPresetPattern{Preset: presetTokenISBN10},
-		presetTokenISBN13:       &StringPresetPattern{Preset: presetTokenISBN13},
-		presetTokenISSN:         &StringPresetPattern{Preset: presetTokenISSN},
-		presetTokenISSN8:        &StringPresetPattern{Preset: presetTokenISSN8},
-		presetTokenISSN13:       &StringPresetPattern{Preset: presetTokenISSN13},
-		presetTokenNumeric:      &StringPresetPattern{Preset: presetTokenNumeric},
-		presetTokenNumericE:     &StringPresetPattern{Preset: presetTokenNumericE},
-		presetTokenNumericX:     &StringPresetPattern{Preset: presetTokenNumericX},
-		presetTokenPublication:  &StringPresetPattern{Preset: presetTokenPublication},
-		presetTokenRgb:          &StringPresetPattern{Preset: presetTokenRgb},
-		presetTokenRgba:         &StringPresetPattern{Preset: presetTokenRgba},
-		presetTokenRgbIcc:       &StringPresetPattern{Preset: presetTokenRgbIcc},
-		presetTokenULID:         &StringPresetPattern{Preset: presetTokenULID},
-		presetTokenUPC:          &StringPresetPattern{Preset: presetTokenUPC},
-		presetTokenUPCA:         &StringPresetPattern{Preset: presetTokenUPCA},
-		presetTokenUPCE:         &StringPresetPattern{Preset: presetTokenUPCE},
-		presetTokenUuid:         &StringPresetPattern{Preset: presetTokenUuid},
-		presetTokenUUID:         &StringPresetPattern{Preset: presetTokenUUID},
-		presetTokenUuid1:        &StringPresetPattern{Preset: presetTokenUuid1},
-		presetTokenUUID1:        &StringPresetPattern{Preset: presetTokenUUID1},
-		presetTokenUuid2:        &StringPresetPattern{Preset: presetTokenUuid2},
-		presetTokenUUID2:        &StringPresetPattern{Preset: presetTokenUUID2},
-		presetTokenUuid3:        &StringPresetPattern{Preset: presetTokenUuid3},
-		presetTokenUUID3:        &StringPresetPattern{Preset: presetTokenUUID3},
-		presetTokenUuid4:        &StringPresetPattern{Preset: presetTokenUuid4},
-		presetTokenUUID4:        &StringPresetPattern{Preset: presetTokenUUID4},
-		presetTokenUuid5:        &StringPresetPattern{Preset: presetTokenUuid5},
-		presetTokenUUID5:        &StringPresetPattern{Preset: presetTokenUUID5},
+		PresetAlpha:        &StringPresetPattern{Preset: PresetAlpha},
+		PresetAlphaNumeric: &StringPresetPattern{Preset: PresetAlphaNumeric},
+		PresetBarcode:      &StringPresetPattern{Preset: PresetBarcode},
+		PresetBase64:       &StringPresetPattern{Preset: PresetBase64},
+		PresetBase64URL:    &StringPresetPattern{Preset: PresetBase64URL},
+		PresetCard:         &StringPresetPattern{Preset: PresetCard},
+		PresetCMYK:         &StringPresetPattern{Preset: PresetCMYK},
+		PresetCMYK300:      &StringPresetPattern{Preset: PresetCMYK300},
+		PresetE164:         &StringPresetPattern{Preset: PresetE164},
+		PresetEAN:          &StringPresetPattern{Preset: PresetEAN},
+		PresetEAN8:         &StringPresetPattern{Preset: PresetEAN8},
+		PresetEAN13:        &StringPresetPattern{Preset: PresetEAN13},
+		PresetDUN14:        &StringPresetPattern{Preset: PresetDUN14},
+		PresetEAN14:        &StringPresetPattern{Preset: PresetEAN14},
+		PresetEAN18:        &StringPresetPattern{Preset: PresetEAN18},
+		PresetEAN99:        &StringPresetPattern{Preset: PresetEAN99},
+		PresetHexadecimal:  &StringPresetPattern{Preset: PresetHexadecimal},
+		PresetHsl:          &StringPresetPattern{Preset: PresetHsl},
+		PresetHsla:         &StringPresetPattern{Preset: PresetHsla},
+		PresetHtmlColor:    &StringPresetPattern{Preset: PresetHtmlColor},
+		PresetInteger:      &StringPresetPattern{Preset: PresetInteger},
+		PresetISBN:         &StringPresetPattern{Preset: PresetISBN},
+		PresetISBN10:       &StringPresetPattern{Preset: PresetISBN10},
+		PresetISBN13:       &StringPresetPattern{Preset: PresetISBN13},
+		PresetISSN:         &StringPresetPattern{Preset: PresetISSN},
+		PresetISSN8:        &StringPresetPattern{Preset: PresetISSN8},
+		PresetISSN13:       &StringPresetPattern{Preset: PresetISSN13},
+		PresetNumeric:      &StringPresetPattern{Preset: PresetNumeric},
+		PresetNumericE:     &StringPresetPattern{Preset: PresetNumericE},
+		PresetNumericX:     &StringPresetPattern{Preset: PresetNumericX},
+		PresetPublication:  &StringPresetPattern{Preset: PresetPublication},
+		PresetRgb:          &StringPresetPattern{Preset: PresetRgb},
+		PresetRgba:         &StringPresetPattern{Preset: PresetRgba},
+		PresetRgbIcc:       &StringPresetPattern{Preset: PresetRgbIcc},
+		PresetULID:         &StringPresetPattern{Preset: PresetULID},
+		PresetUPC:          &StringPresetPattern{Preset: PresetUPC},
+		PresetUPCA:         &StringPresetPattern{Preset: PresetUPCA},
+		PresetUPCE:         &StringPresetPattern{Preset: PresetUPCE},
+		PresetUuid:         &StringPresetPattern{Preset: PresetUuid},
+		PresetUUID:         &StringPresetPattern{Preset: PresetUUID},
+		PresetUuid1:        &StringPresetPattern{Preset: PresetUuid1},
+		PresetUUID1:        &StringPresetPattern{Preset: PresetUUID1},
+		PresetUuid2:        &StringPresetPattern{Preset: PresetUuid2},
+		PresetUUID2:        &StringPresetPattern{Preset: PresetUUID2},
+		PresetUuid3:        &StringPresetPattern{Preset: PresetUuid3},
+		PresetUUID3:        &StringPresetPattern{Preset: PresetUUID3},
+		PresetUuid4:        &StringPresetPattern{Preset: PresetUuid4},
+		PresetUUID4:        &StringPresetPattern{Preset: PresetUUID4},
+		PresetUuid5:        &StringPresetPattern{Preset: PresetUuid5},
+		PresetUUID5:        &StringPresetPattern{Preset: PresetUUID5},
 	}
 }
 
@@ -339,6 +339,22 @@ func (r *constraintRegistry) get(name string) (Constraint, bool) {
 	r.sync.Lock()
 	c, ok := r.namedConstraints[name]
 	return c, ok
+}
+
+// this method is potentially slow - but is only used by PropertyValidator.ToV8nTagString
+// Note: finds only the first with matching name!
+func (r *constraintRegistry) search(name string) (alias string, constraint Constraint, found bool) {
+	defer r.sync.Unlock()
+	r.sync.Lock()
+	for a, c := range r.namedConstraints {
+		if name == reflect.TypeOf(c).Elem().Name() {
+			alias = a
+			constraint = c
+			found = true
+			break
+		}
+	}
+	return
 }
 
 // reset for testing

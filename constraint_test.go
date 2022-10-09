@@ -73,10 +73,10 @@ func TestConstraintSet(t *testing.T) {
 				return true, ""
 			}, ""),
 			&StringCharacters{
-				AllowRanges: []*unicode.RangeTable{
+				AllowRanges: []unicode.RangeTable{
 					{R16: []unicode.Range16{{'0', 'z', 1}}},
 				},
-				DisallowRanges: []*unicode.RangeTable{
+				DisallowRanges: []unicode.RangeTable{
 					{R16: []unicode.Range16{{0x003a, 0x0040, 1}}},
 					{R16: []unicode.Range16{{0x005b, 0x005e, 1}}},
 					{R16: []unicode.Range16{{0x0060, 0x0060, 1}}},
@@ -144,10 +144,10 @@ func TestConstraintSetNoMsg(t *testing.T) {
 				return true, ""
 			}, "Must start with a capital"),
 			&StringCharacters{
-				AllowRanges: []*unicode.RangeTable{
+				AllowRanges: []unicode.RangeTable{
 					{R16: []unicode.Range16{{'0', 'z', 1}}},
 				},
-				DisallowRanges: []*unicode.RangeTable{
+				DisallowRanges: []unicode.RangeTable{
 					{R16: []unicode.Range16{{0x003a, 0x0040, 1}}},
 					{R16: []unicode.Range16{{0x005b, 0x005e, 1}}},
 					{R16: []unicode.Range16{{0x0060, 0x0060, 1}}},
@@ -211,10 +211,10 @@ func TestConstraintSetCeases(t *testing.T) {
 				return true, ""
 			}, "Must start with a capital"),
 			&StringCharacters{
-				AllowRanges: []*unicode.RangeTable{
+				AllowRanges: []unicode.RangeTable{
 					{R16: []unicode.Range16{{'0', 'z', 1}}},
 				},
-				DisallowRanges: []*unicode.RangeTable{
+				DisallowRanges: []unicode.RangeTable{
 					{R16: []unicode.Range16{{0x003a, 0x0040, 1}}},
 					{R16: []unicode.Range16{{0x005b, 0x005e, 1}}},
 					{R16: []unicode.Range16{{0x0060, 0x0060, 1}}},
