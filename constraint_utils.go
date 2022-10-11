@@ -211,6 +211,35 @@ var (
 	}
 )
 
+var rangeTableNames = map[string]*unicode.RangeTable{
+	"BMP": &UnicodeBMP,
+	"SMP": &UnicodeSMP,
+	"SIP": &UnicodeSIP,
+}
+
+func lookupRangeTableName(name string) (*unicode.RangeTable, bool) {
+	if r, ok := rangeTableNames[name]; ok {
+		return r, true
+	}
+	if strings.HasPrefix(name, "Category-") && len(name) > 9 {
+		return lookupUnicodeRangeTable(name[9:], unicode.Categories)
+	} else if strings.HasPrefix(name, "Script-") && len(name) > 7 {
+		return lookupUnicodeRangeTable(name[7:], unicode.Scripts)
+	} else if strings.HasPrefix(name, "Property-") && len(name) > 9 {
+		return lookupUnicodeRangeTable(name[9:], unicode.Properties)
+	} else if strings.HasPrefix(name, "FoldCategory-") && len(name) > 13 {
+		return lookupUnicodeRangeTable(name[13:], unicode.FoldCategory)
+	} else if strings.HasPrefix(name, "FoldScript-") && len(name) > 11 {
+		return lookupUnicodeRangeTable(name[11:], unicode.FoldScript)
+	}
+	return nil, false
+}
+
+func lookupUnicodeRangeTable(name string, in map[string]*unicode.RangeTable) (*unicode.RangeTable, bool) {
+	r, ok := in[name]
+	return r, ok
+}
+
 var (
 	// used by cmp.Equal to test equality of JSON numerics (i.e. float64, in and json.Number)
 	jsonNumericsOption = cmp.FilterValues(jsonNumericCompareFilter, cmp.Comparer(jsonNumericComparator))

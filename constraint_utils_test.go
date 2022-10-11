@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
+	"unicode"
 )
 
 func TestDefaultMessage(t *testing.T) {
@@ -654,5 +655,32 @@ func TestParseDuration(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestLookupRangeTableName(t *testing.T) {
+	_, ok := lookupRangeTableName("BMP")
+	require.True(t, ok)
+	_, ok = lookupRangeTableName("nope")
+	require.False(t, ok)
+	for k := range unicode.Categories {
+		_, ok = lookupRangeTableName("Category-" + k)
+		require.True(t, ok)
+	}
+	for k := range unicode.Scripts {
+		_, ok = lookupRangeTableName("Script-" + k)
+		require.True(t, ok)
+	}
+	for k := range unicode.Properties {
+		_, ok = lookupRangeTableName("Property-" + k)
+		require.True(t, ok)
+	}
+	for k := range unicode.FoldCategory {
+		_, ok = lookupRangeTableName("FoldCategory-" + k)
+		require.True(t, ok)
+	}
+	for k := range unicode.FoldScript {
+		_, ok = lookupRangeTableName("FoldScript-" + k)
+		require.True(t, ok)
 	}
 }

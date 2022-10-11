@@ -32,6 +32,25 @@ func TestStringCharactersConstraint(t *testing.T) {
 	require.True(t, ok)
 }
 
+func TestStringCharactersConstraintWithNamedAllowRanges(t *testing.T) {
+	validator := buildFooValidator(JsonString,
+		&StringCharacters{
+			NamedAllowRanges: []string{"Property-ASCII_Hex_Digit"},
+		}, false)
+	obj := jsonObject(`{
+		"foo": "ghi"
+	}`)
+
+	ok, violations := validator.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, msgInvalidCharacters, violations[0].Message)
+
+	obj["foo"] = "0123456789ABCDEFabcdef"
+	ok, _ = validator.Validate(obj)
+	require.True(t, ok)
+}
+
 func TestStringCharacters_Strict(t *testing.T) {
 	c := &StringCharacters{}
 	validator := buildFooValidator(JsonAny, c, false)
@@ -52,8 +71,27 @@ func TestStringCharactersConstraintWithDisallows(t *testing.T) {
 				*unicode.Upper,
 			},
 			DisallowRanges: []unicode.RangeTable{
-				*unicode.Hex_Digit,
+				*unicode.ASCII_Hex_Digit,
 			},
+		}, false)
+	obj := jsonObject(`{
+		"foo": "ABC"
+	}`)
+
+	ok, violations := validator.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, msgInvalidCharacters, violations[0].Message)
+
+	obj["foo"] = "GHI"
+	ok, _ = validator.Validate(obj)
+	require.True(t, ok)
+}
+
+func TestStringCharactersConstraintWithNamedDisallowRanges(t *testing.T) {
+	validator := buildFooValidator(JsonString,
+		&StringCharacters{
+			NamedDisallowRanges: []string{"Property-ASCII_Hex_Digit"},
 		}, false)
 	obj := jsonObject(`{
 		"foo": "ABC"
