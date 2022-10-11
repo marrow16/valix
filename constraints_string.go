@@ -10,12 +10,44 @@ import (
 
 // StringCharacters constraint to check that a string contains only allowable characters (and does not contain any disallowed characters)
 type StringCharacters struct {
-	// the ranges of characters (runes) that are allowed - each character
-	// must be in at least one of these
+	// the ranges of characters (runes) that are allowed - if this slice is non-empty, each character must be in at least one of these
 	AllowRanges []unicode.RangeTable
+	// the named ranges of characters (runes) that are allowed - if this slice is non-empty, each character must be in at least one of these
+	//
+	// The named ranges can be:
+	//
+	// * "BMP", "SMP" or "SIP" (Basic Multilingual Plane, Supplementary Multilingual Plane or Supplementary Ideographic Plane respectively)
+	//
+	// * any name from unicode.Categories prefixed with "Category-"
+	//
+	// * any name from unicode.Scripts prefixed with "Script-"
+	//
+	// * any name from unicode.Properties prefixed with "Property-"
+	//
+	// * any name from unicode.FoldCategory prefixed with "FoldCategory-"
+	//
+	// * any name from unicode.FoldScript prefixed with "FoldScript-"
+	NamedAllowRanges []string
 	// the ranges of characters (runes) that are not allowed - if any character
 	// is in any of these ranges then the constraint is violated
 	DisallowRanges []unicode.RangeTable
+	// the named ranges of characters (runes) that are not allowed - if any character
+	// is in any of these ranges then the constraint is violated
+	//
+	// The named ranges can be:
+	//
+	// * "BMP", "SMP" or "SIP" (Basic Multilingual Plane, Supplementary Multilingual Plane or Supplementary Ideographic Plane respectively)
+	//
+	// * any name from unicode.Categories prefixed with "Category-"
+	//
+	// * any name from unicode.Scripts prefixed with "Script-"
+	//
+	// * any name from unicode.Properties prefixed with "Property-"
+	//
+	// * any name from unicode.FoldCategory prefixed with "FoldCategory-"
+	//
+	// * any name from unicode.FoldScript prefixed with "FoldScript-"
+	NamedDisallowRanges []string
 	// the violation message to be used if the constraint fails (see Violation.Message)
 	//
 	// (if the Message is an empty string then the default violation message is used)
@@ -32,25 +64,41 @@ func (c *StringCharacters) Check(v interface{}, vcx *ValidatorContext) (bool, st
 }
 
 func (c *StringCharacters) checkString(str string, vcx *ValidatorContext) bool {
-	runes := []rune(str)
-	allowedCount := -1
-	for i, r := range runes {
-		for _, dr := range c.DisallowRanges {
-			if unicode.Is(&dr, r) {
+	la := len(c.AllowRanges) > 0 || len(c.NamedAllowRanges) > 0
+	ld := len(c.DisallowRanges) > 0 || len(c.NamedDisallowRanges) > 0
+	if la || ld {
+		runes := []rune(str)
+		for _, r := range runes {
+			for _, dr := range c.DisallowRanges {
+				if unicode.Is(&dr, r) {
+					return false
+				}
+			}
+			for _, dn := range c.NamedDisallowRanges {
+				if dr, ok := lookupRangeTableName(dn); !ok || (ok && unicode.Is(dr, r)) {
+					return false
+				}
+			}
+			if la && !c.inAllowed(r) {
 				return false
 			}
 		}
-		for _, ar := range c.AllowRanges {
-			if unicode.Is(&ar, r) {
-				allowedCount++
-				break
-			}
-		}
-		if i != allowedCount {
-			return false
-		}
 	}
 	return true
+}
+
+func (c *StringCharacters) inAllowed(r rune) bool {
+	for _, ar := range c.AllowRanges {
+		if unicode.Is(&ar, r) {
+			return true
+		}
+	}
+	for _, an := range c.NamedAllowRanges {
+		if ar, ok := lookupRangeTableName(an); ok && unicode.Is(ar, r) {
+			return true
+		}
+	}
+	return false
 }
 
 // GetMessage implements the Constraint.GetMessage
