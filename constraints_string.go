@@ -2,7 +2,6 @@ package valix
 
 import (
 	"encoding/json"
-	"golang.org/x/text/unicode/norm"
 	"regexp"
 	"strings"
 	"unicode"
@@ -226,6 +225,8 @@ type StringExactLength struct {
 	Value int `v8n:"default"`
 	// if set to true, uses the rune length (true Unicode length) to check length of string
 	UseRuneLen bool
+	// is the optional unicode normalisation form to be used prior to checking length (no unicode normalisation is performed if this is empty or unknown form)
+	NormalisationForm string
 	// the violation message to be used if the constraint fails (see Violation.Message)
 	//
 	// (if the Message is an empty string then the default violation message is used)
@@ -242,6 +243,9 @@ func (c *StringExactLength) Check(v interface{}, vcx *ValidatorContext) (bool, s
 }
 
 func (c *StringExactLength) checkString(str string, vcx *ValidatorContext) bool {
+	if frm, ok := getUnicodeNormalisationForm(c.NormalisationForm); ok {
+		str = frm.String(str)
+	}
 	l := len(str)
 	if c.UseRuneLen {
 		l = len([]rune(str))
@@ -266,6 +270,8 @@ type StringLength struct {
 	ExclusiveMax bool
 	// if set to true, uses the rune length (true Unicode length) to check length of string
 	UseRuneLen bool
+	// is the optional unicode normalisation form to be used prior to checking length (no unicode normalisation is performed if this is empty or unknown form)
+	NormalisationForm string
 	// the violation message to be used if the constraint fails (see Violation.Message)
 	//
 	// (if the Message is an empty string then the default violation message is used)
@@ -282,6 +288,9 @@ func (c *StringLength) Check(v interface{}, vcx *ValidatorContext) (bool, string
 }
 
 func (c *StringLength) checkString(str string, vcx *ValidatorContext) bool {
+	if frm, ok := getUnicodeNormalisationForm(c.NormalisationForm); ok {
+		str = frm.String(str)
+	}
 	l := len(str)
 	if c.UseRuneLen {
 		l = len([]rune(str))
@@ -334,6 +343,8 @@ type StringMaxLength struct {
 	ExclusiveMax bool
 	// if set to true, uses the rune length (true Unicode length) to check length of string
 	UseRuneLen bool
+	// is the optional unicode normalisation form to be used prior to checking length (no unicode normalisation is performed if this is empty or unknown form)
+	NormalisationForm string
 	// the violation message to be used if the constraint fails (see Violation.Message)
 	//
 	// (if the Message is an empty string then the default violation message is used)
@@ -350,6 +361,9 @@ func (c *StringMaxLength) Check(v interface{}, vcx *ValidatorContext) (bool, str
 }
 
 func (c *StringMaxLength) checkString(str string, vcx *ValidatorContext) bool {
+	if frm, ok := getUnicodeNormalisationForm(c.NormalisationForm); ok {
+		str = frm.String(str)
+	}
 	l := len(str)
 	if c.UseRuneLen {
 		l = len([]rune(str))
@@ -373,6 +387,8 @@ type StringMinLength struct {
 	ExclusiveMin bool
 	// if set to true, uses the rune length (true Unicode length) to check length of string
 	UseRuneLen bool
+	// is the optional unicode normalisation form to be used prior to checking length (no unicode normalisation is performed if this is empty or unknown form)
+	NormalisationForm string
 	// the violation message to be used if the constraint fails (see Violation.Message)
 	//
 	// (if the Message is an empty string then the default violation message is used)
@@ -389,6 +405,9 @@ func (c *StringMinLength) Check(v interface{}, vcx *ValidatorContext) (bool, str
 }
 
 func (c *StringMinLength) checkString(str string, vcx *ValidatorContext) bool {
+	if frm, ok := getUnicodeNormalisationForm(c.NormalisationForm); ok {
+		str = frm.String(str)
+	}
 	l := len(str)
 	if c.UseRuneLen {
 		l = len([]rune(str))
@@ -750,10 +769,10 @@ func (c *StringValidToken) GetMessage(tcx I18nContext) string {
 
 // StringValidUnicodeNormalization constraint to check that a string has the correct Unicode normalization form
 type StringValidUnicodeNormalization struct {
-	// the normalization form required - i.e. norm.NFC, norm.NFKC, norm.NFD or norm.NFKD
+	// the normalization form required - i.e. "NFC", "NFKC", "NFD" or "NFKD"
 	//
 	// (from package "golang.org/x/text/unicode/norm")
-	Form norm.Form `v8n:"default"`
+	Form string `v8n:"default"`
 	// the violation message to be used if the constraint fails (see Violation.Message)
 	//
 	// (if the Message is an empty string then the default violation message is used)
@@ -770,17 +789,20 @@ func (c *StringValidUnicodeNormalization) Check(v interface{}, vcx *ValidatorCon
 }
 
 func (c *StringValidUnicodeNormalization) checkString(str string, vcx *ValidatorContext) bool {
-	return c.Form.IsNormalString(str)
+	if f, ok := getUnicodeNormalisationForm(c.Form); ok {
+		return f.IsNormalString(str)
+	}
+	return false
 }
 
 // GetMessage implements the Constraint.GetMessage
 func (c *StringValidUnicodeNormalization) GetMessage(tcx I18nContext) string {
-	switch c.Form {
-	case norm.NFKC:
+	switch strings.ToUpper(c.Form) {
+	case "NFKC":
 		return defaultMessage(tcx, c.Message, msgUnicodeNormalizationNFKC)
-	case norm.NFD:
+	case "NFD":
 		return defaultMessage(tcx, c.Message, msgUnicodeNormalizationNFD)
-	case norm.NFKD:
+	case "NFKD":
 		return defaultMessage(tcx, c.Message, msgUnicodeNormalizationNFKD)
 	}
 	return defaultMessage(tcx, c.Message, msgUnicodeNormalizationNFC)

@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"reflect"
 	"strings"
-
-	"golang.org/x/text/unicode/norm"
 )
 
 func (v *Validator) MarshalJSON() ([]byte, error) {
@@ -257,26 +255,6 @@ func (c *ConstraintSet) MarshalJSON() ([]byte, error) {
 func (c *StringPattern) MarshalJSON() ([]byte, error) {
 	j := map[string]interface{}{
 		"Regexp":  c.Regexp.String(),
-		"Message": c.Message,
-		"Stop":    c.Stop,
-	}
-	return json.Marshal(j)
-}
-
-func (c *StringValidUnicodeNormalization) MarshalJSON() ([]byte, error) {
-	strForm := ""
-	switch c.Form {
-	case norm.NFC:
-		strForm = "NFC"
-	case norm.NFD:
-		strForm = "NFD"
-	case norm.NFKC:
-		strForm = "NFKC"
-	case norm.NFKD:
-		strForm = "NFKD"
-	}
-	j := map[string]interface{}{
-		"Form":    strForm,
 		"Message": c.Message,
 		"Stop":    c.Stop,
 	}

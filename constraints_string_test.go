@@ -2,7 +2,6 @@ package valix
 
 import (
 	"fmt"
-	"golang.org/x/text/unicode/norm"
 	"regexp"
 	"strings"
 	"testing"
@@ -598,6 +597,29 @@ func TestStringExactLengthWithRuneLength(t *testing.T) {
 	require.False(t, ok)
 }
 
+func TestStringExactLengthWithNormalisationForm(t *testing.T) {
+	validator := buildFooValidator(JsonString,
+		&StringExactLength{Value: 1, UseRuneLen: true}, false)
+	// NB. "\u0063\u0327" is 'c' followed by combining cedilla
+	obj := jsonObject(`{
+		"foo": "\u0063\u0327"
+	}`)
+	ok, violations := validator.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, fmt.Sprintf(fmtMsgStringExactLen, 1), violations[0].Message)
+
+	validator = buildFooValidator(JsonString,
+		&StringExactLength{Value: 1, UseRuneLen: true, NormalisationForm: "NFC"}, false)
+	ok, _ = validator.Validate(obj)
+	require.True(t, ok)
+
+	validator = buildFooValidator(JsonString,
+		&StringExactLength{Value: 1, UseRuneLen: false, NormalisationForm: "NFC"}, false)
+	ok, _ = validator.Validate(obj)
+	require.False(t, ok)
+}
+
 func TestStringLength(t *testing.T) {
 	validator := buildFooValidator(JsonString,
 		&StringLength{Minimum: 2, Maximum: 3}, false)
@@ -704,6 +726,29 @@ func TestStringLengthWithRuneLength(t *testing.T) {
 		&StringLength{Minimum: 1, Maximum: 1, UseRuneLen: true}, false)
 	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
+}
+
+func TestStringLengthWithNormalisationForm(t *testing.T) {
+	validator := buildFooValidator(JsonString,
+		&StringLength{Minimum: 1, Maximum: 1, UseRuneLen: true}, false)
+	// NB. "\u0063\u0327" is 'c' followed by combining cedilla
+	obj := jsonObject(`{
+		"foo": "\u0063\u0327"
+	}`)
+	ok, violations := validator.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, fmt.Sprintf(fmtMsgStringMinMaxLen, 1, tokenInclusive, 1, tokenInclusive), violations[0].Message)
+
+	validator = buildFooValidator(JsonString,
+		&StringLength{Minimum: 1, Maximum: 1, UseRuneLen: true, NormalisationForm: "NFC"}, false)
+	ok, _ = validator.Validate(obj)
+	require.True(t, ok)
+
+	validator = buildFooValidator(JsonString,
+		&StringLength{Minimum: 1, Maximum: 1, UseRuneLen: false, NormalisationForm: "NFC"}, false)
+	ok, _ = validator.Validate(obj)
+	require.False(t, ok)
 }
 
 func TestStringLowercase(t *testing.T) {
@@ -813,6 +858,29 @@ func TestStringMaxLengthWithRuneLength(t *testing.T) {
 	require.Equal(t, fmt.Sprintf(fmtMsgStringMaxLen, 1), violations[0].Message)
 }
 
+func TestStringMaxLengthWithNormalisationForm(t *testing.T) {
+	validator := buildFooValidator(JsonString,
+		&StringMaxLength{Value: 1, UseRuneLen: true}, false)
+	// NB. "\u0063\u0327" is 'c' followed by combining cedilla
+	obj := jsonObject(`{
+		"foo": "\u0063\u0327"
+	}`)
+	ok, violations := validator.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, fmt.Sprintf(fmtMsgStringMaxLen, 1), violations[0].Message)
+
+	validator = buildFooValidator(JsonString,
+		&StringMaxLength{Value: 1, UseRuneLen: true, NormalisationForm: "NFC"}, false)
+	ok, _ = validator.Validate(obj)
+	require.True(t, ok)
+
+	validator = buildFooValidator(JsonString,
+		&StringMaxLength{Value: 1, UseRuneLen: false, NormalisationForm: "NFC"}, false)
+	ok, _ = validator.Validate(obj)
+	require.False(t, ok)
+}
+
 func TestStringMinLength(t *testing.T) {
 	validator := buildFooValidator(JsonString,
 		&StringMinLength{Value: 2}, false)
@@ -883,6 +951,34 @@ func TestStringMinLengthWithRuneLength(t *testing.T) {
 	require.Equal(t, 1, len(violations))
 	require.Equal(t, fmt.Sprintf(fmtMsgStringMinLen, 2), violations[0].Message)
 	ok, _ = vWithoutUnicode.Validate(obj)
+	require.True(t, ok)
+}
+
+func TestStringMinLengthWithNormalisationForm(t *testing.T) {
+	validator := buildFooValidator(JsonString,
+		&StringMinLength{Value: 2, UseRuneLen: true}, false)
+	// NB. "\u0063\u0327" is 'c' followed by combining cedilla
+	obj := jsonObject(`{
+		"foo": "\u0063\u0327"
+	}`)
+	ok, _ := validator.Validate(obj)
+	require.True(t, ok)
+
+	validator = buildFooValidator(JsonString,
+		&StringMinLength{Value: 2, UseRuneLen: true, NormalisationForm: "NFC"}, false)
+	ok, violations := validator.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, fmt.Sprintf(fmtMsgStringMinLen, 2), violations[0].Message)
+
+	validator = buildFooValidator(JsonString,
+		&StringMinLength{Value: 1, UseRuneLen: true, NormalisationForm: "NFC"}, false)
+	ok, _ = validator.Validate(obj)
+	require.True(t, ok)
+
+	validator = buildFooValidator(JsonString,
+		&StringMinLength{Value: 2, UseRuneLen: false, NormalisationForm: "NFC"}, false)
+	ok, _ = validator.Validate(obj)
 	require.True(t, ok)
 }
 
@@ -1440,7 +1536,7 @@ func TestStringValidToken_Strict(t *testing.T) {
 
 func TestStringValidUnicodeNormalization(t *testing.T) {
 	validator := buildFooValidator(JsonString,
-		&StringValidUnicodeNormalization{Form: norm.NFC}, false)
+		&StringValidUnicodeNormalization{Form: "NFC"}, false)
 	// NB. "\u0063\u0327" is 'c' followed by combining cedilla
 	obj := jsonObject(`{
 		"foo": "\u0063\u0327"
@@ -1456,11 +1552,20 @@ func TestStringValidUnicodeNormalization(t *testing.T) {
 	require.True(t, ok)
 
 	validator = buildFooValidator(JsonString,
-		&StringValidUnicodeNormalization{Form: norm.NFD}, false)
+		&StringValidUnicodeNormalization{Form: "NFD"}, false)
 	ok, violations = validator.Validate(obj)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))
 	require.Equal(t, msgUnicodeNormalizationNFD, violations[0].Message)
+
+	// with no form set...
+	validator = buildFooValidator(JsonString,
+		&StringValidUnicodeNormalization{}, false)
+	obj["foo"] = ""
+	ok, violations = validator.Validate(obj)
+	require.False(t, ok)
+	require.Equal(t, 1, len(violations))
+	require.Equal(t, msgUnicodeNormalizationNFC, violations[0].Message)
 }
 
 func TestStringValidUnicodeNormalization_Strict(t *testing.T) {
@@ -1478,7 +1583,7 @@ func TestStringValidUnicodeNormalization_Strict(t *testing.T) {
 
 func TestStringValidUnicodeNormalizationK(t *testing.T) {
 	validator := buildFooValidator(JsonString,
-		&StringValidUnicodeNormalization{Form: norm.NFKC}, false)
+		&StringValidUnicodeNormalization{Form: "NFKC"}, false)
 	// NB. "\u0063\u0327" is 'c' followed by combining cedilla
 	obj := jsonObject(`{
 		"foo": "\u0063\u0327"
@@ -1494,7 +1599,7 @@ func TestStringValidUnicodeNormalizationK(t *testing.T) {
 	require.True(t, ok)
 
 	validator = buildFooValidator(JsonString,
-		&StringValidUnicodeNormalization{Form: norm.NFKD}, false)
+		&StringValidUnicodeNormalization{Form: "NFKD"}, false)
 	ok, violations = validator.Validate(obj)
 	require.False(t, ok)
 	require.Equal(t, 1, len(violations))

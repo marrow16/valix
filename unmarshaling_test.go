@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"golang.org/x/text/unicode/norm"
 	"strings"
 	"testing"
 
@@ -947,82 +946,6 @@ func TestStringPatternUnmarshalJSON(t *testing.T) {
 
 	js = `[]`
 	constraint = &StringPattern{}
-	err = json.Unmarshal([]byte(js), constraint)
-	require.NotNil(t, err)
-}
-
-func TestStringValidUnicodeNormalizationUnmarshalJSON(t *testing.T) {
-	js := `{}`
-	constraint := &StringValidUnicodeNormalization{}
-	err := json.Unmarshal([]byte(js), constraint)
-	require.Nil(t, err)
-
-	js = `{
-		"Form": "NFC",
-		"Message": "foo",
-		"Stop": true
-	}`
-	constraint = &StringValidUnicodeNormalization{}
-	err = json.Unmarshal([]byte(js), constraint)
-	require.Nil(t, err)
-	require.Equal(t, "foo", constraint.Message)
-	require.True(t, constraint.Stop)
-	require.Equal(t, norm.NFC, constraint.Form)
-
-	js = `{
-		"Form": "NFD"
-	}`
-	constraint = &StringValidUnicodeNormalization{}
-	err = json.Unmarshal([]byte(js), constraint)
-	require.Nil(t, err)
-	require.Equal(t, norm.NFD, constraint.Form)
-
-	js = `{
-		"Form": "NFKC"
-	}`
-	constraint = &StringValidUnicodeNormalization{}
-	err = json.Unmarshal([]byte(js), constraint)
-	require.Nil(t, err)
-	require.Equal(t, norm.NFKC, constraint.Form)
-
-	js = `{
-		"Form": "NFKD"
-	}`
-	constraint = &StringValidUnicodeNormalization{}
-	err = json.Unmarshal([]byte(js), constraint)
-	require.Nil(t, err)
-	require.Equal(t, norm.NFKD, constraint.Form)
-
-	js = `{
-		"Form": 123
-	}`
-	constraint = &StringValidUnicodeNormalization{}
-	err = json.Unmarshal([]byte(js), constraint)
-	require.NotNil(t, err)
-
-	js = `{
-		"Form": "XXX"
-	}`
-	constraint = &StringValidUnicodeNormalization{}
-	err = json.Unmarshal([]byte(js), constraint)
-	require.NotNil(t, err)
-
-	js = `[]`
-	constraint = &StringValidUnicodeNormalization{}
-	err = json.Unmarshal([]byte(js), constraint)
-	require.NotNil(t, err)
-
-	js = `{
-		"Message": 123
-	}`
-	constraint = &StringValidUnicodeNormalization{}
-	err = json.Unmarshal([]byte(js), constraint)
-	require.NotNil(t, err)
-
-	js = `{
-		"Stop": 123
-	}`
-	constraint = &StringValidUnicodeNormalization{}
 	err = json.Unmarshal([]byte(js), constraint)
 	require.NotNil(t, err)
 }
