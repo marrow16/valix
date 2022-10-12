@@ -7,7 +7,6 @@ import (
 	"unicode"
 
 	"github.com/stretchr/testify/require"
-	"golang.org/x/text/unicode/norm"
 )
 
 func TestValidator_MarshalJSON(t *testing.T) {
@@ -445,54 +444,6 @@ func TestConstraint_StringPattern_MarshalJSON(t *testing.T) {
 	require.NotNil(t, obj)
 	require.Equal(t, "test message", obj["Message"])
 	require.Equal(t, "^([A-Z]+)$", obj["Regexp"])
-}
-
-func TestConstraint_StringValidUnicodeNormalization_MarshalJSON(t *testing.T) {
-	c := &StringValidUnicodeNormalization{
-		Form:    norm.NFC,
-		Message: "test message",
-	}
-	b, err := json.Marshal(c)
-	require.Nil(t, err)
-	obj := map[string]interface{}{}
-	err = json.Unmarshal(b, &obj)
-	require.Nil(t, err)
-	require.NotNil(t, obj)
-	require.Equal(t, "test message", obj["Message"])
-	require.Equal(t, "NFC", obj["Form"])
-
-	c = &StringValidUnicodeNormalization{
-		Form: norm.NFD,
-	}
-	b, err = json.Marshal(c)
-	require.Nil(t, err)
-	obj = map[string]interface{}{}
-	err = json.Unmarshal(b, &obj)
-	require.Nil(t, err)
-	require.NotNil(t, obj)
-	require.Equal(t, "NFD", obj["Form"])
-
-	c = &StringValidUnicodeNormalization{
-		Form: norm.NFKC,
-	}
-	b, err = json.Marshal(c)
-	require.Nil(t, err)
-	obj = map[string]interface{}{}
-	err = json.Unmarshal(b, &obj)
-	require.Nil(t, err)
-	require.NotNil(t, obj)
-	require.Equal(t, "NFKC", obj["Form"])
-
-	c = &StringValidUnicodeNormalization{
-		Form: norm.NFKD,
-	}
-	b, err = json.Marshal(c)
-	require.Nil(t, err)
-	obj = map[string]interface{}{}
-	err = json.Unmarshal(b, &obj)
-	require.Nil(t, err)
-	require.NotNil(t, obj)
-	require.Equal(t, "NFKD", obj["Form"])
 }
 
 func TestConstraint_ArrayConditionalConstraint_MarshalJSONFails(t *testing.T) {

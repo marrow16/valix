@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"golang.org/x/text/unicode/norm"
 	"reflect"
 	"regexp"
 	"strconv"
@@ -701,52 +700,6 @@ func (c *StringPattern) UnmarshalJSON(data []byte) error {
 			c.Regexp = *rx
 		} else {
 			return fmt.Errorf(errMsgFieldExpectedType, "Regexp", "regexp string")
-		}
-	}
-	return nil
-}
-
-func (c *StringValidUnicodeNormalization) UnmarshalJSON(data []byte) error {
-	obj := map[string]interface{}{}
-	err := json.Unmarshal(data, &obj)
-	if err != nil {
-		return err
-	}
-	if raw, ok := obj[constraintPtyNameMessage]; ok {
-		if v, ok := raw.(string); ok {
-			c.Message = v
-		} else {
-			return fmt.Errorf(errMsgFieldExpectedType, constraintPtyNameMessage, "string")
-		}
-	}
-	if raw, ok := obj[constraintPtyNameStop]; ok {
-		if v, ok := raw.(bool); ok {
-			c.Stop = v
-		} else {
-			return fmt.Errorf(errMsgFieldExpectedType, constraintPtyNameStop, "bool")
-		}
-	}
-	if raw, ok := obj["Form"]; ok {
-		v, vOk := raw.(string)
-		var form norm.Form
-		if vOk {
-			switch v {
-			case "NFC":
-				form = norm.NFC
-			case "NFD":
-				form = norm.NFD
-			case "NFKC":
-				form = norm.NFKC
-			case "NFKD":
-				form = norm.NFKD
-			default:
-				vOk = false
-			}
-		}
-		if vOk {
-			c.Form = form
-		} else {
-			return fmt.Errorf(errMsgFieldExpectedType, constraintPtyNameStop, "string (\"NFC\", \"NFD\", \"NFKC\" or \"NFKD\")")
 		}
 	}
 	return nil

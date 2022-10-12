@@ -3,6 +3,7 @@ package valix
 import (
 	"encoding/json"
 	"github.com/google/go-cmp/cmp"
+	"golang.org/x/text/unicode/norm"
 	"math"
 	"regexp"
 	"strconv"
@@ -628,6 +629,23 @@ func checkStringConstraint(v interface{}, vcx *ValidatorContext, c stringConstra
 		return false, c.GetMessage(vcx)
 	}
 	return true, ""
+}
+
+func getUnicodeNormalisationForm(f string) (form norm.Form, ok bool) {
+	ok = true
+	switch strings.ToUpper(f) {
+	case "NFC":
+		form = norm.NFC
+	case "NFKC":
+		form = norm.NFKC
+	case "NFD":
+		form = norm.NFD
+	case "NFKD":
+		form = norm.NFKD
+	default:
+		ok = false
+	}
+	return
 }
 
 type dateCompareConstraint interface {
