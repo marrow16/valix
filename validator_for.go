@@ -13,39 +13,6 @@ const (
 	tagNameJson  = "json"
 )
 
-// ValidatorForOptions is used by ValidatorFor and MustCompileValidatorFor to set
-// the initial overall validator for the struct
-type ValidatorForOptions struct {
-	// IgnoreUnknownProperties is whether to ignore unknown properties (default false)
-	//
-	// Set this to `true` if you want to allow unknown properties
-	IgnoreUnknownProperties bool
-	// Constraints is an optional slice of Constraint items to be checked on the object/array
-	//
-	// * These are checked in the order specified and prior to property validator & unknown property checks
-	Constraints Constraints
-	// AllowNullJson forces validator to accept a request body that is null JSON (i.e. a body containing just `null`)
-	AllowNullJson bool
-	// AllowArray denotes, when true (default is false), that this validator will allow a JSON array - where each
-	// item in the array can be validated as an object
-	AllowArray bool
-	// DisallowObject denotes, when set to true, that this validator will disallow JSON objects - i.e. that it
-	// expects JSON arrays (in which case the AllowArray should also be set to true)
-	DisallowObject bool
-	// StopOnFirst if set, instructs the validator to stop at the first violation found
-	StopOnFirst bool
-	// UseNumber forces RequestValidate method to use json.Number when decoding request body
-	UseNumber bool
-	// OrderedPropertyChecks determines whether properties should be checked in order - when set to true, properties
-	// are sorted by PropertyValidator.Order and property name
-	//
-	// When this is set to false (default) properties are checked in the order in which they appear in the properties map -
-	// which is unpredictable
-	OrderedPropertyChecks bool
-	// OasInfo is additional information (for OpenAPI Specification)
-	OasInfo *OasInfo
-}
-
 const (
 	errMsgValidatorForStructOnly   = "ValidatorFor can only be used with struct arg"
 	errMsgCannotFindPropertyInRepo = tagNameV8nAs + " tag cannot find property name '%s' in properties repository"
@@ -61,12 +28,15 @@ const (
 // `v8n` tag (see full documentation for details of this tag)
 //
 // The `json` tag is also used, if specified, to determine the JSON property name to be used.
-func ValidatorFor(vstruct interface{}, options *ValidatorForOptions) (*Validator, error) {
+func ValidatorFor(vstruct interface{}, options ...Option) (*Validator, error) {
 	ty := reflect.TypeOf(vstruct)
 	if ty.Kind() != reflect.Struct {
 		return nil, errors.New(errMsgValidatorForStructOnly)
 	}
-	result := emptyValidatorFromOptions(options)
+	result, err := emptyValidatorFromOptions(options...)
+	if err != nil {
+		return nil, err
+	}
 
 	properties, err := buildPropertyValidators(ty)
 	if err != nil {
@@ -80,15 +50,15 @@ func ValidatorFor(vstruct interface{}, options *ValidatorForOptions) (*Validator
 //
 // Similar to ValidatorFor but rather than returning an error, it panics if a
 // Validator cannot be compiled for the struct
-func MustCompileValidatorFor(vstruct interface{}, options *ValidatorForOptions) *Validator {
-	v, err := ValidatorFor(vstruct, options)
+func MustCompileValidatorFor(vstruct interface{}, options ...Option) *Validator {
+	v, err := ValidatorFor(vstruct, options...)
 	if err != nil {
 		panic(err)
 	}
 	return v
 }
 
-func emptyValidatorFromOptions(options *ValidatorForOptions) *Validator {
+func emptyValidatorFromOptions(options ...Option) (*Validator, error) {
 	result := &Validator{
 		IgnoreUnknownProperties: false,
 		Properties:              Properties{},
@@ -99,18 +69,14 @@ func emptyValidatorFromOptions(options *ValidatorForOptions) *Validator {
 		UseNumber:               false,
 		StopOnFirst:             false,
 	}
-	if options != nil {
-		result.IgnoreUnknownProperties = options.IgnoreUnknownProperties
-		result.Constraints = options.Constraints
-		result.AllowNullJson = options.AllowNullJson
-		result.UseNumber = options.UseNumber
-		result.AllowArray = options.AllowArray
-		result.DisallowObject = options.DisallowObject
-		result.StopOnFirst = options.StopOnFirst
-		result.OrderedPropertyChecks = options.OrderedPropertyChecks
-		result.OasInfo = options.OasInfo
+	for _, opt := range options {
+		if opt != nil {
+			if err := opt.Apply(result); err != nil {
+				return nil, err
+			}
+		}
 	}
-	return result
+	return result, nil
 }
 
 func buildPropertyValidators(ty reflect.Type) (Properties, error) {
