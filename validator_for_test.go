@@ -1,6 +1,7 @@
 package valix
 
 import (
+	"errors"
 	"fmt"
 	"github.com/stretchr/testify/require"
 	"testing"
@@ -65,11 +66,21 @@ func TestValidatorForWithEmptyStructAndOptions(t *testing.T) {
 	require.NotNil(t, v)
 	require.True(t, v.IgnoreUnknownProperties)
 	require.Equal(t, 0, len(v.Properties))
-	require.NotNil(t, v.Constraints)
 	require.Equal(t, 0, len(v.Constraints))
 	require.False(t, v.AllowArray)
 	require.False(t, v.DisallowObject)
 	require.True(t, v.UseNumber)
+}
+
+type errorOption struct{}
+
+func (o errorOption) Apply(on *Validator) error {
+	return errors.New("Fooey")
+}
+func TestValidatorForWithErroringOption(t *testing.T) {
+	_, err := ValidatorFor(struct{}{}, &errorOption{})
+	require.NotNil(t, err)
+	require.Equal(t, "Fooey", err.Error())
 }
 
 func TestValidatorForWithJsonTag(t *testing.T) {
