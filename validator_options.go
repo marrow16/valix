@@ -55,7 +55,10 @@ func (o *ValidatorForOptions) Apply(on *Validator) error {
 	return nil
 }
 
+// OptionIgnoreUnknownProperties option for ValidatorFor - sets Validator to ignore unknown properties
 var OptionIgnoreUnknownProperties Option = &optionIgnoreUnknownProperties{true}
+
+// OptionDisallowUnknownProperties option for ValidatorFor - sets Validator to not ignore unknown properties
 var OptionDisallowUnknownProperties Option = &optionIgnoreUnknownProperties{false}
 
 type optionIgnoreUnknownProperties struct {
@@ -67,6 +70,7 @@ func (o *optionIgnoreUnknownProperties) Apply(on *Validator) error {
 	return nil
 }
 
+// OptionConstraints option for ValidatorFor - adds constraints to the Validator
 var OptionConstraints = func(constraints ...Constraint) Option {
 	return &optionConstraints{
 		constraints: constraints,
@@ -82,7 +86,10 @@ func (o *optionConstraints) Apply(on *Validator) error {
 	return nil
 }
 
+// OptionAllowNullJson option for ValidatorFor - sets Validator to allow JSON null
 var OptionAllowNullJson Option = &optionAllowNullJson{true}
+
+// OptionDisallowNullJson option for ValidatorFor - sets Validator to not allow JSON null
 var OptionDisallowNullJson Option = &optionAllowNullJson{false}
 
 type optionAllowNullJson struct {
@@ -94,7 +101,10 @@ func (o *optionAllowNullJson) Apply(on *Validator) error {
 	return nil
 }
 
+// OptionAllowArray option for ValidatorFor - sets Validator to allow JSON array
 var OptionAllowArray Option = &optionAllowArray{true}
+
+// OptionDisallowArray option for ValidatorFor - sets Validator to not allow JSON array
 var OptionDisallowArray Option = &optionAllowArray{false}
 
 type optionAllowArray struct {
@@ -106,7 +116,10 @@ func (o *optionAllowArray) Apply(on *Validator) error {
 	return nil
 }
 
+// OptionAllowObject option for ValidatorFor - sets Validator to allow JSON object
 var OptionAllowObject Option = &optionDisallowObject{false}
+
+// OptionDisallowObject option for ValidatorFor - sets Validator to not allow JSON object
 var OptionDisallowObject Option = &optionDisallowObject{true}
 
 type optionDisallowObject struct {
@@ -118,7 +131,10 @@ func (o *optionDisallowObject) Apply(on *Validator) error {
 	return nil
 }
 
+// OptionStopOnFirst option for ValidatorFor - sets Validator to stop on first violation
 var OptionStopOnFirst Option = &optionStopOnFirst{true}
+
+// OptionDontStopOnFirst option for ValidatorFor - sets Validator to not stop on first violation
 var OptionDontStopOnFirst Option = &optionStopOnFirst{false}
 
 type optionStopOnFirst struct {
@@ -130,6 +146,7 @@ func (o *optionStopOnFirst) Apply(on *Validator) error {
 	return nil
 }
 
+// OptionUseNumber option for ValidatorFor - sets Validator to use json.Number when decoding requests
 var OptionUseNumber Option = &optionUseNumber{true}
 
 type optionUseNumber struct {
@@ -141,7 +158,10 @@ func (o *optionUseNumber) Apply(on *Validator) error {
 	return nil
 }
 
+// OptionOrderedPropertyChecks option for ValidatorFor - sets Validator to do ordered property checks
 var OptionOrderedPropertyChecks Option = &optionOrderedPropertyChecks{true}
+
+// OptionUnOrderedPropertyChecks option for ValidatorFor - sets Validator to not do ordered property checks
 var OptionUnOrderedPropertyChecks Option = &optionOrderedPropertyChecks{false}
 
 type optionOrderedPropertyChecks struct {
