@@ -312,6 +312,57 @@ func TestConstraintSetDefaultMessage(t *testing.T) {
 	require.Equal(t, fmt.Sprintf(fmtMsgConstraintSetDefaultOneOf, 1), violations[0].Message)
 }
 
+func TestConstraintSetWithConditionals(t *testing.T) {
+	cc1 := &ConditionalConstraint{
+		When: []string{"AA"},
+		Constraint: &StringNotEmpty{
+			Message: "MSG_1",
+		},
+	}
+	cc2 := &ConditionalConstraint{
+		When: []string{"BB"},
+		Constraint: &StringNotEmpty{
+			Message: "MSG_2",
+		},
+	}
+	set := &ConstraintSet{
+		Constraints: Constraints{cc1, cc2},
+	}
+	vcx := newValidatorContext(nil, nil, false, nil)
+	ok, _ := set.Check("", vcx)
+	require.True(t, ok)
+
+	vcx.SetCondition("BB")
+	ok, msg := set.Check("", vcx)
+	require.False(t, ok)
+	require.Equal(t, "MSG_2", msg)
+
+	vcx.SetCondition("AA")
+	ok, msg = set.Check("", vcx)
+	require.False(t, ok)
+	require.Equal(t, "MSG_1", msg)
+
+	vcx.ClearCondition("AA")
+	vcx.ClearCondition("BB")
+	set.OneOf = true
+	ok, msg = set.Check("", vcx)
+	require.False(t, ok)
+	require.Equal(t, "Constraint set must pass one of 2 undisclosed validations", msg)
+	vcx.SetCondition("AA")
+	ok, msg = set.Check("", vcx)
+	require.False(t, ok)
+	require.Equal(t, "MSG_1", msg)
+	vcx.ClearCondition("AA")
+	vcx.SetCondition("BB")
+	ok, msg = set.Check("", vcx)
+	require.False(t, ok)
+	require.Equal(t, "MSG_2", msg)
+	vcx.SetCondition("AA")
+	ok, msg = set.Check("", vcx)
+	require.False(t, ok)
+	require.Equal(t, "MSG_1", msg)
+}
+
 type testConstraint struct {
 	passes bool
 	msg    string

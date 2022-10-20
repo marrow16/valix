@@ -419,6 +419,22 @@ const (
 	arrayconditionalConstraintName = "ArrayConditionalConstraint"
 )
 
+type Conditional interface {
+	MeetsConditions(vcx *ValidatorContext) bool
+}
+
+func isConditional(c Constraint) (Conditional, bool) {
+	cc, ok := c.(Conditional)
+	return cc, ok
+}
+
+func isCheckRequired(c Constraint, vcx *ValidatorContext) bool {
+	if cc, ok := isConditional(c); ok {
+		return cc.MeetsConditions(vcx)
+	}
+	return true
+}
+
 // ConditionalConstraint is a special constraint that wraps another constraint - but the wrapped
 // constraint is only checked when the specified when condition is met
 type ConditionalConstraint struct {
@@ -431,22 +447,27 @@ type ConditionalConstraint struct {
 }
 
 func (c *ConditionalConstraint) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
-	if c.Constraint != nil && vcx.meetsWhenConditions(c.When) {
-		if c.Others != nil {
-			if curr, ancestryVals, ok := vcx.ancestorValueObject(0); ok {
-				if c.Others.Evaluate(curr, ancestryVals, vcx) {
-					return c.Constraint.Check(v, vcx)
-				}
-			}
-		} else {
-			return c.Constraint.Check(v, vcx)
-		}
+	if c.MeetsConditions(vcx) {
+		return c.Constraint.Check(v, vcx)
 	}
 	return true, c.GetMessage(vcx)
 }
 
 func (c *ConditionalConstraint) GetMessage(tcx I18nContext) string {
 	return ""
+}
+
+func (c *ConditionalConstraint) MeetsConditions(vcx *ValidatorContext) bool {
+	if c.Constraint != nil && vcx.meetsWhenConditions(c.When) {
+		if c.Others != nil {
+			if curr, ancestryVals, ok := vcx.ancestorValueObject(0); ok {
+				return c.Others.Evaluate(curr, ancestryVals, vcx)
+			}
+		} else {
+			return true
+		}
+	}
+	return false
 }
 
 // ArrayConditionalConstraint is a special constraint that wraps another constraint - but the wrapped
@@ -513,7 +534,7 @@ func (c *ArrayConditionalConstraint) Check(v interface{}, vcx *ValidatorContext)
 				}
 			}
 		}
-		if check && c.Constraint != nil {
+		if check && c.Constraint != nil && isCheckRequired(c.Constraint, vcx) {
 			return c.Constraint.Check(v, vcx)
 		}
 	}

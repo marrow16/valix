@@ -67,18 +67,25 @@ const (
 func (c *ConstraintSet) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
 	if c.OneOf {
 		return c.checkOneOf(v, vcx)
+	} else {
+		return c.checkAllOf(v, vcx)
 	}
+}
+
+func (c *ConstraintSet) checkAllOf(v interface{}, vcx *ValidatorContext) (bool, string) {
 	for _, cc := range c.Constraints {
-		if ok, msg := cc.Check(v, vcx); !ok {
-			if c.Message == "" && msg != "" {
+		if isCheckRequired(cc, vcx) {
+			if ok, msg := cc.Check(v, vcx); !ok {
+				if c.Message == "" && msg != "" {
+					vcx.CeaseFurtherIf(c.Stop)
+					return false, msg
+				}
 				vcx.CeaseFurtherIf(c.Stop)
-				return false, msg
+				return false, c.GetMessage(vcx)
 			}
-			vcx.CeaseFurtherIf(c.Stop)
-			return false, c.GetMessage(vcx)
-		}
-		if !vcx.continueAll || !vcx.continuePty() {
-			break
+			if !vcx.continueAll || !vcx.continuePty() {
+				break
+			}
 		}
 	}
 	return true, ""
@@ -88,14 +95,16 @@ func (c *ConstraintSet) checkOneOf(v interface{}, vcx *ValidatorContext) (bool, 
 	finalOk := false
 	firstMsg := ""
 	for _, cc := range c.Constraints {
-		if ok, msg := cc.Check(v, vcx); ok {
-			finalOk = true
-			break
-		} else if firstMsg == "" {
-			firstMsg = msg
-		}
-		if !vcx.continueAll || !vcx.continuePty() {
-			break
+		if isCheckRequired(cc, vcx) {
+			if ok, msg := cc.Check(v, vcx); ok {
+				finalOk = true
+				break
+			} else if firstMsg == "" {
+				firstMsg = msg
+			}
+			if !vcx.continueAll || !vcx.continuePty() {
+				break
+			}
 		}
 	}
 	if finalOk {
