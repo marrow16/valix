@@ -1144,3 +1144,13 @@ func TestSetConditionIf_NoLeaks(t *testing.T) {
 	require.Equal(t, "HERE", violations[0].Message)
 	require.Equal(t, "HERE", violations[1].Message)
 }
+
+func TestIsConditional(t *testing.T) {
+	c := &ConditionalConstraint{}
+	_, isCond := isConditional(c)
+	require.True(t, isCond)
+
+	c2 := &StringNotEmpty{}
+	_, isCond = isConditional(c2)
+	require.False(t, isCond)
+}

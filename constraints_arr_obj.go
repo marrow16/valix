@@ -31,27 +31,36 @@ func (c *ArrayOf) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
 					return false, c.GetMessage(vcx)
 				}
 				if elem != nil {
-					for _, cstr := range c.Constraints {
-						vcx.pushPathIndex(i, elem, nil)
-						cOk, msg := cstr.Check(elem, vcx)
-						if !cOk {
-							vcx.CeaseFurtherIf(c.Stop)
-							if c.Stop {
-								vcx.popPath()
-								return false, msg
-							} else {
-								vcx.AddViolationForCurrent(msg, false)
-							}
-						}
-						vcx.popPath()
-						if !vcx.continueAll || !vcx.continuePty() {
-							break
-						}
+					if csOk, csMsg := c.checkConstraints(i, elem, vcx); !csOk {
+						return false, csMsg
 					}
 				}
 				if !vcx.continueAll || !vcx.continuePty() {
 					break
 				}
+			}
+		}
+	}
+	return true, ""
+}
+
+func (c *ArrayOf) checkConstraints(i int, elem interface{}, vcx *ValidatorContext) (bool, string) {
+	for _, constraint := range c.Constraints {
+		if isCheckRequired(constraint, vcx) {
+			vcx.pushPathIndex(i, elem, nil)
+			cOk, msg := constraint.Check(elem, vcx)
+			if !cOk {
+				vcx.CeaseFurtherIf(c.Stop)
+				if c.Stop {
+					vcx.popPath()
+					return false, msg
+				} else {
+					vcx.AddViolationForCurrent(msg, false)
+				}
+			}
+			vcx.popPath()
+			if !vcx.continueAll || !vcx.continuePty() {
+				break
 			}
 		}
 	}
