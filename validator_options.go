@@ -55,11 +55,55 @@ func (o *ValidatorForOptions) Apply(on *Validator) error {
 	return nil
 }
 
-// OptionIgnoreUnknownProperties option for ValidatorFor - sets Validator to ignore unknown properties
-var OptionIgnoreUnknownProperties Option = &optionIgnoreUnknownProperties{true}
+var (
+	// OptionConstraints option for ValidatorFor - adds constraints to the Validator
+	OptionConstraints = _OptionConstraints
+	// OptionIgnoreUnknownProperties option for ValidatorFor - sets Validator to ignore unknown properties
+	OptionIgnoreUnknownProperties Option = _OptionIgnoreUnknownProperties
+	// OptionDisallowUnknownProperties option for ValidatorFor - sets Validator to not ignore unknown properties
+	OptionDisallowUnknownProperties Option = _OptionDisallowUnknownProperties
+	// OptionAllowNullJson option for ValidatorFor - sets Validator to allow JSON null
+	OptionAllowNullJson Option = _OptionAllowNullJson
+	// OptionDisallowNullJson option for ValidatorFor - sets Validator to not allow JSON null
+	OptionDisallowNullJson Option = _OptionDisallowNullJson
+	// OptionAllowArray option for ValidatorFor - sets Validator to allow JSON array
+	OptionAllowArray Option = _OptionAllowArray
+	// OptionDisallowArray option for ValidatorFor - sets Validator to not allow JSON array
+	OptionDisallowArray Option = _OptionDisallowArray
+	// OptionAllowObject option for ValidatorFor - sets Validator to allow JSON object
+	OptionAllowObject Option = _OptionAllowObject
+	// OptionDisallowObject option for ValidatorFor - sets Validator to not allow JSON object
+	OptionDisallowObject Option = _OptionDisallowObject
+	// OptionStopOnFirst option for ValidatorFor - sets Validator to stop on first violation
+	OptionStopOnFirst Option = _OptionStopOnFirst
+	// OptionDontStopOnFirst option for ValidatorFor - sets Validator to not stop on first violation
+	OptionDontStopOnFirst Option = _OptionDontStopOnFirst
+	// OptionOrderedPropertyChecks option for ValidatorFor - sets Validator to do ordered property checks
+	OptionOrderedPropertyChecks Option = _OptionOrderedPropertyChecks
+	// OptionUnOrderedPropertyChecks option for ValidatorFor - sets Validator to not do ordered property checks
+	// Note that if the validator has any properties with a non-zero order, ordered property checks are always carried out
+	OptionUnOrderedPropertyChecks Option = _OptionUnOrderedPropertyChecks
+)
 
-// OptionDisallowUnknownProperties option for ValidatorFor - sets Validator to not ignore unknown properties
-var OptionDisallowUnknownProperties Option = &optionIgnoreUnknownProperties{false}
+var (
+	_OptionConstraints = func(constraints ...Constraint) Option {
+		return &optionConstraints{
+			constraints: constraints,
+		}
+	}
+	_OptionIgnoreUnknownProperties   = &optionIgnoreUnknownProperties{true}
+	_OptionDisallowUnknownProperties = &optionIgnoreUnknownProperties{false}
+	_OptionAllowNullJson             = &optionAllowNullJson{true}
+	_OptionDisallowNullJson          = &optionAllowNullJson{false}
+	_OptionAllowArray                = &optionAllowArray{true}
+	_OptionDisallowArray             = &optionAllowArray{false}
+	_OptionAllowObject               = &optionDisallowObject{false}
+	_OptionDisallowObject            = &optionDisallowObject{true}
+	_OptionStopOnFirst               = &optionStopOnFirst{true}
+	_OptionDontStopOnFirst           = &optionStopOnFirst{false}
+	_OptionOrderedPropertyChecks     = &optionOrderedPropertyChecks{true}
+	_OptionUnOrderedPropertyChecks   = &optionOrderedPropertyChecks{false}
+)
 
 type optionIgnoreUnknownProperties struct {
 	setting bool
@@ -68,13 +112,6 @@ type optionIgnoreUnknownProperties struct {
 func (o *optionIgnoreUnknownProperties) Apply(on *Validator) error {
 	on.IgnoreUnknownProperties = o.setting
 	return nil
-}
-
-// OptionConstraints option for ValidatorFor - adds constraints to the Validator
-var OptionConstraints = func(constraints ...Constraint) Option {
-	return &optionConstraints{
-		constraints: constraints,
-	}
 }
 
 type optionConstraints struct {
@@ -86,12 +123,6 @@ func (o *optionConstraints) Apply(on *Validator) error {
 	return nil
 }
 
-// OptionAllowNullJson option for ValidatorFor - sets Validator to allow JSON null
-var OptionAllowNullJson Option = &optionAllowNullJson{true}
-
-// OptionDisallowNullJson option for ValidatorFor - sets Validator to not allow JSON null
-var OptionDisallowNullJson Option = &optionAllowNullJson{false}
-
 type optionAllowNullJson struct {
 	setting bool
 }
@@ -100,12 +131,6 @@ func (o *optionAllowNullJson) Apply(on *Validator) error {
 	on.AllowNullJson = o.setting
 	return nil
 }
-
-// OptionAllowArray option for ValidatorFor - sets Validator to allow JSON array
-var OptionAllowArray Option = &optionAllowArray{true}
-
-// OptionDisallowArray option for ValidatorFor - sets Validator to not allow JSON array
-var OptionDisallowArray Option = &optionAllowArray{false}
 
 type optionAllowArray struct {
 	setting bool
@@ -116,12 +141,6 @@ func (o *optionAllowArray) Apply(on *Validator) error {
 	return nil
 }
 
-// OptionAllowObject option for ValidatorFor - sets Validator to allow JSON object
-var OptionAllowObject Option = &optionDisallowObject{false}
-
-// OptionDisallowObject option for ValidatorFor - sets Validator to not allow JSON object
-var OptionDisallowObject Option = &optionDisallowObject{true}
-
 type optionDisallowObject struct {
 	setting bool
 }
@@ -130,12 +149,6 @@ func (o *optionDisallowObject) Apply(on *Validator) error {
 	on.DisallowObject = o.setting
 	return nil
 }
-
-// OptionStopOnFirst option for ValidatorFor - sets Validator to stop on first violation
-var OptionStopOnFirst Option = &optionStopOnFirst{true}
-
-// OptionDontStopOnFirst option for ValidatorFor - sets Validator to not stop on first violation
-var OptionDontStopOnFirst Option = &optionStopOnFirst{false}
 
 type optionStopOnFirst struct {
 	setting bool
@@ -157,12 +170,6 @@ func (o *optionUseNumber) Apply(on *Validator) error {
 	on.UseNumber = o.setting
 	return nil
 }
-
-// OptionOrderedPropertyChecks option for ValidatorFor - sets Validator to do ordered property checks
-var OptionOrderedPropertyChecks Option = &optionOrderedPropertyChecks{true}
-
-// OptionUnOrderedPropertyChecks option for ValidatorFor - sets Validator to not do ordered property checks
-var OptionUnOrderedPropertyChecks Option = &optionOrderedPropertyChecks{false}
 
 type optionOrderedPropertyChecks struct {
 	setting bool
