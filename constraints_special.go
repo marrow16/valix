@@ -419,22 +419,6 @@ const (
 	arrayconditionalConstraintName = "ArrayConditionalConstraint"
 )
 
-type Conditional interface {
-	MeetsConditions(vcx *ValidatorContext) bool
-}
-
-func isConditional(c Constraint) (Conditional, bool) {
-	cc, ok := c.(Conditional)
-	return cc, ok
-}
-
-func isCheckRequired(c Constraint, vcx *ValidatorContext) bool {
-	if cc, ok := isConditional(c); ok {
-		return cc.MeetsConditions(vcx)
-	}
-	return true
-}
-
 // ConditionalConstraint is a special constraint that wraps another constraint - but the wrapped
 // constraint is only checked when the specified when condition is met
 type ConditionalConstraint struct {
@@ -444,17 +428,23 @@ type ConditionalConstraint struct {
 	Others OthersExpr
 	// Constraint is the wrapped constraint
 	Constraint Constraint
+	// FailNotMet specifies that the conditional constraint should fail if the conditions are not met
+	//
+	// By default, if the conditions are not met the conditional constraint passes (without calling the wrapped constraint)
+	FailNotMet bool
+	// NotMetMessage is the message used when FailNotMet is set and the conditions are not met
+	NotMetMessage string
 }
 
 func (c *ConditionalConstraint) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
 	if c.MeetsConditions(vcx) {
 		return c.Constraint.Check(v, vcx)
 	}
-	return true, c.GetMessage(vcx)
+	return !c.FailNotMet, c.GetMessage(vcx)
 }
 
 func (c *ConditionalConstraint) GetMessage(tcx I18nContext) string {
-	return ""
+	return ternary(c.FailNotMet).string(c.NotMetMessage, "")
 }
 
 func (c *ConditionalConstraint) MeetsConditions(vcx *ValidatorContext) bool {
@@ -543,4 +533,157 @@ func (c *ArrayConditionalConstraint) Check(v interface{}, vcx *ValidatorContext)
 
 func (c *ArrayConditionalConstraint) GetMessage(tcx I18nContext) string {
 	return ""
+}
+
+// ConstraintSet is a constraint that contains other constraints
+//
+// The contained constraints are checked sequentially but the overall
+// set stops on the first failing constraint
+type ConstraintSet struct {
+	// Constraints is the slice of constraints within the set
+	Constraints Constraints `v8n:"default"`
+	// when set to true, OneOf specifies that the constraint set should pass just one of
+	// the contained constraints (rather than all of them)
+	OneOf bool
+	// Message is the violation message to be used if any of the constraints fail
+	//
+	// If the message is empty, the message from the first failing contained constraint is used
+	Message string
+	// Stop when set to true, prevents further validation checks on the property if this constraint set fails
+	Stop bool
+}
+
+const (
+	constraintSetName               = "ConstraintSet"
+	constraintSetFieldConstraints   = "Constraints"
+	constraintSetFieldOneOf         = "OneOf"
+	constraintSetFieldMessage       = constraintPtyNameMessage
+	constraintSetFieldStop          = constraintPtyNameStop
+	fmtMsgConstraintSetDefaultAllOf = "Constraint set must pass all of %[1]d undisclosed validations"
+	fmtMsgConstraintSetDefaultOneOf = "Constraint set must pass one of %[1]d undisclosed validations"
+)
+
+// Check implements the Constraint.Check and checks the constraints within the set
+func (c *ConstraintSet) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
+	if c.OneOf {
+		return c.checkOneOf(v, vcx)
+	} else {
+		return c.checkAllOf(v, vcx)
+	}
+}
+
+func (c *ConstraintSet) checkAllOf(v interface{}, vcx *ValidatorContext) (bool, string) {
+	for _, cc := range c.Constraints {
+		if isCheckRequired(cc, vcx) {
+			if ok, msg := cc.Check(v, vcx); !ok {
+				if c.Message == "" && msg != "" {
+					vcx.CeaseFurtherIf(c.Stop)
+					return false, msg
+				}
+				vcx.CeaseFurtherIf(c.Stop)
+				return false, c.GetMessage(vcx)
+			}
+			if !vcx.continueAll || !vcx.continuePty() {
+				break
+			}
+		}
+	}
+	return true, ""
+}
+
+func (c *ConstraintSet) checkOneOf(v interface{}, vcx *ValidatorContext) (bool, string) {
+	finalOk := false
+	firstMsg := ""
+	for _, cc := range c.Constraints {
+		if isCheckRequired(cc, vcx) {
+			if ok, msg := cc.Check(v, vcx); ok {
+				finalOk = true
+				break
+			} else if firstMsg == "" {
+				firstMsg = msg
+			}
+			if !vcx.continueAll || !vcx.continuePty() {
+				break
+			}
+		}
+	}
+	if finalOk {
+		return true, ""
+	}
+	vcx.CeaseFurtherIf(c.Stop)
+	if c.Message == "" && firstMsg != "" {
+		return false, firstMsg
+	}
+	return false, c.GetMessage(vcx)
+}
+
+// GetMessage implements the Constraint.GetMessage
+func (c *ConstraintSet) GetMessage(tcx I18nContext) string {
+	if c.Message == "" {
+		for _, sc := range c.Constraints {
+			if msg := sc.GetMessage(tcx); msg != "" {
+				return msg
+			}
+		}
+		// if we get here then the message is still empty!...
+		if c.OneOf {
+			return obtainI18nContext(tcx).TranslateFormat(fmtMsgConstraintSetDefaultOneOf, len(c.Constraints))
+		}
+		return obtainI18nContext(tcx).TranslateFormat(fmtMsgConstraintSetDefaultAllOf, len(c.Constraints))
+	}
+	return obtainI18nContext(tcx).TranslateMessage(c.Message)
+}
+
+// IsNull is a utility constraint to check that a value is null
+//
+// Normally, null checking would be performed by the PropertyValidator.NotNull setting - however,
+// it may be the case that, under certain conditions, null is the required value
+type IsNull struct {
+	// the violation message to be used if the constraint fails (see Violation.Message)
+	//
+	// (if the Message is an empty string then the default violation message is used)
+	Message string `v8n:"default"`
+	// when set to true, Stop prevents further validation checks on the property if this constraint fails
+	Stop bool
+}
+
+// Check implements the Constraint.Check and checks the constraints within the set
+func (c *IsNull) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
+	if v != nil {
+		vcx.CeaseFurtherIf(c.Stop)
+		return false, c.GetMessage(vcx)
+	}
+	return true, ""
+}
+
+// GetMessage implements the Constraint.GetMessage
+func (c *IsNull) GetMessage(tcx I18nContext) string {
+	return defaultMessage(tcx, c.Message, msgNull)
+}
+
+// IsNotNull is a utility constraint to check that a value is not null
+//
+// Normally, null checking would be performed by the PropertyValidator.NotNull setting - however,
+// it may be the case that null is only disallowed under certain conditions
+type IsNotNull struct {
+	// the violation message to be used if the constraint fails (see Violation.Message)
+	//
+	// (if the Message is an empty string then the default violation message is used)
+	Message string `v8n:"default"`
+	// when set to true, Stop prevents further validation checks on the property if this constraint fails
+	Stop bool
+}
+
+// Check implements the Constraint.Check and checks the constraints within the set
+func (c *IsNotNull) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
+	if v == nil {
+		vcx.CeaseFurtherIf(c.Stop)
+		return false, c.GetMessage(vcx)
+	}
+	return true, ""
+}
+
+// GetMessage implements the Constraint.GetMessage
+func (c *IsNotNull) GetMessage(tcx I18nContext) string {
+	return defaultMessage(tcx, c.Message, msgValueCannotBeNull)
 }

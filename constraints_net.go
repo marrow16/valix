@@ -383,7 +383,7 @@ func useNetwork(addr string, v4, v6 bool) string {
 	return addr
 }
 
-// NetIsURI constraint to check that string value is a valid URN
+// NetIsURI constraint to check that string value is a valid URI
 type NetIsURI struct {
 	// if set, the host is also checked (see also AllowIPAddress and others)
 	CheckHost bool `v8n:"default"`

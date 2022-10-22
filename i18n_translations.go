@@ -786,6 +786,13 @@ var defaultInternalTranslator = &internalTranslator{
 			langIt: "Il valore non può essere nullo",
 			langDe: "Wert darf nicht null sein",
 		},
+		msgNull: {
+			langEn: msgNull,
+			langFr: "La valeur doit être nulle",
+			langEs: "El valor debe ser nulo",
+			langIt: "Il valore deve essere nullo",
+			langDe: "Wert muss null sein",
+		},
 		msgValueMustBeArray: {
 			langEn: msgValueMustBeArray,
 			langFr: "La valeur doit être un tableau",

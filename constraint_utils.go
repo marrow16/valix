@@ -50,6 +50,7 @@ const (
 	msgPositiveOrZero            = "Value must be positive or zero"
 	msgNegative                  = "Value must be negative"
 	msgNegativeOrZero            = "Value must be negative or zero"
+	msgNull                      = "Value must be null"
 	fmtMsgGt                     = "Value must be greater than %[1]v"
 	fmtMsgGte                    = "Value must be greater than or equal to %[1]v"
 	fmtMsgLt                     = "Value must be less than %[1]v"
