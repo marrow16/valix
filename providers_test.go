@@ -19,13 +19,13 @@ func TestDecoderProvider(t *testing.T) {
 	d := getDefaultDecoderProvider().NewDecoderFor(strings.NewReader(jStr), nil)
 	obj := map[string]interface{}{}
 	err := d.Decode(&obj)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.Equal(t, float64(1), obj["foo"])
 
 	d = getDefaultDecoderProvider().NewDecoder(strings.NewReader(jStr), true)
 	obj = map[string]interface{}{}
 	err = d.Decode(&obj)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	jn, ok := obj["foo"].(json.Number)
 	require.True(t, ok)
 	require.Equal(t, "1", jn.String())
@@ -36,14 +36,14 @@ func TestDecoderProvider(t *testing.T) {
 	d = getDefaultDecoderProvider().NewDecoderFor(strings.NewReader(jStr), v)
 	obj = map[string]interface{}{}
 	err = d.Decode(&obj)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.Equal(t, float64(1), obj["foo"])
 
 	v.UseNumber = true
 	d = getDefaultDecoderProvider().NewDecoderFor(strings.NewReader(jStr), v)
 	obj = map[string]interface{}{}
 	err = d.Decode(&obj)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	jn, ok = obj["foo"].(json.Number)
 	require.True(t, ok)
 	require.Equal(t, "1", jn.String())
@@ -55,21 +55,21 @@ func TestDecoderProvider(t *testing.T) {
 	}
 	ts := &unknownPtyTest{}
 	err = d.Decode(ts)
-	require.NotNil(t, err)
+	require.Error(t, err)
 	require.Equal(t, "json: unknown field \"foo\"", err.Error())
 
 	v.IgnoreUnknownProperties = true
 	d = getDefaultDecoderProvider().NewDecoderFor(strings.NewReader(jStr), v)
 	ts = &unknownPtyTest{}
 	err = d.Decode(ts)
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	// and nil replacement protection...
 	DefaultDecoderProvider = nil
 	d = getDefaultDecoderProvider().NewDecoderFor(strings.NewReader(jStr), v)
 	ts = &unknownPtyTest{}
 	err = d.Decode(ts)
-	require.Nil(t, err)
+	require.NoError(t, err)
 }
 
 func TestDefaultPropertyNameProvider(t *testing.T) {

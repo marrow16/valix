@@ -355,10 +355,10 @@ func TestTime_UnmarshalJSON(t *testing.T) {
 			wt := &withTime{}
 			err := d.Decode(wt)
 			if expectOk {
-				require.Nil(t, err)
+				require.NoError(t, err)
 				require.Equal(t, str != "null", wt.Foo.IsSet())
 			} else {
-				require.NotNil(t, err)
+				require.Error(t, err)
 			}
 		})
 	}
@@ -370,14 +370,14 @@ func TestTime_MarshalJSON(t *testing.T) {
 	}
 	wt := &withTime{}
 	data, err := json.Marshal(wt)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.NotNil(t, data)
 	require.Equal(t, "{\"foo\":null}", string(data[:]))
 
 	tt := time.Date(2022, 5, 4, 10, 11, 12, 123456789, time.UTC)
 	wt.Foo = Time{tt, ""}
 	data, err = json.Marshal(wt)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.NotNil(t, data)
 	require.Equal(t, "{\"foo\":\"2022-05-04T10:11:12.123456789Z\"}", string(data[:]))
 
@@ -385,7 +385,7 @@ func TestTime_MarshalJSON(t *testing.T) {
 	tt = time.Date(2022, 5, 4, 10, 11, 12, 123000000, loc)
 	wt.Foo = Time{tt, ""}
 	data, err = json.Marshal(wt)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.NotNil(t, data)
 	require.Equal(t, "{\"foo\":\"2022-05-04T10:11:12.123-01:00\"}", string(data[:]))
 }

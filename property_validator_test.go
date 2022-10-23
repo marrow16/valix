@@ -581,27 +581,27 @@ func TestPropertyValidator_Validate(t *testing.T) {
 
 func TestNewPropertyValidator(t *testing.T) {
 	pv, err := NewPropertyValidator()
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.NotNil(t, pv)
 
 	pv, err = NewPropertyValidator("")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.NotNil(t, pv)
 
 	_, err = NewPropertyValidator("]),'])")
-	require.NotNil(t, err)
+	require.Error(t, err)
 	require.Equal(t, "unopened parenthesis at position 0", err.Error())
 
 	_, err = NewPropertyValidator("blah")
-	require.NotNil(t, err)
+	require.Error(t, err)
 	require.Equal(t, fmt.Sprintf(msgUnknownTokenInTag, "blah"), err.Error())
 
 	_, err = NewPropertyValidator("blah,blah")
-	require.NotNil(t, err)
+	require.Error(t, err)
 	require.Equal(t, fmt.Sprintf(msgUnknownTokenInTag, "blah"), err.Error())
 
 	pv, err = NewPropertyValidator("mandatory,notNull", "type:"+jsonTypeTokenString, "&StringNotEmpty{Message:'fooey'},&StringNotBlank{Message:'fooey2',Stop:true}", "only")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.True(t, pv.Mandatory)
 	require.True(t, pv.NotNull)
 	require.Equal(t, JsonString, pv.Type)

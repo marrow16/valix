@@ -58,7 +58,7 @@ func TestCanTranslateFormat(t *testing.T) {
 
 func TestCanMarshalDefaultI18nContext(t *testing.T) {
 	_, err := json.Marshal(&defaultI18nContext{lang: "en"})
-	require.Nil(t, err)
+	require.NoError(t, err)
 }
 
 func TestAllTokensTranslated(t *testing.T) {

@@ -173,12 +173,12 @@ func TestRegisteredPresetUsedAsV8nTag(t *testing.T) {
 	constraintsRegistry.reset()
 
 	_, err := ValidatorFor(FooTest{}, nil)
-	require.NotNil(t, err)
+	require.Error(t, err)
 	require.Equal(t, fmt.Sprintf(msgWrapped, "Foo", "foo", fmt.Sprintf(msgUnknownConstraint, testName)), err.Error())
 
 	RegisterPresetPattern(testName, nil, "", nil, true)
 	v, err := ValidatorFor(FooTest{}, nil)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.NotNil(t, v)
 	pv := v.Properties["foo"]
 	require.Equal(t, 1, len(pv.Constraints))
@@ -1092,13 +1092,13 @@ func TestNumericWithScientific(t *testing.T) {
 		t.Run(fmt.Sprintf("[%d]\"%s\"", i+1, tc.str), func(t *testing.T) {
 			f, err := strconv.ParseFloat(tc.str, 64)
 			if tc.ok {
-				require.Nil(t, err)
+				require.NoError(t, err)
 				require.True(t, regx.MatchString(tc.str))
 			} else {
 				if math.IsNaN(f) || math.IsInf(f, 0) {
-					require.Nil(t, err)
+					require.NoError(t, err)
 				} else {
-					require.NotNil(t, err)
+					require.Error(t, err)
 				}
 				require.False(t, regx.MatchString(tc.str))
 			}
@@ -1218,10 +1218,10 @@ func TestNumericFullPattern(t *testing.T) {
 		t.Run(fmt.Sprintf("[%d]\"%s\"", i+1, tc.str), func(t *testing.T) {
 			_, err := strconv.ParseFloat(tc.str, 64)
 			if tc.ok {
-				require.Nil(t, err)
+				require.NoError(t, err)
 				require.True(t, regx.MatchString(tc.str))
 			} else {
-				require.NotNil(t, err)
+				require.Error(t, err)
 				require.False(t, regx.MatchString(tc.str))
 			}
 		})

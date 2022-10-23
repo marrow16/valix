@@ -231,7 +231,7 @@ func TestDomainToASCIIDots(t *testing.T) {
 	for k, v := range otherDots {
 		t.Run(k, func(t *testing.T) {
 			s, err := domain(k).toASCII()
-			require.Nil(t, err)
+			require.NoError(t, err)
 			require.Equal(t, v, s)
 		})
 	}

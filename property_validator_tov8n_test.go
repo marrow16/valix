@@ -459,7 +459,7 @@ func TestPropertyValidator_ToV8nTagString_Constraint(t *testing.T) {
 			require.Equal(t, tc.expect, str)
 
 			_, err := NewPropertyValidator(str)
-			require.Nil(t, err)
+			require.NoError(t, err)
 		})
 	}
 }
@@ -622,7 +622,7 @@ func TestPropertyValidator_ToV8nTagString_FieldAbbreviations(t *testing.T) {
 			}
 			str := pv.ToV8nTagString(options)
 			_, err := NewPropertyValidator(str)
-			require.Nil(t, err)
+			require.NoError(t, err)
 
 			require.Equal(t, tc.expect, str)
 		})

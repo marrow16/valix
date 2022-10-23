@@ -181,10 +181,10 @@ func TestParseExpressions(t *testing.T) {
 		t.Run(fmt.Sprintf("ParseExpression:\"%s\"", str), func(t *testing.T) {
 			expr, err := ParseExpression(str)
 			if tc.expectParse {
-				require.Nil(t, err)
+				require.NoError(t, err)
 				require.Equal(t, tc.countOrErrPosn, len(expr))
 			} else {
-				require.NotNil(t, err)
+				require.Error(t, err)
 				require.True(t, strings.Contains(err.Error(), fmt.Sprintf("at position %d)", tc.countOrErrPosn)), err.Error())
 			}
 		})
@@ -194,7 +194,7 @@ func TestParseExpressions(t *testing.T) {
 func TestParseExpression(t *testing.T) {
 	expStr := "(foo&&'bar') || (\"foo\"&& baz) || (bar && baz) && !(foo && bar && baz)"
 	expr, err := ParseExpression(expStr)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.Equal(t, 4, len(expr))
 
 	obj := jsonObject(`{
@@ -218,7 +218,7 @@ func TestParseExpression(t *testing.T) {
 
 func TestEmptyExpressionAlwaysResolvesTrue(t *testing.T) {
 	expr, err := ParseExpression("")
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	result := expr.Evaluate(map[string]interface{}{}, nil, nil)
 	require.True(t, result)
@@ -226,7 +226,7 @@ func TestEmptyExpressionAlwaysResolvesTrue(t *testing.T) {
 
 func TestAndOperator(t *testing.T) {
 	expr, err := ParseExpression("foo && bar")
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	obj := map[string]interface{}{}
 	result := expr.Evaluate(obj, nil, nil)
@@ -243,7 +243,7 @@ func TestAndOperator(t *testing.T) {
 
 func TestOrOperator(t *testing.T) {
 	expr, err := ParseExpression("foo || bar")
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	obj := map[string]interface{}{}
 	result := expr.Evaluate(obj, nil, nil)
@@ -268,7 +268,7 @@ func TestOrOperator(t *testing.T) {
 
 func TestXorOperator(t *testing.T) {
 	expr, err := ParseExpression("foo ^^ bar")
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	obj := map[string]interface{}{}
 	result := expr.Evaluate(obj, nil, nil)
@@ -763,7 +763,7 @@ func TestOthersFluentBuildingToStringAndParseBack(t *testing.T) {
 			str := tc.expr.String()
 			require.Equal(t, tc.str, str)
 			_, err := ParseExpression(str)
-			require.Nil(t, err)
+			require.NoError(t, err)
 		})
 	}
 	println(testCases)
@@ -830,7 +830,7 @@ func TestOtherPropertyPathDetection(t *testing.T) {
 
 func TestExpressionConditionCheck(t *testing.T) {
 	expr, err := ParseExpression("bar && ~TEST_CONDITION")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.Equal(t, 2, len(expr))
 
 	vcx := newEmptyValidatorContext(nil)

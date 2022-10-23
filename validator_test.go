@@ -1427,13 +1427,13 @@ func TestUnMarshallableValidator(t *testing.T) {
 	un := &unMarshallable{}
 	data := []byte(`{"name":"charlie","age":10}`)
 	err := json.Unmarshal(data, un)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.Equal(t, "charlie", un.Name)
 	require.Equal(t, 10, un.Age)
 
 	data = []byte(`{"name":null,"age":-1}`)
 	err = json.Unmarshal(data, un)
-	require.NotNil(t, err)
+	require.Error(t, err)
 	require.Equal(t, msgPositiveOrZero, err.Error()) // messages get sorted!
 	vErr, ok := err.(*ValidationError)
 	require.True(t, ok)
@@ -1449,7 +1449,7 @@ func TestUnMarshallableValidator(t *testing.T) {
 
 	data = []byte(`null`)
 	err = json.Unmarshal(data, un)
-	require.NotNil(t, err)
+	require.Error(t, err)
 	require.Equal(t, msgNotJsonNull, err.Error())
 	vErr, ok = err.(*ValidationError)
 	require.True(t, ok)
@@ -1962,7 +1962,7 @@ func TestValidatorInitialConditionsSet(t *testing.T) {
 	data := []byte(`{}`)
 	myObj := &intoTestStruct{}
 	err = validator.ValidateInto(data, myObj, "FOO", "BAR")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.NotNil(t, grabVcx)
 	stackItem = grabVcx.currentStackItem()
 	require.Equal(t, 2, len(stackItem.conditions))
