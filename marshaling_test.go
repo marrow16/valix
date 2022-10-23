@@ -133,11 +133,11 @@ func TestValidator_MarshalJSON(t *testing.T) {
 	}
 
 	b, err := json.Marshal(v)
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	obj := map[string]interface{}{}
 	err = json.Unmarshal(b, &obj)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.NotNil(t, obj)
 	//pretty, _ := json.MarshalIndent(obj, "", "\t")
 	//println(string(pretty[:]))
@@ -277,7 +277,7 @@ func TestValidator_MarshalJSON_FailsWithCustomConstraints(t *testing.T) {
 		},
 	}
 	_, err := json.Marshal(v)
-	require.NotNil(t, err)
+	require.Error(t, err)
 	require.Equal(t, "json: error calling MarshalJSON for type *valix.Validator: json: unsupported type: valix.Check", err.Error())
 
 	v = &Validator{
@@ -292,7 +292,7 @@ func TestValidator_MarshalJSON_FailsWithCustomConstraints(t *testing.T) {
 		},
 	}
 	_, err = json.Marshal(v)
-	require.NotNil(t, err)
+	require.Error(t, err)
 	require.Equal(t, "json: error calling MarshalJSON for type *valix.Validator: json: error calling MarshalJSON for type *valix.ConstraintSet: json: unsupported type: valix.Check", err.Error())
 
 	v = &Validator{
@@ -307,7 +307,7 @@ func TestValidator_MarshalJSON_FailsWithCustomConstraints(t *testing.T) {
 		},
 	}
 	_, err = json.Marshal(v)
-	require.NotNil(t, err)
+	require.Error(t, err)
 	require.Equal(t, "json: error calling MarshalJSON for type *valix.Validator: json: unsupported type: valix.Check", err.Error())
 
 	v = &Validator{
@@ -324,7 +324,7 @@ func TestValidator_MarshalJSON_FailsWithCustomConstraints(t *testing.T) {
 		},
 	}
 	_, err = json.Marshal(v)
-	require.NotNil(t, err)
+	require.Error(t, err)
 	require.Equal(t, "json: error calling MarshalJSON for type *valix.Validator: json: unsupported type: valix.Check", err.Error())
 
 	v = &Validator{
@@ -340,7 +340,7 @@ func TestValidator_MarshalJSON_FailsWithCustomConstraints(t *testing.T) {
 		},
 	}
 	_, err = json.Marshal(v)
-	require.NotNil(t, err)
+	require.Error(t, err)
 	require.Equal(t, "json: error calling MarshalJSON for type *valix.Validator: json: unsupported type: valix.Check", err.Error())
 
 	v = &Validator{
@@ -360,7 +360,7 @@ func TestValidator_MarshalJSON_FailsWithCustomConstraints(t *testing.T) {
 		},
 	}
 	_, err = json.Marshal(v)
-	require.NotNil(t, err)
+	require.Error(t, err)
 	require.Equal(t, "json: error calling MarshalJSON for type *valix.Validator: json: unsupported type: valix.Check", err.Error())
 
 	cs := Constraints{
@@ -369,7 +369,7 @@ func TestValidator_MarshalJSON_FailsWithCustomConstraints(t *testing.T) {
 		}, ""),
 	}
 	_, err = json.Marshal(cs)
-	require.NotNil(t, err)
+	require.Error(t, err)
 	require.Equal(t, "json: error calling MarshalJSON for type valix.Constraints: json: unsupported type: valix.Check", err.Error())
 }
 
@@ -383,11 +383,11 @@ func TestPropertyValidator_MarshalJSON_WithAllCommonConstraints(t *testing.T) {
 		Constraints: list,
 	}
 	b, err := json.Marshal(pv)
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	obj := map[string]interface{}{}
 	err = json.Unmarshal(b, &obj)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.NotNil(t, obj)
 	require.Equal(t, 7, len(obj))
 
@@ -404,7 +404,7 @@ func TestPropertyValidator_MarshalJSON_FailsWithCustomConstraints(t *testing.T) 
 		},
 	}
 	_, err := json.Marshal(pv)
-	require.NotNil(t, err)
+	require.Error(t, err)
 	require.Equal(t, "json: error calling MarshalJSON for type *valix.PropertyValidator: json: unsupported type: valix.Check", err.Error())
 }
 
@@ -422,11 +422,11 @@ func TestConstraint_StringCharacters_MarshalJSON(t *testing.T) {
 		Message: "test message",
 	}
 	b, err := json.Marshal(c)
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	obj := map[string]interface{}{}
 	err = json.Unmarshal(b, &obj)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.NotNil(t, obj)
 }
 
@@ -436,11 +436,11 @@ func TestConstraint_StringPattern_MarshalJSON(t *testing.T) {
 		Message: "test message",
 	}
 	b, err := json.Marshal(c)
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	obj := map[string]interface{}{}
 	err = json.Unmarshal(b, &obj)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.NotNil(t, obj)
 	require.Equal(t, "test message", obj["Message"])
 	require.Equal(t, "^([A-Z]+)$", obj["Regexp"])
@@ -455,7 +455,7 @@ func TestConstraint_ArrayConditionalConstraint_MarshalJSONFails(t *testing.T) {
 		},
 	}
 	_, err := json.Marshal(c)
-	require.NotNil(t, err)
+	require.Error(t, err)
 }
 
 func TestAllConstraintsCanBeMarshalledAndUnmarshalled(t *testing.T) {
@@ -471,7 +471,7 @@ func TestAllConstraintsCanBeMarshalledAndUnmarshalled(t *testing.T) {
 		pv.Constraints = append(pv.Constraints, c)
 	}
 	b, err := json.Marshal(v)
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	//obj := map[string]interface{}{}
 	//err = json.Unmarshal(b, &obj)
@@ -480,7 +480,7 @@ func TestAllConstraintsCanBeMarshalledAndUnmarshalled(t *testing.T) {
 
 	uv := &Validator{}
 	err = json.Unmarshal(b, &uv)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	upv := uv.Properties["foo"]
 	require.Equal(t, len(pv.Constraints), len(upv.Constraints))
 }
@@ -494,5 +494,5 @@ func TestConstraint_SetConditionIf_MarshalJSONFails(t *testing.T) {
 		},
 	}
 	_, err := json.Marshal(c)
-	require.NotNil(t, err)
+	require.Error(t, err)
 }

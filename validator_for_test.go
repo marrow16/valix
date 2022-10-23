@@ -35,7 +35,7 @@ func TestMustCompileValidatorForEmptyStruct(t *testing.T) {
 
 func TestShouldErrorWithNonStruct(t *testing.T) {
 	_, err := ValidatorFor("", nil)
-	require.NotNil(t, err)
+	require.Error(t, err)
 	require.Equal(t, errMsgValidatorForStructOnly, err.Error())
 }
 
@@ -43,7 +43,7 @@ func TestValidatorForWithEmptyStruct(t *testing.T) {
 	myStruct := struct{}{}
 
 	v, err := ValidatorFor(myStruct, nil)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.NotNil(t, v)
 	require.False(t, v.IgnoreUnknownProperties)
 	require.Equal(t, 0, len(v.Properties))
@@ -62,7 +62,7 @@ func TestValidatorForWithEmptyStructAndOptions(t *testing.T) {
 		AllowNullJson:           true,
 		UseNumber:               true,
 	})
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.NotNil(t, v)
 	require.True(t, v.IgnoreUnknownProperties)
 	require.Equal(t, 0, len(v.Properties))
@@ -79,7 +79,7 @@ func (o errorOption) Apply(on *Validator) error {
 }
 func TestValidatorForWithErroringOption(t *testing.T) {
 	_, err := ValidatorFor(struct{}{}, &errorOption{})
-	require.NotNil(t, err)
+	require.Error(t, err)
 	require.Equal(t, "Fooey", err.Error())
 }
 
@@ -88,7 +88,7 @@ func TestValidatorForWithJsonTag(t *testing.T) {
 		Foo string `json:"foo"`
 	}{}
 	v, err := ValidatorFor(myStruct, nil)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.NotNil(t, v)
 	require.Equal(t, 1, len(v.Properties))
 	_, ok := v.Properties["foo"]
@@ -98,7 +98,7 @@ func TestValidatorForWithJsonTag(t *testing.T) {
 		Foo int `json:"foo,omitempty"`
 	}{}
 	v, err = ValidatorFor(myStruct2, nil)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.NotNil(t, v)
 	require.Equal(t, 1, len(v.Properties))
 	_, ok = v.Properties["foo"]
@@ -110,7 +110,7 @@ func TestValidatorForDetectsTypeString(t *testing.T) {
 		Foo string `json:"foo"`
 	}{}
 	v, err := ValidatorFor(myStruct, nil)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.NotNil(t, v)
 	require.Equal(t, 1, len(v.Properties))
 	pv, ok := v.Properties["foo"]
@@ -162,7 +162,7 @@ func TestValidatorForDetectsTypeNumber(t *testing.T) {
 	for i, st := range testCases {
 		t.Run(fmt.Sprintf("NumericTypeDetect[%d]", i), func(t *testing.T) {
 			v, err := ValidatorFor(st, nil)
-			require.Nil(t, err)
+			require.NoError(t, err)
 			require.NotNil(t, v)
 			require.Equal(t, 1, len(v.Properties))
 			pv, ok := v.Properties["foo"]
@@ -179,7 +179,7 @@ func TestValidatorForDetectsTypeBoolean(t *testing.T) {
 		Foo bool `json:"foo"`
 	}{}
 	v, err := ValidatorFor(myStruct, nil)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.NotNil(t, v)
 	require.Equal(t, 1, len(v.Properties))
 	pv, ok := v.Properties["foo"]
@@ -194,7 +194,7 @@ func TestValidatorForDetectsTypeObject(t *testing.T) {
 		Foo struct{ Sub string } `json:"foo"`
 	}{}
 	v, err := ValidatorFor(myStruct, nil)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.NotNil(t, v)
 	require.Equal(t, 1, len(v.Properties))
 	pv, ok := v.Properties["foo"]
@@ -210,7 +210,7 @@ func TestValidatorForDetectsTypeDatetime(t *testing.T) {
 		Bar *time.Time `json:"bar"`
 	}{}
 	v, err := ValidatorFor(myStruct, nil)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.NotNil(t, v)
 	require.Equal(t, 2, len(v.Properties))
 	pv, ok := v.Properties["foo"]
@@ -230,7 +230,7 @@ func TestValidatorForDetectsTypeMap(t *testing.T) {
 		Foo map[string]interface{} `json:"foo"`
 	}{}
 	v, err := ValidatorFor(myStruct, nil)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.NotNil(t, v)
 	require.Equal(t, 1, len(v.Properties))
 	pv, ok := v.Properties["foo"]
@@ -243,7 +243,7 @@ func TestValidatorForDetectsTypeMap(t *testing.T) {
 		Foo map[int]interface{} `json:"foo"`
 	}{}
 	v, err = ValidatorFor(myStruct2, nil)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.NotNil(t, v)
 	require.Equal(t, 1, len(v.Properties))
 	pv, ok = v.Properties["foo"]
@@ -258,7 +258,7 @@ func TestValidatorForDetectsTypeArray(t *testing.T) {
 		Foo []string `json:"foo"`
 	}{}
 	v, err := ValidatorFor(myStruct, nil)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.NotNil(t, v)
 	require.Equal(t, 1, len(v.Properties))
 	pv, ok := v.Properties["foo"]
@@ -295,7 +295,7 @@ func TestValidatorForWithBadV8nTags(t *testing.T) {
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("BadV8nTags[%d]", i), func(t *testing.T) {
 			_, err := ValidatorFor(tc, nil)
-			require.NotNil(t, err)
+			require.Error(t, err)
 		})
 	}
 }
@@ -305,7 +305,7 @@ func TestValidatorForWithV8nTag(t *testing.T) {
 		Foo string `json:"foo" v8n:"type:string,notNull,mandatory,constraints:[StringValidToken{Tokens:[\"A\",\"B\"]},StringLength{Minimum: 16, Maximum: 64, UseRuneLen:true, Message:\"Oh fooey\"},StringPattern{Regexp:\"^([a-fA-F0-9]{8})$\"}]"`
 	}{}
 	v, err := ValidatorFor(myStruct, nil)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.NotNil(t, v)
 	require.Equal(t, 1, len(v.Properties))
 	pv, ok := v.Properties["foo"]
@@ -322,7 +322,7 @@ func TestValidatorForWithOrderingTags(t *testing.T) {
 		} `json:"foo" v8n:"obj.ordered"`
 	}{}
 	v, err := ValidatorFor(myStruct, nil)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.NotNil(t, v)
 
 	require.True(t, v.Properties["foo"].ObjectValidator.OrderedPropertyChecks)
@@ -339,7 +339,7 @@ func TestValidatorForWithBadOrderTagValue(t *testing.T) {
 	}{}
 	v, err := ValidatorFor(myStruct, nil)
 	require.Nil(t, v)
-	require.NotNil(t, err)
+	require.Error(t, err)
 	require.Equal(t, fmt.Sprintf(msgWrapped, "Aaa", "aaa", fmt.Sprintf(msgUnknownTagValue, tagTokenOrder, "int", "not_a_number")), err.Error())
 }
 
@@ -359,7 +359,7 @@ func TestValidatorForWithNestedStruct(t *testing.T) {
 		Map         map[string]interface{} `json:"map"`
 	}{}
 	v, err := ValidatorFor(myStruct, nil)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.NotNil(t, v)
 	require.Equal(t, 4, len(v.Properties))
 }
@@ -370,7 +370,7 @@ func TestValidatorForWithNestedStructTagError(t *testing.T) {
 			Sub2 struct{} `v8n:"BAD_TOKEN"`
 		}
 	}{}, nil)
-	require.NotNil(t, err)
+	require.Error(t, err)
 	require.Equal(t, fmt.Sprintf(msgWrapped, "Sub2", "Sub2", fmt.Sprintf(msgUnknownTokenInTag, "BAD_TOKEN")), err.Error())
 
 	_, err = ValidatorFor(struct {
@@ -378,7 +378,7 @@ func TestValidatorForWithNestedStructTagError(t *testing.T) {
 			Sub2 struct{} `v8n:"BAD_TOKEN"`
 		}
 	}{}, nil)
-	require.NotNil(t, err)
+	require.Error(t, err)
 	require.Equal(t, fmt.Sprintf(msgWrapped, "Sub2", "Sub2", fmt.Sprintf(msgUnknownTokenInTag, "BAD_TOKEN")), err.Error())
 }
 
@@ -397,7 +397,7 @@ func TestValidatorForWithNestedStruct_SetsValidatorTypeCorrectly(t *testing.T) {
 		Sub3 []string
 	}{}
 	v, err := ValidatorFor(myStruct, nil)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.NotNil(t, v)
 	require.False(t, v.Properties["Sub1"].ObjectValidator.AllowArray)
 	require.False(t, v.Properties["Sub1"].ObjectValidator.DisallowObject)
@@ -446,7 +446,7 @@ func TestValidatorForFailsWithBadTagInSliceStruct(t *testing.T) {
 			Foo string `v8n:"bad_token"`
 		} `json:"slice"`
 	}{}, nil)
-	require.NotNil(t, err)
+	require.Error(t, err)
 	require.Equal(t, fmt.Sprintf(msgWrapped, "Foo", "Foo", fmt.Sprintf(msgUnknownTokenInTag, "bad_token")), err.Error())
 
 	_, err = ValidatorFor(struct {
@@ -454,13 +454,13 @@ func TestValidatorForFailsWithBadTagInSliceStruct(t *testing.T) {
 			Foo string `v8n:"bad_token"`
 		} `json:"slice"`
 	}{}, nil)
-	require.NotNil(t, err)
+	require.Error(t, err)
 	require.Equal(t, fmt.Sprintf(msgWrapped, "Foo", "Foo", fmt.Sprintf(msgUnknownTokenInTag, "bad_token")), err.Error())
 }
 
 func TestValidatorForDeepStruct(t *testing.T) {
 	v, err := ValidatorFor(deepTestStruct{}, nil)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.NotNil(t, v)
 
 	require.Equal(t, 5, len(v.Properties))
@@ -534,7 +534,7 @@ func TestValidatorForStructPtrField(t *testing.T) {
 			Foo string
 		}
 	}{}, nil)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.NotNil(t, v)
 
 	require.Equal(t, 1, len(v.Properties))
@@ -549,7 +549,7 @@ func TestValidatorForSlicePtrStructField(t *testing.T) {
 			Foo string
 		}
 	}{}, nil)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.NotNil(t, v)
 
 	require.Equal(t, 1, len(v.Properties))
@@ -608,7 +608,7 @@ func TestNamedConstraintTagsUseCorrectDefaultFields(t *testing.T) {
 		Foo string `json:"foo" v8n:"&StringNotEmpty1{},&StringNotEmpty2{},&StringNotEmpty2{Message: 'Message 3'}"`
 	}
 	v, err := ValidatorFor(MyStruct{}, nil)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.NotNil(t, v)
 
 	str := `{"foo": ""}`
@@ -633,7 +633,7 @@ func TestConstraintTagUsingCustomConstraint(t *testing.T) {
 		Foo string `json:"foo" v8n:"&MyCustom{Message: 'Overridden Message'}"`
 	}
 	v, err := ValidatorFor(myStruct{}, nil)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.NotNil(t, v)
 
 	str := `{"foo": ""}`
@@ -665,7 +665,7 @@ func TestConstraintTagWithDefinedConstraintWithUnexportedField(t *testing.T) {
 		Foo string `json:"foo" v8n:"&MyDefined{}"`
 	}
 	v, err := ValidatorFor(myStruct{}, nil)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.NotNil(t, v)
 
 	type myStruct2 struct {
@@ -673,13 +673,13 @@ func TestConstraintTagWithDefinedConstraintWithUnexportedField(t *testing.T) {
 	}
 	v, err = ValidatorFor(myStruct2{}, nil)
 	require.Nil(t, v)
-	require.NotNil(t, err)
+	require.Error(t, err)
 	require.Equal(t, fmt.Sprintf(msgWrapped, "Foo", "foo", fmt.Sprintf(msgConstraintFieldNotExported, "MyDefined", "msg")), err.Error())
 }
 
 func TestValidatorForStopsOnFirst(t *testing.T) {
 	v, err := ValidatorFor(itemInSlice{}, &ValidatorForOptions{StopOnFirst: true})
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.NotNil(t, v)
 	json := `{
 				"foo": null,
@@ -705,7 +705,7 @@ func TestValidatorForWithPropertiesFromRepo(t *testing.T) {
 		Fooey string `json:"fooey" v8n-as:"foo"`
 	}
 	v, err := ValidatorFor(myStruct{}, nil)
-	require.NotNil(t, err)
+	require.Error(t, err)
 	require.Equal(t, fmt.Sprintf(errMsgCannotFindPropertyInRepo, "foo"), err.Error())
 	require.Nil(t, v)
 
@@ -715,7 +715,7 @@ func TestValidatorForWithPropertiesFromRepo(t *testing.T) {
 		},
 	})
 	v, err = ValidatorFor(myStruct{}, nil)
-	require.NotNil(t, err)
+	require.Error(t, err)
 	require.Equal(t, fmt.Sprintf(errMsgIncompatiblePropertyType, "foo"), err.Error())
 	require.Nil(t, v)
 
@@ -728,7 +728,7 @@ func TestValidatorForWithPropertiesFromRepo(t *testing.T) {
 		},
 	})
 	v, err = ValidatorFor(myStruct{}, nil)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.True(t, v.Properties["fooey"].Mandatory)
 	require.Equal(t, "oh fooey", v.Properties["fooey"].RequiredWithMessage)
 	require.Nil(t, v.Properties["fooey"].ObjectValidator)
@@ -750,13 +750,13 @@ func TestPropertyObjectDifferentiation(t *testing.T) {
 	}
 
 	dv, err := ValidatorFor(DatesRequest{}, nil)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.NotNil(t, dv)
 	ov, err := ValidatorFor(ObjsRequest{}, nil)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.NotNil(t, ov)
 	ov2, err := ValidatorFor(Objs2Request{}, nil)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.NotNil(t, ov2)
 
 	require.Nil(t, dv.Properties["dates"].ObjectValidator)

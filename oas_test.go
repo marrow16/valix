@@ -12,7 +12,7 @@ func TestValidatorForWithOasTag(t *testing.T) {
 		Foo string `json:"foo" oas:"description:'THIS IS DESC!',title:'THIS IS TITLE',format:'THIS IS FORMAT',example:'THIS IS EXAMPLE',deprecated"`
 	}
 	v, err := ValidatorFor(myStruct{}, nil)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.NotNil(t, v)
 
 	pv, ok := v.Properties["foo"]
@@ -29,7 +29,7 @@ func TestValidatorForWithOasTagUnknownTokenFails(t *testing.T) {
 		Foo string `json:"foo" oas:"UNKNOWN_TOKEN"`
 	}
 	_, err := ValidatorFor(myStruct{}, nil)
-	require.NotNil(t, err)
+	require.Error(t, err)
 	require.Equal(t, fmt.Sprintf(msgOasUnknownTokenInTag, "UNKNOWN_TOKEN"), err.Error())
 }
 
@@ -38,20 +38,20 @@ func TestValidatorForWithBadOasTag(t *testing.T) {
 		Foo string `json:"foo" oas:"title:'<unclosed single quote"`
 	}
 	_, err := ValidatorFor(myStruct{}, nil)
-	require.NotNil(t, err)
+	require.Error(t, err)
 	require.Equal(t, fmt.Sprintf(msgUnclosed, 6), err.Error())
 }
 
 func TestOasTagItemExpectedString(t *testing.T) {
 	pv := &PropertyValidator{}
 	err := pv.addOasTagItem("desc:xxx")
-	require.NotNil(t, err)
+	require.Error(t, err)
 	require.Equal(t, fmt.Sprintf(msgOasExpectedString, "desc"), err.Error())
 }
 
 func TestOasTagItemUnexpectedColon(t *testing.T) {
 	pv := &PropertyValidator{}
 	err := pv.addOasTagItem("deprecated:xxx")
-	require.NotNil(t, err)
+	require.Error(t, err)
 	require.Equal(t, fmt.Sprintf(msgOasUnexpectedColon, "deprecated"), err.Error())
 }

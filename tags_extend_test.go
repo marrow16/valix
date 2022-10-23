@@ -53,7 +53,7 @@ func TestTagAliasesRepoErrorsOnNotFound(t *testing.T) {
 	defer tagAliasesRepo.reset()
 
 	_, err := tagAliasesRepo.resolve([]string{"$non_existent_alias"})
-	require.NotNil(t, err)
+	require.Error(t, err)
 	require.Equal(t, fmt.Sprintf(errMsgUnknownTagAlias, "non_existent_alias"), err.Error())
 }
 
@@ -63,7 +63,7 @@ func TestTagAliasesRepoErrorsOnCyclic(t *testing.T) {
 
 	tagAliasesRepo.registerSingle("cyclic", "$cyclic")
 	_, err := tagAliasesRepo.resolve([]string{"$cyclic"})
-	require.NotNil(t, err)
+	require.Error(t, err)
 	require.Equal(t, fmt.Sprintf(errMsgCyclicTagAlias, "cyclic"), err.Error())
 
 	tagAliasesRepo.reset()
@@ -71,7 +71,7 @@ func TestTagAliasesRepoErrorsOnCyclic(t *testing.T) {
 	tagAliasesRepo.registerSingle("second", "$third")
 	tagAliasesRepo.registerSingle("third", "foo,$first,bar")
 	_, err = tagAliasesRepo.resolve([]string{"$first"})
-	require.NotNil(t, err)
+	require.Error(t, err)
 	require.Equal(t, fmt.Sprintf(errMsgCyclicTagAlias, "first"), err.Error())
 }
 
@@ -81,7 +81,7 @@ func TestTagAliasesRepoErrorsWithBadReplacement(t *testing.T) {
 
 	tagAliasesRepo.registerSingle("bad", "'")
 	_, err := tagAliasesRepo.resolve([]string{"$bad"})
-	require.NotNil(t, err)
+	require.Error(t, err)
 	require.Equal(t, fmt.Sprintf(errMsgAliasParse, "bad", fmt.Errorf(msgUnclosed, 0)), err.Error())
 }
 
@@ -91,19 +91,19 @@ func TestTagAliasesResolvesSingleLevel(t *testing.T) {
 
 	tagAliasesRepo.registerSingle("test", "FOO")
 	result, err := tagAliasesRepo.resolve([]string{"$test"})
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.Equal(t, 1, len(result))
 	require.Equal(t, "FOO", result[0])
 
 	result, err = tagAliasesRepo.resolve([]string{"$test", "FOO2"})
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.Equal(t, 2, len(result))
 	require.Equal(t, "FOO", result[0])
 	require.Equal(t, "FOO2", result[1])
 
 	tagAliasesRepo.registerSingle("test", "FOO,BAR,BAZ")
 	result, err = tagAliasesRepo.resolve([]string{"$test"})
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.Equal(t, 3, len(result))
 	require.Equal(t, "FOO", result[0])
 	require.Equal(t, "BAR", result[1])
@@ -119,7 +119,7 @@ func TestTagAliasesResolvesDeep(t *testing.T) {
 	tagAliasesRepo.registerSingle("third", "FOO3, BAR3")
 
 	result, err := tagAliasesRepo.resolve([]string{"$first"})
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.Equal(t, 6, len(result))
 	require.Equal(t, "FOO1", result[0])
 	require.Equal(t, "FOO2", result[1])
@@ -138,15 +138,15 @@ func TestTagAliasErrorsCauseTagParsingErrors(t *testing.T) {
 
 	pv := &PropertyValidator{}
 	err := pv.processV8nTagValue("Foo", "foo", "$unknown")
-	require.NotNil(t, err)
+	require.Error(t, err)
 	require.Equal(t, fmt.Sprintf(msgWrapped, "Foo", "foo", fmt.Sprintf(errMsgUnknownTagAlias, "unknown")), err.Error())
 
 	err = pv.processV8nTagValue("Foo", "foo", "$bad")
-	require.NotNil(t, err)
+	require.Error(t, err)
 	require.Equal(t, fmt.Sprintf(msgWrapped, "Foo", "foo", fmt.Sprintf(errMsgAliasParse, "bad", fmt.Errorf(msgUnclosed, 0))), err.Error())
 
 	err = pv.processV8nTagValue("Foo", "foo", "$cyclic")
-	require.NotNil(t, err)
+	require.Error(t, err)
 	require.Equal(t, fmt.Sprintf(msgWrapped, "Foo", "foo", fmt.Sprintf(errMsgCyclicTagAlias, "cyclic")), err.Error())
 }
 
@@ -185,7 +185,7 @@ func TestCustomTagTokenUsed(t *testing.T) {
 		Foo string `json:"foo" v8n:"test:test_value"`
 	}
 	_, err := ValidatorFor(testStruct{}, nil)
-	require.NotNil(t, err)
+	require.Error(t, err)
 	require.Equal(t, fmt.Sprintf(msgWrapped, "Foo", "foo", fmt.Sprintf(msgUnknownTokenInTag, "test")), err.Error())
 
 	custom := &testCustomTagToken{}
@@ -193,7 +193,7 @@ func TestCustomTagTokenUsed(t *testing.T) {
 	require.Equal(t, 1, len(customTagTokenRegistry.handlers))
 
 	v, err := ValidatorFor(testStruct{}, nil)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.NotNil(t, v)
 	require.Equal(t, 1, custom.hits)
 	require.Equal(t, "test", custom.token)
@@ -204,7 +204,7 @@ func TestCustomTagTokenUsed(t *testing.T) {
 
 	custom.errors = true
 	_, err = ValidatorFor(testStruct{}, nil)
-	require.NotNil(t, err)
+	require.Error(t, err)
 	require.Equal(t, 2, custom.hits)
 	require.Equal(t, fmt.Sprintf(msgWrapped, "Foo", "foo", customTagTokenError), err.Error())
 }
@@ -278,14 +278,14 @@ func TestCustomTagUsed(t *testing.T) {
 		Foo string `json:"foo" test:"test_value"`
 	}
 	v, err := ValidatorFor(testStruct{}, nil)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.True(t, v.Properties["foo"].Mandatory)
 	require.True(t, v.Properties["foo"].NotNull)
 	require.Equal(t, "test_value", custom.value)
 
 	custom.errors = true
 	_, err = ValidatorFor(testStruct{}, nil)
-	require.NotNil(t, err)
+	require.Error(t, err)
 	require.Equal(t, customTagError, err.Error())
 }
 

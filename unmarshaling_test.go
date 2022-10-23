@@ -283,7 +283,7 @@ const (
 func TestValidatorUnmarshal(t *testing.T) {
 	v := Validator{}
 	err := json.Unmarshal([]byte(vJson), &v)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.True(t, v.AllowNullJson)
 	require.True(t, v.AllowArray)
 	require.True(t, v.DisallowObject)
@@ -668,7 +668,7 @@ func TestUnmarshalPropertiesType(t *testing.T) {
 	}`
 	v := Validator{}
 	err := json.Unmarshal([]byte(j), &v)
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	j = `{
 		"Properties": {
@@ -679,7 +679,7 @@ func TestUnmarshalPropertiesType(t *testing.T) {
 	}`
 	v = Validator{}
 	err = json.Unmarshal([]byte(j), &v)
-	require.NotNil(t, err)
+	require.Error(t, err)
 
 	j = `{
 		"Properties": {
@@ -690,7 +690,7 @@ func TestUnmarshalPropertiesType(t *testing.T) {
 	}`
 	v = Validator{}
 	err = json.Unmarshal([]byte(j), &v)
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	j = `{
 		"Properties": {
@@ -701,7 +701,7 @@ func TestUnmarshalPropertiesType(t *testing.T) {
 	}`
 	v = Validator{}
 	err = json.Unmarshal([]byte(j), &v)
-	require.NotNil(t, err)
+	require.Error(t, err)
 }
 
 func TestUnmarshalConstraints(t *testing.T) {
@@ -718,7 +718,7 @@ func TestUnmarshalConstraints(t *testing.T) {
 	}`
 	v := Validator{}
 	err := json.Unmarshal([]byte(j), &v)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.Equal(t, 1, len(v.Constraints))
 	constraint := v.Constraints[0].(*StringNotEmpty)
 	require.True(t, constraint.Stop)
@@ -729,7 +729,7 @@ func TestUnmarshalConstraints(t *testing.T) {
 	}`
 	v = Validator{}
 	err = json.Unmarshal([]byte(j), &v)
-	require.NotNil(t, err)
+	require.Error(t, err)
 
 	j = `{
 		"Constraints": [
@@ -738,7 +738,7 @@ func TestUnmarshalConstraints(t *testing.T) {
 	}`
 	v = Validator{}
 	err = json.Unmarshal([]byte(j), &v)
-	require.NotNil(t, err)
+	require.Error(t, err)
 }
 
 func TestUnmarshalWithUnmarshallableConstraint(t *testing.T) {
@@ -756,7 +756,7 @@ func TestUnmarshalWithUnmarshallableConstraint(t *testing.T) {
 	}`
 	v := Validator{}
 	err := json.Unmarshal([]byte(j), &v)
-	require.NotNil(t, err)
+	require.Error(t, err)
 	require.Equal(t, "this constraint cannot be unmarshalled", err.Error())
 }
 
@@ -777,12 +777,12 @@ func TestConstraintSetUnmarshalJSON(t *testing.T) {
 	js := `{}`
 	constraint := &ConstraintSet{}
 	err := json.Unmarshal([]byte(js), constraint)
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	js = `[]`
 	constraint = &ConstraintSet{}
 	err = json.Unmarshal([]byte(js), constraint)
-	require.NotNil(t, err)
+	require.Error(t, err)
 
 	js = `{
 		"Message": "foo",
@@ -790,7 +790,7 @@ func TestConstraintSetUnmarshalJSON(t *testing.T) {
 	}`
 	constraint = &ConstraintSet{}
 	err = json.Unmarshal([]byte(js), constraint)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.Equal(t, "foo", constraint.Message)
 	require.True(t, constraint.Stop)
 
@@ -799,7 +799,7 @@ func TestConstraintSetUnmarshalJSON(t *testing.T) {
 	}`
 	constraint = &ConstraintSet{}
 	err = json.Unmarshal([]byte(js), constraint)
-	require.NotNil(t, err)
+	require.Error(t, err)
 	require.Equal(t, fmt.Sprintf(errMsgFieldExpectedType, constraintSetFieldMessage, "string"), err.Error())
 
 	js = `{
@@ -807,7 +807,7 @@ func TestConstraintSetUnmarshalJSON(t *testing.T) {
 	}`
 	constraint = &ConstraintSet{}
 	err = json.Unmarshal([]byte(js), constraint)
-	require.NotNil(t, err)
+	require.Error(t, err)
 	require.Equal(t, fmt.Sprintf(errMsgFieldExpectedType, constraintSetFieldStop, "bool"), err.Error())
 
 	js = `{
@@ -815,7 +815,7 @@ func TestConstraintSetUnmarshalJSON(t *testing.T) {
 	}`
 	constraint = &ConstraintSet{}
 	err = json.Unmarshal([]byte(js), constraint)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.Equal(t, 0, len(constraint.Constraints))
 
 	js = `{
@@ -823,7 +823,7 @@ func TestConstraintSetUnmarshalJSON(t *testing.T) {
 	}`
 	constraint = &ConstraintSet{}
 	err = json.Unmarshal([]byte(js), constraint)
-	require.NotNil(t, err)
+	require.Error(t, err)
 	require.Equal(t, fmt.Sprintf(errMsgFieldExpectedType, constraintSetFieldConstraints, "array"), err.Error())
 
 	js = `{
@@ -835,7 +835,7 @@ func TestConstraintSetUnmarshalJSON(t *testing.T) {
 	}`
 	constraint = &ConstraintSet{}
 	err = json.Unmarshal([]byte(js), constraint)
-	require.NotNil(t, err)
+	require.Error(t, err)
 	require.Equal(t, fmt.Sprintf(errMsgUnknownNamedConstraint, "UNKNOWN_CONSTRAINT_NAME"), err.Error())
 
 	js = `{
@@ -847,7 +847,7 @@ func TestConstraintSetUnmarshalJSON(t *testing.T) {
 	}`
 	constraint = &ConstraintSet{}
 	err = json.Unmarshal([]byte(js), constraint)
-	require.NotNil(t, err)
+	require.Error(t, err)
 	require.Equal(t, fmt.Sprintf(errMsgFieldExpectedType, "name", "string"), err.Error())
 
 	js = `{
@@ -859,7 +859,7 @@ func TestConstraintSetUnmarshalJSON(t *testing.T) {
 	}`
 	constraint = &ConstraintSet{}
 	err = json.Unmarshal([]byte(js), constraint)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.Equal(t, 1, len(constraint.Constraints))
 
 	js = `{
@@ -872,7 +872,7 @@ func TestConstraintSetUnmarshalJSON(t *testing.T) {
 	}`
 	constraint = &ConstraintSet{}
 	err = json.Unmarshal([]byte(js), constraint)
-	require.NotNil(t, err)
+	require.Error(t, err)
 	require.Equal(t, fmt.Sprintf(errMsgFieldExpectedType, "fields", "object"), err.Error())
 
 	js = `{
@@ -887,14 +887,14 @@ func TestConstraintSetUnmarshalJSON(t *testing.T) {
 	}`
 	constraint = &ConstraintSet{}
 	err = json.Unmarshal([]byte(js), constraint)
-	require.NotNil(t, err)
+	require.Error(t, err)
 
 	js = `{
 		"OneOf": "this should be boolean"
 	}`
 	constraint = &ConstraintSet{}
 	err = json.Unmarshal([]byte(js), constraint)
-	require.NotNil(t, err)
+	require.Error(t, err)
 	require.Equal(t, fmt.Sprintf(errMsgFieldExpectedType, constraintSetFieldOneOf, "bool"), err.Error())
 }
 
@@ -902,7 +902,7 @@ func TestStringPatternUnmarshalJSON(t *testing.T) {
 	js := `{}`
 	constraint := &StringPattern{}
 	err := json.Unmarshal([]byte(js), constraint)
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	js = `{
 		"Message": "foo",
@@ -911,7 +911,7 @@ func TestStringPatternUnmarshalJSON(t *testing.T) {
 	}`
 	constraint = &StringPattern{}
 	err = json.Unmarshal([]byte(js), constraint)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.Equal(t, "foo", constraint.Message)
 	require.True(t, constraint.Stop)
 	require.Equal(t, "^([A-Z]+)$", constraint.Regexp.String())
@@ -921,51 +921,51 @@ func TestStringPatternUnmarshalJSON(t *testing.T) {
 	}`
 	constraint = &StringPattern{}
 	err = json.Unmarshal([]byte(js), constraint)
-	require.NotNil(t, err)
+	require.Error(t, err)
 
 	js = `{
 		"Regexp": 123
 	}`
 	constraint = &StringPattern{}
 	err = json.Unmarshal([]byte(js), constraint)
-	require.NotNil(t, err)
+	require.Error(t, err)
 
 	js = `{
 		"Message": true
 	}`
 	constraint = &StringPattern{}
 	err = json.Unmarshal([]byte(js), constraint)
-	require.NotNil(t, err)
+	require.Error(t, err)
 
 	js = `{
 		"Stop": "true"
 	}`
 	constraint = &StringPattern{}
 	err = json.Unmarshal([]byte(js), constraint)
-	require.NotNil(t, err)
+	require.Error(t, err)
 
 	js = `[]`
 	constraint = &StringPattern{}
 	err = json.Unmarshal([]byte(js), constraint)
-	require.NotNil(t, err)
+	require.Error(t, err)
 }
 
 func TestArrayConditionalConstraintUnmarshalJSON(t *testing.T) {
 	js := `{}`
 	constraint := &ArrayConditionalConstraint{}
 	err := json.Unmarshal([]byte(js), constraint)
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	js = `{
 		"Constraint": nil
 	}`
 	err = json.Unmarshal([]byte(js), constraint)
-	require.NotNil(t, err)
+	require.Error(t, err)
 	js = `{
 		"Constraint": 1
 	}`
 	err = json.Unmarshal([]byte(js), constraint)
-	require.NotNil(t, err)
+	require.Error(t, err)
 
 	js = `{
 		"When": 1,
@@ -974,7 +974,7 @@ func TestArrayConditionalConstraintUnmarshalJSON(t *testing.T) {
 		}
 	}`
 	err = json.Unmarshal([]byte(js), constraint)
-	require.NotNil(t, err)
+	require.Error(t, err)
 
 	js = `{
 		"Ancestry": "xxx",
@@ -983,7 +983,7 @@ func TestArrayConditionalConstraintUnmarshalJSON(t *testing.T) {
 		}
 	}`
 	err = json.Unmarshal([]byte(js), constraint)
-	require.NotNil(t, err)
+	require.Error(t, err)
 
 	js = `{
 		"When": "%2",
@@ -993,7 +993,7 @@ func TestArrayConditionalConstraintUnmarshalJSON(t *testing.T) {
 		}
 	}`
 	err = json.Unmarshal([]byte(js), constraint)
-	require.NotNil(t, err)
+	require.Error(t, err)
 
 	js = `{
 		"When": "%2",
@@ -1006,7 +1006,7 @@ func TestArrayConditionalConstraintUnmarshalJSON(t *testing.T) {
 		}
 	}`
 	err = json.Unmarshal([]byte(js), constraint)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	wrapped := constraint.Constraint.(*StringGreaterThanOther)
 	require.Equal(t, "foo", wrapped.PropertyName)
 }
@@ -1014,7 +1014,7 @@ func TestArrayConditionalConstraintUnmarshalJSON(t *testing.T) {
 func TestValidateUnmarshallingConstraintWithNonStructConstraint(t *testing.T) {
 	var constraint nonStructConstraint = ""
 	_, err := validateUnmarshallingConstraint(&constraint, map[string]interface{}{}, nil, nil)
-	require.NotNil(t, err)
+	require.Error(t, err)
 	require.Equal(t, msgConstraintNotStruct, err.Error())
 }
 
@@ -1030,7 +1030,7 @@ func TestUnmarshalConstraintWithBadWhens(t *testing.T) {
 		]
 	}`)
 	constraint, err := unmarshalConstraint(obj)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	condConstraint, ok := constraint.(*ConditionalConstraint)
 	require.True(t, ok)
 	require.Equal(t, 1, len(condConstraint.When))
@@ -1048,7 +1048,7 @@ func TestUnmarshalConstraintWithBadWhens(t *testing.T) {
 			"whenConditions": "should be an array"
 	}`)
 	_, err = unmarshalConstraint(obj)
-	require.NotNil(t, err)
+	require.Error(t, err)
 	require.Equal(t, fmt.Sprintf(errMsgFieldExpectedType, ptyNameWhenConditions, "array"), err.Error())
 
 	obj = jsonObject(`{
@@ -1059,7 +1059,7 @@ func TestUnmarshalConstraintWithBadWhens(t *testing.T) {
 			"whenConditions": [1]
 	}`)
 	_, err = unmarshalConstraint(obj)
-	require.NotNil(t, err)
+	require.Error(t, err)
 	require.Equal(t, fmt.Sprintf(errMsgFieldExpectedType, ptyNameWhenConditions, "array of strings"), err.Error())
 }
 
@@ -1073,7 +1073,7 @@ func TestUnmarshalConstraintWithBadOthersExpr(t *testing.T) {
 			"othersExpr": "foo && bar"
 	}`)
 	constraint, err := unmarshalConstraint(obj)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	condConstraint, ok := constraint.(*ConditionalConstraint)
 	require.True(t, ok)
 	require.Equal(t, 0, len(condConstraint.When))
@@ -1092,7 +1092,7 @@ func TestUnmarshalConstraintWithBadOthersExpr(t *testing.T) {
 			"othersExpr": ["should be a string"]
 	}`)
 	_, err = unmarshalConstraint(obj)
-	require.NotNil(t, err)
+	require.Error(t, err)
 	require.Equal(t, fmt.Sprintf(errMsgFieldExpectedType, ptyNameOthersExpr, "string"), err.Error())
 
 	obj = jsonObject(`{
@@ -1103,7 +1103,7 @@ func TestUnmarshalConstraintWithBadOthersExpr(t *testing.T) {
 			"othersExpr": "not a valid expr"
 	}`)
 	_, err = unmarshalConstraint(obj)
-	require.NotNil(t, err)
+	require.Error(t, err)
 	require.Equal(t, fmt.Sprintf(errMsgCannotParseExpr, "not a valid expr", "unexpected property name start (at position 4)"), err.Error())
 }
 
@@ -1113,7 +1113,7 @@ func TestUnmarshalPropertyValidatorWithBadWithExprs(t *testing.T) {
 		"requiredWith": ""
 	}`
 	err := json.Unmarshal([]byte(js), pv)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.NotNil(t, pv.RequiredWith)
 	require.Equal(t, 0, len(pv.RequiredWith))
 
@@ -1122,7 +1122,7 @@ func TestUnmarshalPropertyValidatorWithBadWithExprs(t *testing.T) {
 		"requiredWith": null
 	}`
 	err = json.Unmarshal([]byte(js), pv)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.NotNil(t, pv.RequiredWith)
 	require.Equal(t, 0, len(pv.RequiredWith))
 
@@ -1130,14 +1130,14 @@ func TestUnmarshalPropertyValidatorWithBadWithExprs(t *testing.T) {
 		"requiredWith": 0
 	}`
 	err = json.Unmarshal([]byte(js), pv)
-	require.NotNil(t, err)
+	require.Error(t, err)
 
 	// with bad expression (missing boolean operators)...
 	js = `{
 		"requiredWith": "foo bar baz"
 	}`
 	err = json.Unmarshal([]byte(js), pv)
-	require.NotNil(t, err)
+	require.Error(t, err)
 	require.True(t, strings.Contains(err.Error(), fmt.Sprintf("at position %d", 4)))
 
 	pv.RequiredWith = nil
@@ -1145,7 +1145,7 @@ func TestUnmarshalPropertyValidatorWithBadWithExprs(t *testing.T) {
 		"requiredWith": "foo || !bar"
 	}`
 	err = json.Unmarshal([]byte(js), pv)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.NotNil(t, pv.RequiredWith)
 	require.Equal(t, 2, len(pv.RequiredWith))
 	opt := pv.RequiredWith[0].(*OtherProperty)
@@ -1182,35 +1182,35 @@ func TestSetConditionIf_UnmarshalJSONFails(t *testing.T) {
 	js := `{}`
 
 	err := json.Unmarshal([]byte(js), c)
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	js = `{"Constraint": "should be object"}`
 	err = json.Unmarshal([]byte(js), c)
-	require.NotNil(t, err)
+	require.Error(t, err)
 	require.Equal(t, fmt.Sprintf(errMsgFieldExpectedType, "Constraint", "object"), err.Error())
 
 	js = `{"Constraint": {"foo": "this isnt a constraint"}}`
 	err = json.Unmarshal([]byte(js), c)
-	require.NotNil(t, err)
+	require.Error(t, err)
 	require.Equal(t, fmt.Sprintf(errMsgUnknownNamedConstraint, ""), err.Error())
 
 	js = `{"SetOk": 1}`
 	err = json.Unmarshal([]byte(js), c)
-	require.NotNil(t, err)
+	require.Error(t, err)
 	require.Equal(t, fmt.Sprintf(errMsgFieldExpectedType, "SetOk", "string"), err.Error())
 
 	js = `{"SetFail": 1}`
 	err = json.Unmarshal([]byte(js), c)
-	require.NotNil(t, err)
+	require.Error(t, err)
 	require.Equal(t, fmt.Sprintf(errMsgFieldExpectedType, "SetFail", "string"), err.Error())
 
 	js = `{"Parent": "should be bool"}`
 	err = json.Unmarshal([]byte(js), c)
-	require.NotNil(t, err)
+	require.Error(t, err)
 	require.Equal(t, fmt.Sprintf(errMsgFieldExpectedType, "Parent", "bool"), err.Error())
 
 	js = `{"Global": "should be bool"}`
 	err = json.Unmarshal([]byte(js), c)
-	require.NotNil(t, err)
+	require.Error(t, err)
 	require.Equal(t, fmt.Sprintf(errMsgFieldExpectedType, "Global", "bool"), err.Error())
 }
