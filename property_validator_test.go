@@ -590,7 +590,7 @@ func TestNewPropertyValidator(t *testing.T) {
 
 	_, err = NewPropertyValidator("]),'])")
 	require.Error(t, err)
-	require.Equal(t, "unopened parenthesis at position 0", err.Error())
+	require.Equal(t, "unopened ']' at position 0", err.Error())
 
 	_, err = NewPropertyValidator("blah")
 	require.Error(t, err)

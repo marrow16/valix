@@ -3,10 +3,13 @@ package valix
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/go-andiamo/splitter"
 	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
+
+	_ "github.com/go-andiamo/splitter"
 )
 
 const (
@@ -26,8 +29,6 @@ const (
 	msgConstraintArgsParseError     = msgV8nPrefix + "constraint '%s{}' - args parsing error (%s)"
 	msgUnknownTagValue              = msgV8nPrefix + "token '%s' expected %s value (found \"%s\")"
 	msgPropertyNotObject            = msgV8nPrefix + "token '%s' cannot be used on non object/array field"
-	msgUnclosed                     = "unclosed parenthesis or quote started at position %d"
-	msgUnopened                     = "unopened parenthesis at position %d"
 	msgWrapped                      = "field '%s' (property '%s') - %s"
 )
 
@@ -158,8 +159,8 @@ func addConditions(conditions *Conditions, tagValue string, allowCurly bool) err
 	if isBracedStr(tagValue, allowCurly) {
 		if tokens, err := parseCommas(tagValue[1 : len(tagValue)-1]); err == nil {
 			for _, token := range tokens {
-				if isQuotedStr(token, true) {
-					*conditions = append(*conditions, token[1:len(token)-1])
+				if unq, ok := isQuotedStr(token); ok {
+					*conditions = append(*conditions, unq)
 				} else {
 					*conditions = append(*conditions, token)
 				}
@@ -167,8 +168,8 @@ func addConditions(conditions *Conditions, tagValue string, allowCurly bool) err
 		} else {
 			return err
 		}
-	} else if isQuotedStr(tagValue, true) {
-		*conditions = append(*conditions, tagValue[1:len(tagValue)-1])
+	} else if unq, ok := isQuotedStr(tagValue); ok {
+		*conditions = append(*conditions, unq)
 	} else {
 		*conditions = append(*conditions, tagValue)
 	}
@@ -474,8 +475,8 @@ func safeSet(fv reflect.Value, valueStr string, hasValue bool) (result bool) {
 
 func safeSetString(fv reflect.Value, valueStr string) (result bool) {
 	result = false
-	if isQuotedStr(valueStr, true) {
-		fv.SetString(valueStr[1 : len(valueStr)-1])
+	if unq, ok := isQuotedStr(valueStr); ok {
+		fv.SetString(unq)
 		result = true
 	}
 	return
@@ -529,8 +530,8 @@ func safeSetSlice(fv reflect.Value, valueStr string) (result bool) {
 		}
 	} else if fv.Type().Elem().Kind() == otherKind {
 		useValue := valueStr
-		if isQuotedStr(valueStr, true) {
-			useValue = valueStr[1 : len(valueStr)-1]
+		if unq, ok := isQuotedStr(valueStr); ok {
+			useValue = unq
 		}
 		if expr, err := ParseExpression(useValue); err == nil {
 			vx := reflect.ValueOf(expr)
@@ -543,8 +544,8 @@ func safeSetSlice(fv reflect.Value, valueStr string) (result bool) {
 
 func safeSetRegexp(fv reflect.Value, valueStr string) (result bool) {
 	result = false
-	if isQuotedStr(valueStr, true) {
-		if rx, err := regexp.Compile(valueStr[1 : len(valueStr)-1]); err == nil {
+	if unq, ok := isQuotedStr(valueStr); ok {
+		if rx, err := regexp.Compile(unq); err == nil {
 			rxv := reflect.ValueOf(rx).Elem()
 			fv.Set(rxv)
 			result = true
@@ -605,8 +606,8 @@ func itemsToSliceOfStrings(strItems []string, itemType reflect.Type) (result ref
 	result = reflect.MakeSlice(itemType, len(strItems), len(strItems))
 	for i, vu := range strItems {
 		v := strings.Trim(vu, " ")
-		if isQuotedStr(v, true) {
-			result.Index(i).SetString(v[1 : len(v)-1])
+		if unq, ok := isQuotedStr(v); ok {
+			result.Index(i).SetString(unq)
 		} else {
 			result.Index(i).SetString(v)
 		}
@@ -728,101 +729,11 @@ func firstValidColonAt(str string) int {
 	return result
 }
 
+var commaSplitter = splitter.MustCreateSplitter(',',
+	splitter.DoubleQuotesDoubleEscaped, splitter.SingleQuotesDoubleEscaped,
+	splitter.Parenthesis, splitter.CurlyBrackets, splitter.SquareBrackets).
+	AddDefaultOptions(splitter.TrimSpaces, splitter.IgnoreEmpties)
+
 func parseCommas(str string) ([]string, error) {
-	result := make([]string, 0, len(str)/4)
-	runes := []rune(str)
-	stk := &delimiterStack{current: nil, stack: []*delimiter{}}
-	lastTokenAt := 0
-	for i, r := range runes {
-		switch r {
-		case ',':
-			if !stk.inAny() {
-				result = append(result, strings.Trim(string(runes[lastTokenAt:i]), " "))
-				lastTokenAt = i + 1
-			}
-		case '"', '\'', '[', ']', '(', ')', '{', '}':
-			if err := stk.delimiter(r, i); err != nil {
-				return nil, err
-			}
-		}
-	}
-	if stk.inAny() {
-		return nil, fmt.Errorf(msgUnclosed, stk.current.pos)
-	}
-	if lastTokenAt < len(runes) {
-		result = append(result, strings.Trim(string(runes[lastTokenAt:]), " "))
-	}
-	return result, nil
-}
-
-type delimiterStack struct {
-	current *delimiter
-	stack   []*delimiter
-}
-type delimiter struct {
-	open    rune
-	pos     int
-	isQuote bool
-}
-
-func (ds *delimiterStack) delimiter(ch rune, pos int) error {
-	switch ch {
-	case '"', '\'':
-		ds.delimiterQuote(ch, pos)
-	case '(', '[', '{':
-		ds.delimiterOpenBrace(ch, pos)
-	case ')':
-		return ds.delimiterCloseBrace(pos, '(')
-	case ']':
-		return ds.delimiterCloseBrace(pos, '[')
-	case '}':
-		return ds.delimiterCloseBrace(pos, '{')
-	}
-	return nil
-}
-
-func (ds *delimiterStack) delimiterQuote(ch rune, pos int) {
-	if ds.current != nil && ds.current.open == ch {
-		ds.pop()
-	} else if !ds.inQuote() {
-		ds.push(ch, pos)
-	}
-}
-
-func (ds *delimiterStack) delimiterOpenBrace(ch rune, pos int) {
-	if !ds.inQuote() {
-		ds.push(ch, pos)
-	}
-}
-
-func (ds *delimiterStack) delimiterCloseBrace(pos int, opened rune) error {
-	if !ds.inQuote() {
-		if ds.current == nil || ds.current.open != opened {
-			return fmt.Errorf(msgUnopened, pos)
-		}
-		ds.pop()
-	}
-	return nil
-}
-
-func (ds *delimiterStack) push(ch rune, pos int) {
-	if ds.current != nil {
-		ds.stack = append(ds.stack, ds.current)
-	}
-	ds.current = &delimiter{open: ch, pos: pos, isQuote: ch == '"' || ch == '\''}
-}
-
-func (ds *delimiterStack) pop() {
-	if len(ds.stack) > 0 {
-		ds.current = ds.stack[len(ds.stack)-1]
-		ds.stack = ds.stack[0 : len(ds.stack)-1]
-	} else {
-		ds.current = nil
-	}
-}
-func (ds *delimiterStack) inAny() bool {
-	return ds.current != nil
-}
-func (ds *delimiterStack) inQuote() bool {
-	return ds.current != nil && ds.current.isQuote
+	return commaSplitter.Split(str)
 }

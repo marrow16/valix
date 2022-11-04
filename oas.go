@@ -76,9 +76,9 @@ func (pv *PropertyValidator) addOasTagItem(tagItem string) (result error) {
 		hasColon = true
 		tagToken = strings.Trim(tagItem[0:cAt], " ")
 		tagValue = strings.Trim(tagItem[cAt+1:], " ")
-		tagValueIsStr = isQuotedStr(tagValue, true)
-		if tagValueIsStr {
-			tagValue = tagValue[1 : len(tagValue)-1]
+		if unq, ok := isQuotedStr(tagValue); ok {
+			tagValueIsStr = true
+			tagValue = unq
 		}
 	}
 	colonErr := false
@@ -89,29 +89,24 @@ func (pv *PropertyValidator) addOasTagItem(tagItem string) (result error) {
 		if !strErr {
 			pv.OasInfo.Description = tagValue
 		}
-		break
 	case tagOpenApiTitle:
 		strErr = !tagValueIsStr
 		if !strErr {
 			pv.OasInfo.Title = tagValue
 		}
-		break
 	case tagOpenApiFormat, tagOpenApiFormat2:
 		strErr = !tagValueIsStr
 		if !strErr {
 			pv.OasInfo.Format = tagValue
 		}
-		break
 	case tagOpenApiExample, tagOpenApiExample2:
 		strErr = !tagValueIsStr
 		if !strErr {
 			pv.OasInfo.Example = tagValue
 		}
-		break
 	case tagOpenApiDeprecated:
 		colonErr = hasColon
 		pv.OasInfo.Deprecated = true
-		break
 	default:
 		result = fmt.Errorf(msgOasUnknownTokenInTag, tagToken)
 	}

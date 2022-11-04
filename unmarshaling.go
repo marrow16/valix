@@ -656,7 +656,7 @@ func unmarshalGetConstraint(c map[string]interface{}) (Constraint, error) {
 
 func (jt *JsonType) UnmarshalJSON(data []byte) error {
 	str := string(data[:])
-	if isQuotedStr(str, false) {
+	if strings.HasPrefix(str, `"`) && strings.HasPrefix(str, `"`) {
 		if v, ok := JsonTypeFromString(str[1 : len(str)-1]); ok {
 			*jt = v
 			return nil

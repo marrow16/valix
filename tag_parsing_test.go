@@ -49,11 +49,11 @@ func TestArgsStringToArgs(t *testing.T) {
 
 	_, err = argsStringToArgs(constraintName, "str: (,bool:true")
 	require.Error(t, err)
-	require.Equal(t, fmt.Sprintf(msgConstraintArgsParseError, constraintName, fmt.Sprintf(msgUnclosed, 5)), err.Error())
+	require.Equal(t, fmt.Sprintf(msgConstraintArgsParseError, constraintName, "unclosed '(' at position 5"), err.Error())
 
 	_, err = argsStringToArgs(constraintName, "str: ),bool:true")
 	require.Error(t, err)
-	require.Equal(t, fmt.Sprintf(msgConstraintArgsParseError, constraintName, fmt.Sprintf(msgUnopened, 5)), err.Error())
+	require.Equal(t, fmt.Sprintf(msgConstraintArgsParseError, constraintName, "unopened ')' at position 5"), err.Error())
 
 	args, err = argsStringToArgs(constraintName, "xxx")
 	require.NoError(t, err)
@@ -100,9 +100,12 @@ func TestPropertyValidator_ProcessTagItems(t *testing.T) {
 	err = pv.processTagItems("", "", []string{tagTokenConstraintsPrefix + "StringNotEmpty{}"})
 	require.NoError(t, err)
 	require.Equal(t, 1, len(pv.Constraints))
-	err = pv.processTagItems("", "", []string{tagTokenConstraintsPrefix + "&StringNotEmpty{}"})
+	err = pv.processTagItems("", "", []string{tagTokenConstraintsPrefix + `&StringNotEmpty{Message:"this message has a "" double quote in it"}`})
 	require.NoError(t, err)
 	require.Equal(t, 2, len(pv.Constraints))
+	c2, ok := pv.Constraints[1].(*StringNotEmpty)
+	require.True(t, ok)
+	require.Equal(t, "this message has a \" double quote in it", c2.Message)
 
 	err = pv.processTagItems("", "", []string{tagTokenConstraintsPrefix + "[StringNotEmpty{}, &StringNotEmpty{}]"})
 	require.NoError(t, err)
@@ -110,11 +113,13 @@ func TestPropertyValidator_ProcessTagItems(t *testing.T) {
 
 	err = pv.processTagItems("", "", []string{tagTokenConstraintsPrefix + "[)(]"})
 	require.Error(t, err)
-	require.Equal(t, fmt.Sprintf(msgUnopened, 0), err.Error())
+	require.Equal(t, "unopened ')' at position 0", err.Error())
 
 	err = pv.processTagItems("", "", []string{tagTokenConstraintsPrefix + "[,]"})
+	require.NoError(t, err)
+
+	err = pv.processTagItems("", "", []string{tagTokenConstraintsPrefix + "[Unknown{}]"})
 	require.Error(t, err)
-	require.Equal(t, fmt.Sprintf(msgUnknownConstraint, ""), err.Error())
 
 	err = pv.processTagItems("", "", []string{"&Bad{}X"})
 	require.Error(t, err)
@@ -312,7 +317,7 @@ func TestPropertyValidator_AddTagItemWhen(t *testing.T) {
 
 	err = pv.addTagItem("", "", tagTokenWhen+":[{]")
 	require.Error(t, err)
-	require.Equal(t, fmt.Sprintf(msgUnclosed, 0), err.Error())
+	require.Equal(t, "unclosed '{' at position 0", err.Error())
 
 	err = pv.addTagItem("", "", tagTokenWhen+":\"TEST4\"")
 	require.NoError(t, err)
@@ -347,7 +352,7 @@ func TestPropertyValidator_AddTagItemUnwanted(t *testing.T) {
 
 	err = pv.addTagItem("", "", tagTokenUnwanted+":[{]")
 	require.Error(t, err)
-	require.Equal(t, fmt.Sprintf(msgUnclosed, 0), err.Error())
+	require.Equal(t, "unclosed '{' at position 0", err.Error())
 
 	err = pv.addTagItem("", "", tagTokenUnwanted+":\"TEST4\"")
 	require.NoError(t, err)
@@ -378,7 +383,7 @@ func TestPropertyValidator_AddTagItemMandatoryWhen(t *testing.T) {
 
 	err = pv.addTagItem("", "", tagTokenMandatory+":[{]")
 	require.Error(t, err)
-	require.Equal(t, fmt.Sprintf(msgUnclosed, 0), err.Error())
+	require.Equal(t, "unclosed '{' at position 0", err.Error())
 
 	err = pv.addTagItem("", "", tagTokenMandatory+":\"TEST4\"")
 	require.NoError(t, err)
@@ -415,7 +420,7 @@ func TestPropertyValidator_AddTagItemOnly(t *testing.T) {
 
 	err = pv.addTagItem("", "", tagTokenOnly+":[{]")
 	require.Error(t, err)
-	require.Equal(t, fmt.Sprintf(msgUnclosed, 0), err.Error())
+	require.Equal(t, "unclosed '{' at position 0", err.Error())
 
 	err = pv.addTagItem("", "", tagTokenOnly+":\"TEST4\"")
 	require.NoError(t, err)
@@ -667,7 +672,7 @@ func TestPropertyValidator_AddTagItemObjWhen(t *testing.T) {
 
 	err = pv.addTagItem("", "", tagTokenObjWhen+":[{]")
 	require.Error(t, err)
-	require.Equal(t, fmt.Sprintf(msgUnclosed, 0), err.Error())
+	require.Equal(t, "unclosed '{' at position 0", err.Error())
 
 	err = pv.addTagItem("", "", tagTokenObjWhen+":\"TEST4\"")
 	require.NoError(t, err)
@@ -801,7 +806,7 @@ func TestRebuildConstraintWithArgs(t *testing.T) {
 
 	c, err = rebuildConstraintWithArgs(constraintName, orgConstraint, ")(")
 	require.Error(t, err)
-	require.Equal(t, fmt.Sprintf(msgConstraintArgsParseError, constraintName, fmt.Sprintf(msgUnopened, 0)), err.Error())
+	require.Equal(t, fmt.Sprintf(msgConstraintArgsParseError, constraintName, "unopened ')' at position 0"), err.Error())
 }
 
 func TestRebuildConstraintWithOneArg(t *testing.T) {
@@ -1192,26 +1197,6 @@ func TestItemsToSlice_Bool(t *testing.T) {
 	require.False(t, ok)
 	v, ok = itemsToSlice(itemType, "[x,2,3]")
 	require.False(t, ok)
-}
-
-func TestDelimStack(t *testing.T) {
-	stk := &delimiterStack{current: nil, stack: []*delimiter{}}
-	stk.push('"', 1)
-	stk.push('[', 2)
-	stk.push('(', 3)
-	require.Equal(t, 2, len(stk.stack))
-	require.Equal(t, '(', stk.current.open)
-	require.Equal(t, 3, stk.current.pos)
-	stk.pop()
-	require.Equal(t, 1, len(stk.stack))
-	require.Equal(t, '[', stk.current.open)
-	require.Equal(t, 2, stk.current.pos)
-	stk.pop()
-	require.Equal(t, 0, len(stk.stack))
-	require.Equal(t, '"', stk.current.open)
-	require.Equal(t, 1, stk.current.pos)
-	stk.pop()
-	require.Nil(t, stk.current)
 }
 
 func TestWrappedConstraint(t *testing.T) {

@@ -9,7 +9,7 @@ import (
 
 func TestValidatorForWithOasTag(t *testing.T) {
 	type myStruct struct {
-		Foo string `json:"foo" oas:"description:'THIS IS DESC!',title:'THIS IS TITLE',format:'THIS IS FORMAT',example:'THIS IS EXAMPLE',deprecated"`
+		Foo string `json:"foo" oas:"description:'THIS IS ''DESC''!',title:'THIS IS TITLE',format:'THIS IS FORMAT',example:'THIS IS EXAMPLE',deprecated"`
 	}
 	v, err := ValidatorFor(myStruct{}, nil)
 	require.NoError(t, err)
@@ -18,7 +18,7 @@ func TestValidatorForWithOasTag(t *testing.T) {
 	pv, ok := v.Properties["foo"]
 	require.True(t, ok)
 	require.True(t, pv.OasInfo.Deprecated)
-	require.Equal(t, "THIS IS DESC!", pv.OasInfo.Description)
+	require.Equal(t, "THIS IS 'DESC'!", pv.OasInfo.Description)
 	require.Equal(t, "THIS IS TITLE", pv.OasInfo.Title)
 	require.Equal(t, "THIS IS FORMAT", pv.OasInfo.Format)
 	require.Equal(t, "THIS IS EXAMPLE", pv.OasInfo.Example)
@@ -39,7 +39,7 @@ func TestValidatorForWithBadOasTag(t *testing.T) {
 	}
 	_, err := ValidatorFor(myStruct{}, nil)
 	require.Error(t, err)
-	require.Equal(t, fmt.Sprintf(msgUnclosed, 6), err.Error())
+	require.Equal(t, "unclosed ''' at position 6", err.Error())
 }
 
 func TestOasTagItemExpectedString(t *testing.T) {
