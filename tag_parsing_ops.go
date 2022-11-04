@@ -104,8 +104,8 @@ var tagOpUnwantedWith = func(pv *PropertyValidator, hasColon bool, tagValue stri
 }
 
 var tagOpRequiredWithMsg = func(pv *PropertyValidator, hasColon bool, tagValue string) error {
-	if isQuotedStr(tagValue, true) {
-		pv.RequiredWithMessage = tagValue[1 : len(tagValue)-1]
+	if unq, ok := isQuotedStr(tagValue); ok {
+		pv.RequiredWithMessage = unq
 	} else {
 		pv.RequiredWithMessage = tagValue
 	}
@@ -113,8 +113,8 @@ var tagOpRequiredWithMsg = func(pv *PropertyValidator, hasColon bool, tagValue s
 }
 
 var tagOpUnwantedWithMsg = func(pv *PropertyValidator, hasColon bool, tagValue string) error {
-	if isQuotedStr(tagValue, true) {
-		pv.UnwantedWithMessage = tagValue[1 : len(tagValue)-1]
+	if unq, ok := isQuotedStr(tagValue); ok {
+		pv.UnwantedWithMessage = unq
 	} else {
 		pv.UnwantedWithMessage = tagValue
 	}
@@ -156,8 +156,8 @@ var tagTokenOperations = map[string]tagTokenOperation{
 		return nil
 	},
 	tagTokenOnlyMsg: func(pv *PropertyValidator, hasColon bool, tagValue string) error {
-		if isQuotedStr(tagValue, true) {
-			pv.OnlyMessage = tagValue[1 : len(tagValue)-1]
+		if unq, ok := isQuotedStr(tagValue); ok {
+			pv.OnlyMessage = unq
 		} else {
 			pv.OnlyMessage = tagValue
 		}
@@ -234,8 +234,8 @@ var tagTokenOperations = map[string]tagTokenOperation{
 		if isBracedStr(tagValue, true) {
 			if tokens, err := parseCommas(tagValue[1 : len(tagValue)-1]); err == nil {
 				for _, token := range tokens {
-					if isQuotedStr(token, true) {
-						pv.ObjectValidator.WhenConditions = append(pv.ObjectValidator.WhenConditions, token[1:len(token)-1])
+					if unq, ok := isQuotedStr(token); ok {
+						pv.ObjectValidator.WhenConditions = append(pv.ObjectValidator.WhenConditions, unq)
 					} else {
 						pv.ObjectValidator.WhenConditions = append(pv.ObjectValidator.WhenConditions, token)
 					}
@@ -243,8 +243,8 @@ var tagTokenOperations = map[string]tagTokenOperation{
 			} else {
 				return err
 			}
-		} else if isQuotedStr(tagValue, true) {
-			pv.ObjectValidator.WhenConditions = append(pv.ObjectValidator.WhenConditions, tagValue[1:len(tagValue)-1])
+		} else if unq, ok := isQuotedStr(tagValue); ok {
+			pv.ObjectValidator.WhenConditions = append(pv.ObjectValidator.WhenConditions, unq)
 		} else {
 			pv.ObjectValidator.WhenConditions = append(pv.ObjectValidator.WhenConditions, tagValue)
 		}
@@ -263,9 +263,13 @@ var tagTokenOperations = map[string]tagTokenOperation{
 	},
 }
 
-func isQuotedStr(str string, allowSingles bool) bool {
-	return (strings.HasPrefix(str, "\"") && strings.HasSuffix(str, "\"")) ||
-		(allowSingles && strings.HasPrefix(str, "'") && strings.HasSuffix(str, "'"))
+func isQuotedStr(str string) (string, bool) {
+	if strings.HasPrefix(str, `"`) && strings.HasSuffix(str, `"`) {
+		return strings.ReplaceAll(str[1:len(str)-1], `""`, `"`), true
+	} else if strings.HasPrefix(str, `'`) && strings.HasSuffix(str, `'`) {
+		return strings.ReplaceAll(str[1:len(str)-1], `''`, `'`), true
+	}
+	return "", false
 }
 
 func isBracedStr(str string, allowCurly bool) bool {

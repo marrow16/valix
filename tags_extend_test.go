@@ -82,7 +82,7 @@ func TestTagAliasesRepoErrorsWithBadReplacement(t *testing.T) {
 	tagAliasesRepo.registerSingle("bad", "'")
 	_, err := tagAliasesRepo.resolve([]string{"$bad"})
 	require.Error(t, err)
-	require.Equal(t, fmt.Sprintf(errMsgAliasParse, "bad", fmt.Errorf(msgUnclosed, 0)), err.Error())
+	require.Equal(t, fmt.Sprintf(errMsgAliasParse, "bad", "unclosed ''' at position 0"), err.Error())
 }
 
 func TestTagAliasesResolvesSingleLevel(t *testing.T) {
@@ -143,7 +143,7 @@ func TestTagAliasErrorsCauseTagParsingErrors(t *testing.T) {
 
 	err = pv.processV8nTagValue("Foo", "foo", "$bad")
 	require.Error(t, err)
-	require.Equal(t, fmt.Sprintf(msgWrapped, "Foo", "foo", fmt.Sprintf(errMsgAliasParse, "bad", fmt.Errorf(msgUnclosed, 0))), err.Error())
+	require.Equal(t, fmt.Sprintf(msgWrapped, "Foo", "foo", fmt.Sprintf(errMsgAliasParse, "bad", "unclosed ''' at position 0")), err.Error())
 
 	err = pv.processV8nTagValue("Foo", "foo", "$cyclic")
 	require.Error(t, err)

@@ -254,8 +254,8 @@ func checkTokenTypeNameSequencing(token *parsedToken, runes []rune, tokens []*pa
 		return fmt.Errorf("unexpected property name start (at position %d)", token.start)
 	}
 	token.name = string(runes[token.start:token.end])
-	if isQuotedStr(token.name, true) {
-		token.name = token.name[1 : len(token.name)-1]
+	if unq, ok := isQuotedStr(token.name); ok {
+		token.name = unq
 	}
 	return nil
 }
