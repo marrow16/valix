@@ -493,6 +493,9 @@ func TestNetIsTCP(t *testing.T) {
 		"127.0.0.1:65536": {
 			{&NetIsTCP{}, false},
 		},
+		"127.0.0.1:": {
+			{&NetIsTCP{}, false},
+		},
 		"127.0.0.1:80": {
 			{&NetIsTCP{}, true},
 			{&NetIsTCP{DisallowPrivate: true}, true},
@@ -504,6 +507,9 @@ func TestNetIsTCP(t *testing.T) {
 			{&NetIsTCP{V4Only: true, V6Only: true}, false},
 		},
 		"[::1]": {
+			{&NetIsTCP{}, false},
+		},
+		"[::1]:": {
 			{&NetIsTCP{}, false},
 		},
 		"[::1]:80": {
