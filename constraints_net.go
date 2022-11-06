@@ -263,7 +263,7 @@ type NetIsTCP struct {
 
 // Check implements Constraint.Check
 func (c *NetIsTCP) Check(v interface{}, vcx *ValidatorContext) (bool, string) {
-	if str, ok := v.(string); ok && !(c.V4Only && c.V6Only) && str != "" {
+	if str, ok := v.(string); ok && !(c.V4Only && c.V6Only) && str != "" && !strings.HasSuffix(str, ":") {
 		pass := false
 		if ta, err := net.ResolveTCPAddr(useNetwork("tcp", c.V4Only, c.V6Only), str); err == nil {
 			pass = isValidIp(ta.IP, c.V4Only, c.V6Only, c.DisallowPrivate, c.DisallowLoopback)
