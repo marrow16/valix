@@ -3,6 +3,7 @@ package valix
 import (
 	"fmt"
 	"golang.org/x/text/language"
+	"net"
 	"net/mail"
 	"strconv"
 	"strings"
@@ -304,6 +305,8 @@ func (c *StringValidCurrencyCode) GetMessage(tcx I18nContext) string {
 type StringValidEmail struct {
 	// DisallowRFC5322 when set, disallows email addresses in RFC5322 format (i.e "Barry Gibbs <bg@example.com>")
 	DisallowRFC5322 bool
+	// CheckExchange when set, checks the MX (mail exchange) for the email address
+	CheckExchange bool
 	// AllowIPAddress when set, allows email addresses with IP (e.g. "me@[123.0.1.2]")
 	AllowIPAddress bool
 	// AllowIPV6 when set, allows email addresses with IP v6 (e.g. "me@[2001:db8::68]")
@@ -354,54 +357,22 @@ func (c *StringValidEmail) Check(v interface{}, vcx *ValidatorContext) (bool, st
 }
 
 func (c *StringValidEmail) checkString(str string, vcx *ValidatorContext) bool {
+	result := false
 	if c.DisallowRFC5322 {
-		if isValidEmail(str, domainOptions{
-			allowIPAddress:      c.AllowIPAddress,
-			allowIPV6:           c.AllowIPV6,
-			allowLocal:          c.AllowLocal,
-			allowTldOnly:        c.AllowTldOnly,
-			allowGeographicTlds: c.AllowGeographicTlds,
-			allowGenericTlds:    c.AllowGenericTlds,
-			allowBrandTlds:      c.AllowBrandTlds,
-			allowInfraTlds:      c.AllowInfraTlds,
-			allowTestTlds:       c.AllowTestTlds,
-			addCountryCodeTlds:  c.AddCountryCodeTlds,
-			excCountryCodeTlds:  c.ExcCountryCodeTlds,
-			addGenericTlds:      c.AddGenericTlds,
-			excGenericTlds:      c.ExcGenericTlds,
-			addBrandTlds:        c.AddBrandTlds,
-			excBrandTlds:        c.ExcBrandTlds,
-			addLocalTlds:        c.AddLocalTlds,
-			excLocalTlds:        c.ExcLocalTlds,
-		}) {
-			return true
-		}
+		result = c.checkEmailAddress(str)
 	} else if a, err := mail.ParseAddress(str); err != nil {
 		// fails to parse addresses with IPv6 - so try directly...
 		if c.AllowIPAddress {
-			if isValidEmail(str, domainOptions{
-				allowIPAddress:      c.AllowIPAddress,
-				allowIPV6:           c.AllowIPV6,
-				allowLocal:          c.AllowLocal,
-				allowTldOnly:        c.AllowTldOnly,
-				allowGeographicTlds: c.AllowGeographicTlds,
-				allowGenericTlds:    c.AllowGenericTlds,
-				allowBrandTlds:      c.AllowBrandTlds,
-				allowInfraTlds:      c.AllowInfraTlds,
-				allowTestTlds:       c.AllowTestTlds,
-				addCountryCodeTlds:  c.AddCountryCodeTlds,
-				excCountryCodeTlds:  c.ExcCountryCodeTlds,
-				addGenericTlds:      c.AddGenericTlds,
-				excGenericTlds:      c.ExcGenericTlds,
-				addBrandTlds:        c.AddBrandTlds,
-				excBrandTlds:        c.ExcBrandTlds,
-				addLocalTlds:        c.AddLocalTlds,
-				excLocalTlds:        c.ExcLocalTlds,
-			}) {
-				return true
-			}
+			result = c.checkEmailAddress(str)
 		}
-	} else if isValidEmail(a.Address, domainOptions{
+	} else {
+		result = c.checkEmailAddress(a.Address)
+	}
+	return result
+}
+
+func (c *StringValidEmail) checkEmailAddress(addr string) bool {
+	if isValidEmail(addr, domainOptions{
 		allowIPAddress:      c.AllowIPAddress,
 		allowIPV6:           c.AllowIPV6,
 		allowLocal:          c.AllowLocal,
@@ -420,7 +391,16 @@ func (c *StringValidEmail) checkString(str string, vcx *ValidatorContext) bool {
 		addLocalTlds:        c.AddLocalTlds,
 		excLocalTlds:        c.ExcLocalTlds,
 	}) {
-		return true
+		if c.CheckExchange {
+			if aAt := strings.LastIndex(addr, "@"); aAt != -1 {
+				dom := addr[aAt+1:]
+				if mxs, err := net.LookupMX(dom); err == nil && len(mxs) > 0 {
+					return true
+				}
+			}
+		} else {
+			return true
+		}
 	}
 	return false
 }

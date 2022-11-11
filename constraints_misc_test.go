@@ -555,7 +555,11 @@ func TestStringValidEmail(t *testing.T) {
 			},
 		},
 		"me@google.com": {
-			expectValid: true,
+			expectValid:            true,
+			expectValidWithOptions: true,
+			tryWith: &StringValidEmail{
+				CheckExchange: true,
+			},
 		},
 		"me2@google.com": {
 			expectValid:            true,
@@ -667,6 +671,13 @@ func TestStringValidEmail(t *testing.T) {
 			expectValidWithOptions: true,
 			tryWith: &StringValidEmail{
 				AllowInfraTlds: true,
+			},
+		},
+		"me@xxx-yyy-zzz.com": {
+			expectValid:            true,
+			expectValidWithOptions: false,
+			tryWith: &StringValidEmail{
+				CheckExchange: true,
 			},
 		},
 	}
