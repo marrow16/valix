@@ -80,6 +80,8 @@ func (c *NetIsCIDR) GetMessage(tcx I18nContext) string {
 
 // NetIsHostname constraint to check that string value is a valid hostname
 type NetIsHostname struct {
+	// CheckHost when set, checks the host (using net.LookupHost)
+	CheckHost bool
 	// AllowIPAddress when set, allows IP address hostnames
 	AllowIPAddress bool
 	// AllowIPV6 when set, allows IP v6 address hostnames
@@ -128,7 +130,7 @@ func (c *NetIsHostname) Check(v interface{}, vcx *ValidatorContext) (bool, strin
 }
 
 func (c *NetIsHostname) checkString(str string, vcx *ValidatorContext) bool {
-	return len(str) > 0 && isValidDomain(str, domainOptions{
+	if len(str) > 0 && isValidDomain(str, domainOptions{
 		allowIPAddress:      c.AllowIPAddress,
 		allowIPV6:           c.AllowIPV6,
 		allowLocal:          c.AllowLocal,
@@ -146,7 +148,16 @@ func (c *NetIsHostname) checkString(str string, vcx *ValidatorContext) bool {
 		excBrandTlds:        c.ExcBrandTlds,
 		addLocalTlds:        c.AddLocalTlds,
 		excLocalTlds:        c.ExcLocalTlds,
-	})
+	}) {
+		if c.CheckHost {
+			if addrs, err := net.LookupHost(str); err == nil && len(addrs) > 0 {
+				return true
+			}
+		} else {
+			return true
+		}
+	}
+	return false
 }
 
 // GetMessage implements the Constraint.GetMessage

@@ -297,6 +297,24 @@ func TestNetIsHostname(t *testing.T) {
 				ExcBrandTlds:   []string{"audi"},
 			}, false},
 		},
+		"goxxx.compare": {
+			{&NetIsHostname{
+				AllowGenericTlds: true,
+			}, true},
+			{&NetIsHostname{
+				CheckHost:        true,
+				AllowGenericTlds: true,
+			}, false},
+		},
+		"go.compare": {
+			{&NetIsHostname{
+				AllowGenericTlds: true,
+			}, true},
+			{&NetIsHostname{
+				CheckHost:        true,
+				AllowGenericTlds: true,
+			}, true},
+		},
 	}
 	for a, tcs := range testCases {
 		for i, tc := range tcs {
