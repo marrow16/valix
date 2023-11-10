@@ -56,6 +56,8 @@ func (o *ValidatorForOptions) Apply(on *Validator) error {
 }
 
 var (
+	// OptionIgnoreOasTags option for ValidatorFor - ignores oas tags on struct fields
+	OptionIgnoreOasTags Option = _OptionIgnoreOasTags
 	// OptionConstraints option for ValidatorFor - adds constraints to the Validator
 	OptionConstraints = _OptionConstraints
 	// OptionIgnoreUnknownProperties option for ValidatorFor - sets Validator to ignore unknown properties
@@ -86,7 +88,8 @@ var (
 )
 
 var (
-	_OptionConstraints = func(constraints ...Constraint) Option {
+	_OptionIgnoreOasTags = &optionIgnoreOasTags{}
+	_OptionConstraints   = func(constraints ...Constraint) Option {
 		return &optionConstraints{
 			constraints: constraints,
 		}
@@ -104,6 +107,13 @@ var (
 	_OptionOrderedPropertyChecks     = &optionOrderedPropertyChecks{true}
 	_OptionUnOrderedPropertyChecks   = &optionOrderedPropertyChecks{false}
 )
+
+type optionIgnoreOasTags struct {
+}
+
+func (o *optionIgnoreOasTags) Apply(on *Validator) error {
+	return nil
+}
 
 type optionIgnoreUnknownProperties struct {
 	setting bool

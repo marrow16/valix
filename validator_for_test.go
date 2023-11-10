@@ -763,3 +763,19 @@ func TestPropertyObjectDifferentiation(t *testing.T) {
 	require.NotNil(t, ov.Properties["objs"].ObjectValidator)
 	require.Nil(t, ov2.Properties["objs"].ObjectValidator)
 }
+
+func TestOptionIgnoreOasTags(t *testing.T) {
+	type SubStruct struct {
+		Foo string `json:"foo" oas:"description:foo,example"`
+	}
+	type OasTags struct {
+		Foo string    `json:"foo" oas:"description:foo,example"`
+		Sub SubStruct `json:"sub"`
+	}
+	_, err := ValidatorFor(OasTags{})
+	require.Error(t, err)
+
+	v, err := ValidatorFor(OasTags{}, OptionIgnoreOasTags)
+	require.NoError(t, err)
+	require.NotNil(t, v)
+}

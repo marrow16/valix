@@ -1,13 +1,13 @@
 module github.com/marrow16/valix
 
-go 1.17
+go 1.19
 
 require (
 	github.com/go-andiamo/splitter v1.2.5
-	github.com/google/go-cmp v0.5.7
-	github.com/stretchr/testify v1.8.1
-	golang.org/x/net v0.0.0-20220722155237-a158d28d115b
-	golang.org/x/text v0.3.7
+	github.com/google/go-cmp v0.5.9
+	github.com/stretchr/testify v1.8.2
+	golang.org/x/net v0.8.0
+	golang.org/x/text v0.8.0
 )
 
 require (
