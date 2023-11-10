@@ -21,7 +21,7 @@ const (
 
 // ValidatorFor creates a Validator for a specified struct
 //
-// If a Validator cannot be compiled for the supplied struct an error is returned
+// # If a Validator cannot be compiled for the supplied struct an error is returned
 //
 // When evaluating the supplied struct to build a Validator, tags on the struct fields
 // are used to further clarify the validation constraints.  These are specified using the
@@ -38,7 +38,14 @@ func ValidatorFor(vstruct interface{}, options ...Option) (*Validator, error) {
 		return nil, err
 	}
 
-	properties, err := buildPropertyValidators(ty)
+	ignoreOas := false
+	for _, o := range options {
+		if _, ok := o.(*optionIgnoreOasTags); ok {
+			ignoreOas = true
+			break
+		}
+	}
+	properties, err := buildPropertyValidators(ty, ignoreOas)
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +86,7 @@ func emptyValidatorFromOptions(options ...Option) (*Validator, error) {
 	return result, nil
 }
 
-func buildPropertyValidators(ty reflect.Type) (Properties, error) {
+func buildPropertyValidators(ty reflect.Type, ignoreOas bool) (Properties, error) {
 	cnt := ty.NumField()
 	result := make(Properties, cnt)
 	newTy := reflect.New(ty)
@@ -87,7 +94,7 @@ func buildPropertyValidators(ty reflect.Type) (Properties, error) {
 		fld := ty.Field(i)
 		actualFld := newTy.Elem().FieldByName(fld.Name)
 		if actualFld.CanSet() {
-			pv, fn, err := propertyValidatorFromField(fld)
+			pv, fn, err := propertyValidatorFromField(fld, ignoreOas)
 			if err != nil {
 				return nil, err
 			}
@@ -97,7 +104,7 @@ func buildPropertyValidators(ty reflect.Type) (Properties, error) {
 	return result, nil
 }
 
-func propertyValidatorFromField(fld reflect.StructField) (*PropertyValidator, string, error) {
+func propertyValidatorFromField(fld reflect.StructField, ignoreOas bool) (*PropertyValidator, string, error) {
 	name := getFieldName(fld)
 	result, err := initialPropertyValidator(fld, name)
 	if err != nil {
@@ -109,20 +116,21 @@ func propertyValidatorFromField(fld reflect.StructField) (*PropertyValidator, st
 	if err := customTagsRegistry.processField(fld, result); err != nil {
 		return nil, name, err
 	}
-	if err := result.processOasTag(fld); err != nil {
-		return nil, name, err
+	if !ignoreOas {
+		if err := result.processOasTag(fld); err != nil {
+			return nil, name, err
+		}
 	}
-
 	fKind := fld.Type.Kind()
 	objValidatorUsed := false
 	if result.Type == JsonObject {
-		if used, err := setPropertyValidatorObjectValidatorForStruct(fld, result); err != nil {
+		if used, err := setPropertyValidatorObjectValidatorForStruct(fld, result, ignoreOas); err != nil {
 			return nil, name, err
 		} else {
 			objValidatorUsed = used
 		}
 	} else if result.Type == JsonArray && fKind == reflect.Slice {
-		if used, err := setPropertyValidatorObjectValidatorForSlice(fld, result); err != nil {
+		if used, err := setPropertyValidatorObjectValidatorForSlice(fld, result, ignoreOas); err != nil {
 			return nil, name, err
 		} else {
 			objValidatorUsed = used
@@ -134,11 +142,11 @@ func propertyValidatorFromField(fld reflect.StructField) (*PropertyValidator, st
 	return result, name, nil
 }
 
-func setPropertyValidatorObjectValidatorForStruct(fld reflect.StructField, pv *PropertyValidator) (used bool, err error) {
+func setPropertyValidatorObjectValidatorForStruct(fld reflect.StructField, pv *PropertyValidator, ignoreOas bool) (used bool, err error) {
 	used = false
 	fKind := fld.Type.Kind()
 	if fKind == reflect.Struct {
-		if ptys, err := buildPropertyValidators(fld.Type); err != nil {
+		if ptys, err := buildPropertyValidators(fld.Type, ignoreOas); err != nil {
 			return false, err
 		} else if len(ptys) > 0 && pv.ObjectValidator != nil {
 			pv.ObjectValidator.DisallowObject = false
@@ -147,7 +155,7 @@ func setPropertyValidatorObjectValidatorForStruct(fld reflect.StructField, pv *P
 			used = true
 		}
 	} else if fKind == reflect.Ptr && fld.Type.Elem().Kind() == reflect.Struct {
-		if ptys, err := buildPropertyValidators(fld.Type.Elem()); err != nil {
+		if ptys, err := buildPropertyValidators(fld.Type.Elem(), ignoreOas); err != nil {
 			return false, err
 		} else if len(ptys) > 0 && pv.ObjectValidator != nil {
 			pv.ObjectValidator.DisallowObject = false
@@ -159,10 +167,10 @@ func setPropertyValidatorObjectValidatorForStruct(fld reflect.StructField, pv *P
 	return
 }
 
-func setPropertyValidatorObjectValidatorForSlice(fld reflect.StructField, pv *PropertyValidator) (used bool, err error) {
+func setPropertyValidatorObjectValidatorForSlice(fld reflect.StructField, pv *PropertyValidator, ignoreOas bool) (used bool, err error) {
 	used = false
 	if fld.Type.Elem().Kind() == reflect.Struct {
-		if ptys, err := buildPropertyValidators(fld.Type.Elem()); err != nil {
+		if ptys, err := buildPropertyValidators(fld.Type.Elem(), ignoreOas); err != nil {
 			return false, err
 		} else if len(ptys) > 0 && pv.ObjectValidator != nil {
 			pv.ObjectValidator.DisallowObject = true
@@ -171,7 +179,7 @@ func setPropertyValidatorObjectValidatorForSlice(fld reflect.StructField, pv *Pr
 			used = true
 		}
 	} else if fld.Type.Elem().Kind() == reflect.Ptr && fld.Type.Elem().Elem().Kind() == reflect.Struct {
-		if ptys, err := buildPropertyValidators(fld.Type.Elem().Elem()); err != nil {
+		if ptys, err := buildPropertyValidators(fld.Type.Elem().Elem(), ignoreOas); err != nil {
 			return false, err
 		} else if len(ptys) > 0 && pv.ObjectValidator != nil {
 			pv.ObjectValidator.DisallowObject = true
