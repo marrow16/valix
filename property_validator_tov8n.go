@@ -153,9 +153,6 @@ func v8nConstraintToString(constraint Constraint, options V8nTagStringOptions, n
 	if unchanged {
 		return pfx + name + ternary(options.DiscardUnneededCurlies).string("", "{}")
 	}
-	if cmp.Equal(constraint, raw, regexOption) {
-		return pfx + name + ternary(options.DiscardUnneededCurlies).string("", "{}")
-	}
 	rawV := reflect.ValueOf(raw).Elem()
 	rawTy := reflect.TypeOf(raw).Elem()
 	vflds := reflect.VisibleFields(rawTy)
@@ -163,21 +160,26 @@ func v8nConstraintToString(constraint Constraint, options V8nTagStringOptions, n
 	diffs := make([]v8nConstraintField, 0, len(vflds))
 	allNames := map[string]bool{}
 	for _, fld := range vflds {
-		allNames[fld.Name] = true
-		af := actV.Field(fld.Index[0])
-		rf := rawV.Field(fld.Index[0])
-		if !cmp.Equal(af.Interface(), rf.Interface(), regexOption) {
-			diff := v8nConstraintField{
-				name:     fld.Name,
-				value:    af.Interface(),
-				rValue:   af,
-				orgValue: rf.Interface(),
+		if fld.IsExported() {
+			allNames[fld.Name] = true
+			af := actV.Field(fld.Index[0])
+			rf := rawV.Field(fld.Index[0])
+			if !cmp.Equal(af.Interface(), rf.Interface(), regexOption) {
+				diff := v8nConstraintField{
+					name:     fld.Name,
+					value:    af.Interface(),
+					rValue:   af,
+					orgValue: rf.Interface(),
+				}
+				if df, ok := fld.Tag.Lookup(tagNameV8n); ok && df == "default" {
+					diff.isDefault = true
+				}
+				diffs = append(diffs, diff)
 			}
-			if df, ok := fld.Tag.Lookup(tagNameV8n); ok && df == "default" {
-				diff.isDefault = true
-			}
-			diffs = append(diffs, diff)
 		}
+	}
+	if len(diffs) == 0 {
+		return pfx + name + ternary(options.DiscardUnneededCurlies).string("", "{}")
 	}
 	return pfx + name + "{" + v8nFieldsToString(diffs, allNames, options) + "}"
 }
