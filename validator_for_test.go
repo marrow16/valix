@@ -3,6 +3,7 @@ package valix
 import (
 	"errors"
 	"fmt"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
@@ -778,4 +779,37 @@ func TestOptionIgnoreOasTags(t *testing.T) {
 	v, err := ValidatorFor(OasTags{}, OptionIgnoreOasTags)
 	require.NoError(t, err)
 	require.NotNil(t, v)
+}
+
+func TestValidatorFor_Embedded(t *testing.T) {
+	type abstractStruct struct {
+		Aaa string `json:"aaa"`
+	}
+	type baseStruct struct {
+		abstractStruct
+		Foo string `json:"foo"`
+		Bar string `json:"bar"`
+	}
+	type myStruct struct {
+		baseStruct
+		Baz string `json:"baz"`
+	}
+	v, err := ValidatorFor(myStruct{}, nil)
+	require.NoError(t, err)
+	require.NotNil(t, v)
+	require.Equal(t, 4, len(v.Properties))
+
+	testJson := `{
+"aaa": "aaa",
+"foo": "foo",
+"bar": "bar",
+"baz": "baz"}`
+	my := &myStruct{}
+	ok, violations, _ := v.ValidateStringInto(testJson, my)
+	require.True(t, ok)
+	require.Equal(t, 0, len(violations))
+	assert.Equal(t, "aaa", my.Aaa)
+	assert.Equal(t, "foo", my.Foo)
+	assert.Equal(t, "bar", my.Bar)
+	assert.Equal(t, "baz", my.Baz)
 }
