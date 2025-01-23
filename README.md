@@ -1119,13 +1119,13 @@ the above will check the properties in order specified by their <code>order:</co
 The `v8n` tag can also support custom tokens which can be registered using `valix.RegisterCustomTagToken`.
 Any registered custom tag tokens can be used in the `v8n` tag and will be processed when building a validator for a struct using `valix.ValidatorFor`
 
-An example of how this is used can be found in [examples/custom_tag_tokens_test.go](https://github.com/marrow16/valix/blob/master/examples/custom_tag_tokens_test.go)
+An example of how this is used can be found in [_examples/custom_tag_tokens_test.go](https://github.com/marrow16/valix/blob/master/examples/custom_tag_tokens_test.go)
 
 #### Tag token aliases
 
 If you find that you're using the same `v8n` tag tokens repeatedly - you can create aliases for these and then just reference the alias using a `$` prefix.
 
-An example of how this is used can be found in [examples/tag_aliases_test.go](https://github.com/marrow16/valix/blob/master/examples/tag_aliases_test.go)
+An example of how this is used can be found in [_examples/tag_aliases_test.go](https://github.com/marrow16/valix/blob/master/examples/tag_aliases_test.go)
 
 #### Abbreviating constraints in tags
 

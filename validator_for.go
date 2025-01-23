@@ -92,13 +92,23 @@ func buildPropertyValidators(ty reflect.Type, ignoreOas bool) (Properties, error
 	newTy := reflect.New(ty)
 	for i := 0; i < cnt; i++ {
 		fld := ty.Field(i)
-		actualFld := newTy.Elem().FieldByName(fld.Name)
-		if actualFld.CanSet() {
-			pv, fn, err := propertyValidatorFromField(fld, ignoreOas)
+		if fld.Anonymous {
+			embeddedPtys, err := buildPropertyValidators(fld.Type, ignoreOas)
 			if err != nil {
 				return nil, err
 			}
-			result[fn] = pv
+			for k, v := range embeddedPtys {
+				result[k] = v
+			}
+		} else {
+			actualFld := newTy.Elem().FieldByName(fld.Name)
+			if actualFld.CanSet() {
+				pv, fn, err := propertyValidatorFromField(fld, ignoreOas)
+				if err != nil {
+					return nil, err
+				}
+				result[fn] = pv
+			}
 		}
 	}
 	return result, nil
