@@ -6,8 +6,8 @@ require (
 	github.com/go-andiamo/splitter v1.2.5
 	github.com/google/go-cmp v0.5.9
 	github.com/stretchr/testify v1.8.2
-	golang.org/x/net v0.33.0
-	golang.org/x/text v0.21.0
+	golang.org/x/net v0.38.0
+	golang.org/x/text v0.23.0
 )
 
 require (
